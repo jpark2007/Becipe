@@ -1,0 +1,23 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "Becipe Web",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["expo", "start", "--web", "--port", "8081"],
+      "port": 8081
+    },
+    {
+      "name": "Becipe Dev",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["expo", "start", "--web", "--port", "8081"],
+      "port": 8081
+    },
+    {
+      "name": "UI Preview",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["serve", "-p", "8082", "-s", "."],
+      "port": 8082
+    }
+  ]
+}

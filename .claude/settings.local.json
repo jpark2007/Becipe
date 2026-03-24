@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx create-expo-app@latest . --template blank-typescript)",
+      "Read(//Users/jonahpark/**)",
+      "Bash(npx create-expo-app@latest Becipe --template blank-typescript)",
+      "Read(//private/tmp/**)",
+      "Bash(npx create-expo-app@latest becipe-init --template blank-typescript)",
+      "Read(//tmp/**)",
+      "Bash(cp /tmp/becipe-init/package.json /Users/jonahpark/Becipe/package.json)",
+      "Bash(cp /tmp/becipe-init/tsconfig.json /Users/jonahpark/Becipe/tsconfig.json)",
+      "Bash(cp /tmp/becipe-init/app.json /Users/jonahpark/Becipe/app.json)",
+      "Bash(cp /tmp/becipe-init/index.ts /Users/jonahpark/Becipe/index.ts)",
+      "Bash(cp -r /tmp/becipe-init/assets /Users/jonahpark/Becipe/assets)",
+      "Bash(npm install:*)",
+      "mcp__Claude_Preview__preview_start",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Bash(curl -s \"https://raw.githubusercontent.com/anthropics/claude-code/main/plugins/frontend-design/skills/frontend-design/SKILL.md\")"
+    ]
+  }
+}

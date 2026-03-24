@@ -1,0 +1,1417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Becipe — UI Snapshot</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400;1,600&family=DM+Mono:wght@400;500&family=Lora:ital,wght@0,400;1,400&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --ink:        #0C0A08;
+    --card:       #161210;
+    --card-hi:    #201C18;
+    --border:     #272018;
+    --muted:      #7A6E64;
+    --ivory:      #EDE8DC;
+    --terra:      #C4622D;
+    --terra-lt:   #E4956A;
+    --ff-display: 'Cormorant Garamond', serif;
+    --ff-mono:    'DM Mono', monospace;
+    --ff-body:    'Lora', serif;
+  }
+
+  body {
+    background: #111;
+    font-family: var(--ff-body);
+    color: var(--ivory);
+    padding: 48px 32px;
+  }
+
+  /* ── page header ── */
+  .page-title {
+    font-family: var(--ff-display);
+    font-style: italic;
+    font-size: 52px;
+    color: var(--ivory);
+    margin-bottom: 6px;
+  }
+  .page-sub {
+    font-family: var(--ff-mono);
+    font-size: 11px;
+    letter-spacing: 3px;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 56px;
+  }
+
+  /* ── screen grid ── */
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, 320px);
+    gap: 32px;
+    justify-content: center;
+  }
+
+  /* ── device shell ── */
+  .device {
+    width: 320px;
+    background: var(--ink);
+    border: 1px solid var(--border);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+  .device-label {
+    font-family: var(--ff-mono);
+    font-size: 9px;
+    letter-spacing: 2.5px;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding: 10px 14px 8px;
+    border-bottom: 1px solid var(--border);
+    background: var(--card);
+  }
+  .screen { flex: 1; }
+
+  /* ── shared primitives ── */
+  .hairline { height: 1px; background: var(--border); }
+  .terra { color: var(--terra); }
+  .muted  { color: var(--muted); }
+  .ivory  { color: var(--ivory); }
+  .mono   { font-family: var(--ff-mono); }
+  .display{ font-family: var(--ff-display); }
+  .body-t { font-family: var(--ff-body); }
+
+  /* ─────────────────────────────────────────
+     SCREEN 1 — LOGIN
+  ───────────────────────────────────────── */
+  .login { padding: 52px 28px 36px; }
+  .login-wordmark {
+    font-family: var(--ff-display);
+    font-style: italic;
+    font-weight: 600;
+    font-size: 72px;
+    color: var(--ivory);
+    line-height: 1;
+    margin-bottom: 8px;
+  }
+  .login-tagline {
+    font-family: var(--ff-mono);
+    font-size: 10px;
+    letter-spacing: 3px;
+    color: var(--muted);
+    margin-bottom: 40px;
+  }
+  .field-wrap { margin-bottom: 24px; }
+  .field-label {
+    font-family: var(--ff-mono);
+    font-size: 9px;
+    letter-spacing: 2.5px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+  .field-value {
+    font-family: var(--ff-body);
+    font-size: 15px;
+    color: var(--muted);
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+  }
+  .cta-btn {
+    width: 100%;
+    background: var(--terra);
+    padding: 16px;
+    text-align: center;
+    font-family: var(--ff-mono);
+    font-weight: 500;
+    font-size: 11px;
+    letter-spacing: 3.5px;
+    color: var(--ivory);
+    text-transform: uppercase;
+    margin-top: 32px;
+    margin-bottom: 20px;
+  }
+  .login-footer {
+    font-family: var(--ff-body);
+    font-size: 13px;
+    color: var(--muted);
+    text-align: center;
+  }
+  .login-footer span { color: var(--terra); }
+
+  /* ─────────────────────────────────────────
+     SCREEN 2 — SIGNUP
+  ───────────────────────────────────────── */
+  .signup { padding: 40px 28px 36px; }
+  .eyebrow {
+    font-family: var(--ff-mono);
+    font-size: 9px;
+    letter-spacing: 2.5px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+  .signup-title {
+    font-family: var(--ff-display);
+    font-style: italic;
+    font-size: 44px;
+    color: var(--ivory);
+    margin-bottom: 4px;
+  }
+
+  /* ─────────────────────────────────────────
+     SCREEN 3 — FEED
+  ───────────────────────────────────────── */
+  .tab-screen { display: flex; flex-direction: column; height: 560px; }
+  .tab-header {
+    padding: 16px 16px 0;
+    flex-shrink: 0;
+  }
+  .tab-eyebrow {
+    font-family: var(--ff-mono);
+    font-size: 9px;
+    letter-spacing: 2.5px;
+    color: var(--muted);
+    margin-bottom: 4px;
+  }
+  .tab-title {
+    font-family: var(--ff-display);
+    font-style: italic;
+    font-size: 32px;
+    color: var(--ivory);
+    margin-bottom: 10px;
+  }
+  .tab-content { flex: 1; overflow: hidden; padding: 0 0 0; }
+  .tab-bar {
+    height: 58px;
+    border-top: 1px solid var(--border);
+    background: var(--ink);
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+  }
+  .tab-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    cursor: pointer;
+  }
+  .tab-icon {
+    font-size: 14px;
+    color: var(--muted);
+  }
+  .tab-item.active .tab-icon { color: var(--terra); }
+  .tab-name {
+    font-family: var(--ff-mono);
+    font-size: 8px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .tab-item.active .tab-name { color: var(--terra); }
+
+  /* feed card */
+  .feed-card { border-bottom: 1px solid var(--border); }
+  .feed-card-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px 10px;
+  }
+  .avatar-sq {
+    width: 32px; height: 32px;
+    background: var(--terra);
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--ff-display);
+    font-style: italic;
+    font-size: 18px;
+    color: var(--ivory);
+    flex-shrink: 0;
+  }
+  .feed-user-line {
+    font-family: var(--ff-mono);
+    font-size: 10px;
+    letter-spacing: 1px;
+    color: var(--ivory);
+  }
+  .feed-action {
+    font-family: var(--ff-body);
+    font-style: italic;
+    font-size: 12px;
+    color: var(--muted);
+  }
+  .feed-img {
+    width: 100%;
+    height: 180px;
+    object-fit: cover;
+    display: block;
+    background: var(--card-hi);
+    position: relative;
+    overflow: hidden;
+  }
+  .feed-img-placeholder {
+    width: 100%; height: 180px;
+    background: linear-gradient(160deg, #1e1a14 0%, #2a221a 50%, #1a1510 100%);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .feed-img-label {
+    font-family: var(--ff-display);
+    font-style: italic;
+    font-size: 13px;
+    color: var(--muted);
+    opacity: 0.6;
+  }
+  .feed-card-foot {
+    padding: 10px 16px 12px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  .feed-rating {
+    font-family: var(--ff-mono);
+    font-weight: 500;
+    font-size: 26px;
+    color: var(--terra);
+    line-height: 1;
+  }
+  .feed-rating-denom {
+    font-family: var(--ff-mono);
+    font-size: 11px;
+    color: var(--muted);
+  }
+  .feed-note {
+    font-family: var(--ff-body);
+    font-style: italic;
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 3px;
+  }
+  .feed-recipe-link {
+    font-family: var(--ff-display);
+    font-style: italic;
+    font-size: 15px;
+    color: var(--ivory);
+    border-top: 1px solid var(--border);
+    padding: 8px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .feed-recipe-link span {
+    font-family: var(--ff-mono);
+    font-size: 9px;
+    color: var(--muted);
+  }
+
+  /* ─────────────────────────────────────────
+     SCREEN 4 — EXPLORE
+  ───────────────────────────────────────── */
+  .explore-modes {
+    display: flex;
+    gap: 0;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 12px;
+  }
+  .mode-tab {
+    font-family: var(--ff-mono);
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding: 10px 16px 9px;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+  }
+  .mode-tab.active {
+    color: var(--ivory);
+    border-bottom-color: var(--ivory);
+  }
+  .search-bar {
+    margin: 0 16px 12px;
+    padding-bottom: 9px;
+    border-bottom: 1px solid var(--border);
+    font-family: var(--ff-body);
+    font-size: 14px;
+    color: var(--muted);
+  }
+  .sort-chips {
+    display: flex;
+    gap: 16px;
+    padding: 0 16px 10px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 0;
+    overflow-x: auto;
+  }
+  .chip {
+    font-family: var(--ff-mono);
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding-bottom: 6px;
+    cursor: pointer;
+    white-space: nowrap;
+    border-bottom: 2px solid transparent;
+  }
+  .chip.active {
+    color: var(--terra);
+    border-bottom-color: var(--terra);
+  }
+  .cuisine-chips {
+    display: flex;
+    gap: 14px;
+    padding: 8px 16px;
+    overflow-x: auto;
+    border-bottom: 1px solid var(--border);
+  }
+  .cuisine-chip {
+    font-family: var(--ff-mono);
+    font-size: 8px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--muted);
+    white-space: nowrap;
+    padding-bottom: 4px;
+    border-bottom: 2px solid transparent;
+  }
+  .cuisine-chip.active { color: var(--terra); border-bottom-color: var(--terra); }
+
+  /* recipe card grid */
+  .recipe-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1px;
+    background: var(--border);
+  }
+  .recipe-card {
+    background: var(--ink);
+    position: relative;
+    overflow: hidden;
+  }
+  .recipe-card-img {
+    width: 100%; height: 110px;
+    background: linear-gradient(160deg, #221d16 0%, #332a1e 100%);
+    position: relative;
+  }
+  .recipe-card-scrim {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to top, rgba(0,0,0,0.75) 0%, transparent 55%);
+  }
+  .recipe-card-title {
+    position: absolute;
+    bottom: 7px; left: 9px; right: 9px;
+    font-family: var(--ff-display);
+    font-style: italic;
+    font-size: 15px;
+    color: var(--ivory);
+    line-height: 1.2;
+  }
+  .recipe-card-cuisine {
+    position: absolute;
+    top: 7px; right: 7px;
+    font-family: var(--ff-mono);
+    font-size: 7px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--terra);
+    background: rgba(0,0,0,0.6);
+    padding: 3px 5px;
+  }
+  .recipe-card-meta {
+    padding: 7px 9px 9px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .recipe-card-rating {
+    font-family: var(--ff-mono);
+    font-size: 13px;
+    color: var(--terra);
+  }
+  .recipe-card-time {
+    font-family: var(--ff-mono);
+    font-size: 9px;
+    color: var(--muted);
+  }
+
+  /* ─────────────────────────────────────────
+     SCREEN 5 — ADD
+  ───────────────────────────────────────── */
+  .add-screen { padding: 28px 16px; }
+  .add-title {
+    font-family: var(--ff-display);
+    font-style: italic;
+    font-size: 34px;
+    color: var(--ivory);
+    margin-bottom: 4px;
+  }
+  .add-sub {
+    font-family: var(--ff-mono);
+    font-size: 9px;
+    letter-spacing: 2px;
+    color: var(--muted);
+    margin-bottom: 28px;
+  }
+  .add-mode-row {
+    border-left: 3px solid var(--terra);
+    padding: 12px 14px;
+    margin-bottom: 2px;
+    background: var(--card);
+    cursor: pointer;
+  }
+  .add-mode-label {
+    font-family: var(--ff-mono);
+    font-size: 9px;
+    letter-spacing: 2.5px;
+    text-transform: uppercase;
+    color: var(--terra);
+    margin-bottom: 4px;
+  }
+  .add-mode-desc {
+    font-family: var(--ff-body);
+    font-style: italic;
+    font-size: 13px;
+    color: var(--muted);
+  }
+
+  /* manual form state */
+  .add-form { margin-top: 24px; }
+  .form-title-input {
+    font-family: var(--ff-display);
+    font-style: italic;
+    font-size: 26px;
+    color: var(--ivory);
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 18px;
+  }
+  .form-row { margin-bottom: 16px; }
+  .step-row {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 10px;
+    align-items: flex-start;
+  }
+  .step-num {
+    font-family: var(--ff-mono);
+    font-size: 9px;
+    color: var(--terra);
+    border-left: 2px solid var(--terra);
+    padding: 3px 6px;
+    margin-top: 2px;
+    flex-shrink: 0;
+  }
+  .step-text {
+    font-family: var(--ff-body);
+    font-size: 13px;
+    color: var(--muted);
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+    flex: 1;
+  }
+
+  /* ─────────────────────────────────────────
+     SCREEN 6 — RECIPE DETAIL
+  ───────────────────────────────────────── */
+  .recipe-detail { }
+  .detail-hero {
+    width: 100%; height: 200px;
+    background: linear-gradient(160deg, #221d16 0%, #3a2e22 100%);
+    position: relative;
+  }
+  .detail-hero-scrim {
+    position: absolute; inset: 0;
+    background: linear-gradient(to top, rgba(8,6,4,0.85) 0%, transparent 55%);
+  }
+  .detail-meta-over {
+    position: absolute;
+    bottom: 14px; left: 16px; right: 16px;
+  }
+  .detail-cuisine-tag {
+    font-family: var(--ff-mono);
+    font-size: 8px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--terra);
+    margin-bottom: 6px;
+  }
+  .detail-title {
+    font-family: var(--ff-display);
+    font-style: italic;
+    font-weight: 600;
+    font-size: 28px;
+    color: var(--ivory);
+    line-height: 1.15;
+  }
+  .detail-body { padding: 14px 16px; }
+  .detail-stats {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 14px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--border);
+  }
+  .stat-block { }
+  .stat-val {
+    font-family: var(--ff-mono);
+    font-size: 18px;
+    color: var(--terra);
+  }
+  .stat-label {
+    font-family: var(--ff-mono);
+    font-size: 8px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .section-head {
+    font-family: var(--ff-mono);
+    font-size: 8px;
+    letter-spacing: 2.5px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 10px;
+    margin-top: 14px;
+  }
+  .ingredient-row {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 8px;
+    align-items: baseline;
+  }
+  .ing-amount {
+    font-family: var(--ff-mono);
+    font-size: 11px;
+    color: var(--terra);
+    width: 54px;
+    flex-shrink: 0;
+  }
+  .ing-name {
+    font-family: var(--ff-body);
+    font-size: 13px;
+    color: var(--ivory);
+  }
+
+  /* ─────────────────────────────────────────
+     SCREEN 7 — COOK MODE
+  ───────────────────────────────────────── */
+  .cook-screen {
+    background: var(--ink);
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    padding: 28px 24px 20px;
+  }
+  .cook-progress {
+    height: 2px;
+    background: var(--border);
+    margin-bottom: 28px;
+    position: relative;
+  }
+  .cook-progress-fill {
+    height: 2px;
+    background: var(--terra);
+    width: 33%;
+  }
+  .cook-step-counter {
+    font-family: var(--ff-mono);
+    font-size: 9px;
+    letter-spacing: 2.5px;
+    text-transform: uppercase;
+    color: var(--terra);
+    margin-bottom: 16px;
+  }
+  .cook-step-text {
+    font-family: var(--ff-display);
+    font-style: italic;
+    font-size: 26px;
+    color: var(--ivory);
+    line-height: 1.4;
+    flex: 1;
+  }
+  .cook-nav {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 28px;
+  }
+  .cook-btn {
+    font-family: var(--ff-mono);
+    font-size: 9px;
+    letter-spacing: 2.5px;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+    width: 80px;
+    text-align: center;
+  }
+  .cook-btn.primary { color: var(--ivory); border-color: var(--ivory); }
+  .cook-ingredients {
+    margin-top: 20px;
+    border-top: 1px solid var(--border);
+    padding-top: 14px;
+  }
+  .cook-ing-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+  }
+  .cook-checkbox {
+    width: 12px; height: 12px;
+    border: 1px solid var(--terra);
+    flex-shrink: 0;
+  }
+  .cook-checkbox.checked { background: var(--terra); }
+  .cook-ing-text {
+    font-family: var(--ff-body);
+    font-size: 12px;
+    color: var(--muted);
+  }
+  .cook-ing-text.checked {
+    text-decoration: line-through;
+    color: var(--border);
+  }
+
+  /* ─────────────────────────────────────────
+     SCREEN 8 — LOG A TRY
+  ───────────────────────────────────────── */
+  .try-screen { padding: 24px 20px; }
+  .try-intro {
+    font-family: var(--ff-body);
+    font-style: italic;
+    font-size: 14px;
+    color: var(--muted);
+    margin-bottom: 20px;
+    line-height: 1.5;
+  }
+  .rating-card {
+    border: 1px solid var(--border);
+    background: var(--card);
+    padding: 16px;
+    margin-bottom: 18px;
+  }
+  .rating-label {
+    font-family: var(--ff-mono);
+    font-size: 8px;
+    letter-spacing: 2.5px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 12px;
+  }
+  .rating-bars {
+    display: flex;
+    gap: 2px;
+    height: 28px;
+    margin-bottom: 10px;
+  }
+  .rating-bar {
+    flex: 1;
+    background: var(--border);
+  }
+  .rating-bar.filled { background: var(--terra); }
+  .rating-score {
+    font-family: var(--ff-mono);
+    font-weight: 500;
+    font-size: 34px;
+    color: var(--terra);
+  }
+  .rating-denom-small {
+    font-family: var(--ff-mono);
+    font-size: 14px;
+    color: var(--muted);
+  }
+  .try-note {
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+    font-family: var(--ff-body);
+    font-style: italic;
+    font-size: 13px;
+    color: var(--muted);
+    margin-bottom: 16px;
+  }
+  .photo-picker {
+    border: 1px dashed var(--border);
+    padding: 20px;
+    text-align: center;
+    margin-bottom: 22px;
+  }
+  .photo-picker-label {
+    font-family: var(--ff-mono);
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  /* ─────────────────────────────────────────
+     SCREEN 9 — PROFILE
+  ───────────────────────────────────────── */
+  .profile-screen { padding: 32px 20px 0; }
+  .profile-header { margin-bottom: 20px; }
+  .profile-avatar {
+    width: 60px; height: 60px;
+    background: var(--terra);
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--ff-display);
+    font-style: italic;
+    font-size: 28px;
+    color: var(--ivory);
+    margin-bottom: 12px;
+  }
+  .profile-name {
+    font-family: var(--ff-display);
+    font-style: italic;
+    font-size: 30px;
+    color: var(--ivory);
+    margin-bottom: 2px;
+  }
+  .profile-handle {
+    font-family: var(--ff-mono);
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    color: var(--muted);
+    margin-bottom: 16px;
+  }
+  .profile-stats {
+    display: flex;
+    gap: 24px;
+    margin-bottom: 20px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--border);
+  }
+  .profile-stat-num {
+    font-family: var(--ff-mono);
+    font-size: 20px;
+    color: var(--ivory);
+  }
+  .profile-stat-label {
+    font-family: var(--ff-mono);
+    font-size: 8px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .profile-signout {
+    font-family: var(--ff-mono);
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--terra);
+    margin-top: 12px;
+    display: inline-block;
+  }
+
+  /* ─────────────────────────────────────────
+     SCREEN 10 — FRIDGE SEARCH
+  ───────────────────────────────────────── */
+  .fridge-screen { padding: 0 16px 16px; }
+  .fridge-prompt {
+    font-family: var(--ff-display);
+    font-style: italic;
+    font-size: 24px;
+    color: var(--ivory);
+    margin-bottom: 4px;
+    padding-top: 16px;
+  }
+  .fridge-sub {
+    font-family: var(--ff-mono);
+    font-size: 9px;
+    letter-spacing: 1.5px;
+    color: var(--muted);
+    margin-bottom: 16px;
+  }
+  .ingredient-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+    margin-bottom: 16px;
+  }
+  .ing-tag {
+    font-family: var(--ff-mono);
+    font-size: 9px;
+    letter-spacing: 1.5px;
+    color: var(--ivory);
+    border: 1px solid var(--border);
+    padding: 5px 9px;
+  }
+  .ing-tag.active {
+    border-color: var(--terra);
+    color: var(--terra);
+  }
+  .fridge-add {
+    padding-bottom: 9px;
+    border-bottom: 1px solid var(--border);
+    font-family: var(--ff-body);
+    font-style: italic;
+    font-size: 13px;
+    color: var(--muted);
+    margin-bottom: 16px;
+  }
+  .fridge-result {
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .fridge-result-title {
+    font-family: var(--ff-display);
+    font-style: italic;
+    font-size: 16px;
+    color: var(--ivory);
+  }
+  .fridge-result-match {
+    font-family: var(--ff-mono);
+    font-size: 8px;
+    letter-spacing: 1.5px;
+    color: var(--terra);
+  }
+
+  /* section separator */
+  .section-divider {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 24px 0 8px;
+  }
+  .section-divider-line { flex: 1; height: 1px; background: #222; }
+  .section-divider-label {
+    font-family: var(--ff-mono);
+    font-size: 9px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: #333;
+  }
+</style>
+</head>
+<body>
+
+<div class="page-title">Becipe</div>
+<div class="page-sub">UI Snapshot — Dark Kitchen Editorial</div>
+
+<div class="grid">
+
+  <!-- ── 1. LOGIN ── -->
+  <div class="device">
+    <div class="device-label">01 — Login</div>
+    <div class="screen">
+      <div class="login">
+        <div class="login-wordmark">Becipe</div>
+        <div class="login-tagline">COOK · SHARE · DISCOVER</div>
+        <div class="hairline" style="margin-bottom:32px"></div>
+        <div class="field-wrap">
+          <div class="field-label">Email</div>
+          <div class="field-value">your@email.com</div>
+        </div>
+        <div class="field-wrap">
+          <div class="field-label">Password</div>
+          <div class="field-value">••••••••</div>
+        </div>
+        <div class="cta-btn">Sign In</div>
+        <div class="login-footer">No account? <span>Create one →</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 2. SIGNUP ── -->
+  <div class="device">
+    <div class="device-label">02 — Sign Up</div>
+    <div class="screen">
+      <div class="signup">
+        <div class="eyebrow">New Account</div>
+        <div class="signup-title">Join Becipe</div>
+        <div class="hairline" style="margin: 12px 0 28px"></div>
+        <div class="field-wrap">
+          <div class="field-label">Your Name</div>
+          <div class="field-value">Julia Child</div>
+        </div>
+        <div class="field-wrap">
+          <div class="field-label">Username</div>
+          <div class="field-value">@juliachild</div>
+        </div>
+        <div class="field-wrap">
+          <div class="field-label">Email</div>
+          <div class="field-value">your@email.com</div>
+        </div>
+        <div class="field-wrap">
+          <div class="field-label">Password</div>
+          <div class="field-value">••••••••</div>
+        </div>
+        <div class="cta-btn">Create Account</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 3. FEED ── -->
+  <div class="device">
+    <div class="device-label">03 — Feed</div>
+    <div class="screen tab-screen">
+      <div class="tab-header">
+        <div class="tab-eyebrow">Feed</div>
+        <div class="tab-title">Your Feed</div>
+        <div class="hairline"></div>
+      </div>
+      <div class="tab-content">
+        <!-- card 1 -->
+        <div class="feed-card">
+          <div class="feed-card-head">
+            <div class="avatar-sq">M</div>
+            <div>
+              <div class="feed-user-line">@marcella</div>
+              <div class="feed-action">tried a recipe</div>
+            </div>
+            <div style="margin-left:auto; font-family:var(--ff-mono); font-size:9px; color:var(--muted)">2h ago</div>
+          </div>
+          <div class="feed-img-placeholder">
+            <div class="feed-img-label">Cacio e Pepe</div>
+          </div>
+          <div class="feed-card-foot">
+            <div>
+              <div class="feed-rating">8.5<span class="feed-rating-denom">/10</span></div>
+            </div>
+            <div>
+              <div class="feed-note">"Perfectly al dente. The pepper bloom made all the difference."</div>
+            </div>
+          </div>
+          <div class="feed-recipe-link">
+            Cacio e Pepe <span>VIEW →</span>
+          </div>
+        </div>
+        <!-- card 2 -->
+        <div class="feed-card">
+          <div class="feed-card-head">
+            <div class="avatar-sq" style="background:#7A6E64">T</div>
+            <div>
+              <div class="feed-user-line">@tomas_k</div>
+              <div class="feed-action">saved a recipe</div>
+            </div>
+            <div style="margin-left:auto; font-family:var(--ff-mono); font-size:9px; color:var(--muted)">5h ago</div>
+          </div>
+          <div class="feed-img-placeholder" style="height:120px">
+            <div class="feed-img-label">Miso Glazed Salmon</div>
+          </div>
+          <div class="feed-recipe-link">
+            Miso Glazed Salmon <span>VIEW →</span>
+          </div>
+        </div>
+      </div>
+      <div class="tab-bar">
+        <div class="tab-item active">
+          <div class="tab-icon">⊟</div>
+          <div class="tab-name">Feed</div>
+        </div>
+        <div class="tab-item">
+          <div class="tab-icon">◎</div>
+          <div class="tab-name">Explore</div>
+        </div>
+        <div class="tab-item">
+          <div class="tab-icon">⊕</div>
+          <div class="tab-name">Add</div>
+        </div>
+        <div class="tab-item">
+          <div class="tab-icon">◯</div>
+          <div class="tab-name">Profile</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 4. EXPLORE — BROWSE ── -->
+  <div class="device">
+    <div class="device-label">04 — Explore</div>
+    <div class="screen tab-screen">
+      <div class="tab-header">
+        <div class="tab-eyebrow">Explore</div>
+        <div style="height:4px"></div>
+      </div>
+      <div class="tab-content">
+        <div class="explore-modes">
+          <div class="mode-tab active">Browse</div>
+          <div class="mode-tab">My Fridge</div>
+        </div>
+        <div class="search-bar">Search recipes…</div>
+        <div class="sort-chips">
+          <div class="chip active">For Tonight</div>
+          <div class="chip">New</div>
+          <div class="chip">Top Rated</div>
+          <div class="chip">Most Tried</div>
+        </div>
+        <div class="cuisine-chips">
+          <div class="cuisine-chip active">All</div>
+          <div class="cuisine-chip">Italian</div>
+          <div class="cuisine-chip">Japanese</div>
+          <div class="cuisine-chip">Mexican</div>
+          <div class="cuisine-chip">Indian</div>
+          <div class="cuisine-chip">French</div>
+        </div>
+        <div class="recipe-grid">
+          <div class="recipe-card">
+            <div class="recipe-card-img">
+              <div class="recipe-card-scrim"></div>
+              <div class="recipe-card-cuisine">Italian</div>
+              <div class="recipe-card-title">Cacio e Pepe</div>
+            </div>
+            <div class="recipe-card-meta">
+              <div class="recipe-card-rating">8.5</div>
+              <div class="recipe-card-time">25 min</div>
+            </div>
+          </div>
+          <div class="recipe-card">
+            <div class="recipe-card-img" style="background:linear-gradient(160deg,#1a1e1a 0%,#2a3222 100%)">
+              <div class="recipe-card-scrim"></div>
+              <div class="recipe-card-cuisine">Japanese</div>
+              <div class="recipe-card-title">Miso Glazed Salmon</div>
+            </div>
+            <div class="recipe-card-meta">
+              <div class="recipe-card-rating">9.2</div>
+              <div class="recipe-card-time">35 min</div>
+            </div>
+          </div>
+          <div class="recipe-card">
+            <div class="recipe-card-img" style="background:linear-gradient(160deg,#1e1a18 0%,#32261a 100%)">
+              <div class="recipe-card-scrim"></div>
+              <div class="recipe-card-cuisine">French</div>
+              <div class="recipe-card-title">Boeuf Bourguignon</div>
+            </div>
+            <div class="recipe-card-meta">
+              <div class="recipe-card-rating">9.7</div>
+              <div class="recipe-card-time">3 hr</div>
+            </div>
+          </div>
+          <div class="recipe-card">
+            <div class="recipe-card-img" style="background:linear-gradient(160deg,#1e1a14 0%,#2e2818 100%)">
+              <div class="recipe-card-scrim"></div>
+              <div class="recipe-card-cuisine">Indian</div>
+              <div class="recipe-card-title">Chicken Tikka Masala</div>
+            </div>
+            <div class="recipe-card-meta">
+              <div class="recipe-card-rating">8.9</div>
+              <div class="recipe-card-time">50 min</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="tab-bar">
+        <div class="tab-item"><div class="tab-icon">⊟</div><div class="tab-name">Feed</div></div>
+        <div class="tab-item active"><div class="tab-icon">◎</div><div class="tab-name">Explore</div></div>
+        <div class="tab-item"><div class="tab-icon">⊕</div><div class="tab-name">Add</div></div>
+        <div class="tab-item"><div class="tab-icon">◯</div><div class="tab-name">Profile</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 5. ADD RECIPE ── -->
+  <div class="device">
+    <div class="device-label">05 — Add Recipe</div>
+    <div class="screen tab-screen">
+      <div class="tab-content" style="padding:0">
+        <div class="add-screen">
+          <div class="add-title">Add a Recipe</div>
+          <div class="add-sub">Create from scratch or import from the web</div>
+          <div class="add-mode-row">
+            <div class="add-mode-label">Create Manually</div>
+            <div class="add-mode-desc">Write your own recipe from scratch</div>
+          </div>
+          <div class="add-mode-row" style="border-left-color:var(--muted)">
+            <div class="add-mode-label" style="color:var(--muted)">Import from URL</div>
+            <div class="add-mode-desc">Paste a link from any recipe website</div>
+          </div>
+          <div class="add-mode-row" style="border-left-color:var(--muted)">
+            <div class="add-mode-label" style="color:var(--muted)">Import from TikTok / Instagram</div>
+            <div class="add-mode-desc">Paste a video link or share directly</div>
+          </div>
+          <div class="add-form">
+            <div class="form-title-input">Pasta al Limone</div>
+            <div class="form-row">
+              <div class="field-label">Cuisine</div>
+              <div class="field-value">Italian</div>
+            </div>
+            <div class="field-label" style="margin-bottom:8px">Steps</div>
+            <div class="step-row">
+              <div class="step-num">01</div>
+              <div class="step-text">Bring a large pot of salted water to a rolling boil.</div>
+            </div>
+            <div class="step-row">
+              <div class="step-num">02</div>
+              <div class="step-text">Zest two lemons, reserve juice.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="tab-bar">
+        <div class="tab-item"><div class="tab-icon">⊟</div><div class="tab-name">Feed</div></div>
+        <div class="tab-item"><div class="tab-icon">◎</div><div class="tab-name">Explore</div></div>
+        <div class="tab-item active"><div class="tab-icon">⊕</div><div class="tab-name">Add</div></div>
+        <div class="tab-item"><div class="tab-icon">◯</div><div class="tab-name">Profile</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 6. RECIPE DETAIL ── -->
+  <div class="device">
+    <div class="device-label">06 — Recipe Detail</div>
+    <div class="screen" style="height:560px; overflow:hidden">
+      <div class="detail-hero">
+        <div class="detail-hero-scrim"></div>
+        <div class="detail-meta-over">
+          <div class="detail-cuisine-tag">Italian · Easy · 25 min</div>
+          <div class="detail-title">Cacio e Pepe</div>
+        </div>
+      </div>
+      <div class="detail-body">
+        <div class="detail-stats">
+          <div class="stat-block">
+            <div class="stat-val">8.5</div>
+            <div class="stat-label">Rating</div>
+          </div>
+          <div class="stat-block">
+            <div class="stat-val">142</div>
+            <div class="stat-label">Tries</div>
+          </div>
+          <div class="stat-block">
+            <div class="stat-val">25m</div>
+            <div class="stat-label">Time</div>
+          </div>
+          <div class="stat-block">
+            <div class="stat-val">2</div>
+            <div class="stat-label">Servings</div>
+          </div>
+        </div>
+        <div style="font-family:var(--ff-body); font-style:italic; font-size:13px; color:var(--muted); margin-bottom:10px; line-height:1.5">
+          Roman simplicity at its finest — three ingredients, infinite depth.
+        </div>
+        <div class="section-head">Ingredients</div>
+        <div class="ingredient-row">
+          <div class="ing-amount">200g</div>
+          <div class="ing-name">tonnarelli or spaghetti</div>
+        </div>
+        <div class="ingredient-row">
+          <div class="ing-amount">2 tsp</div>
+          <div class="ing-name">black pepper, coarsely ground</div>
+        </div>
+        <div class="ingredient-row">
+          <div class="ing-amount">80g</div>
+          <div class="ing-name">Pecorino Romano, finely grated</div>
+        </div>
+        <div class="ingredient-row">
+          <div class="ing-amount">40g</div>
+          <div class="ing-name">Parmigiano Reggiano</div>
+        </div>
+        <div style="margin-top:16px; display:flex; gap:8px">
+          <div class="cta-btn" style="flex:1; margin:0; padding:13px; font-size:9px">Cook Mode</div>
+          <div class="cta-btn" style="flex:1; margin:0; padding:13px; font-size:9px; background:var(--card); border:1px solid var(--border)">Log a Try</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 7. COOK MODE ── -->
+  <div class="device">
+    <div class="device-label">07 — Cook Mode</div>
+    <div class="screen" style="height:560px">
+      <div class="cook-screen">
+        <div class="cook-progress">
+          <div class="cook-progress-fill"></div>
+        </div>
+        <div class="cook-step-counter">Step 1 — 4</div>
+        <div class="cook-step-text">
+          Toast the black pepper in a dry pan over medium heat until fragrant, about 90 seconds. This is everything.
+        </div>
+        <div class="cook-nav">
+          <div class="cook-btn">← Prev</div>
+          <div class="cook-btn primary">Next →</div>
+        </div>
+        <div class="cook-ingredients">
+          <div class="section-head">Ingredients</div>
+          <div class="cook-ing-item">
+            <div class="cook-checkbox checked"></div>
+            <div class="cook-ing-text checked">200g tonnarelli</div>
+          </div>
+          <div class="cook-ing-item">
+            <div class="cook-checkbox checked"></div>
+            <div class="cook-ing-text checked">2 tsp black pepper</div>
+          </div>
+          <div class="cook-ing-item">
+            <div class="cook-checkbox"></div>
+            <div class="cook-ing-text">80g Pecorino Romano</div>
+          </div>
+          <div class="cook-ing-item">
+            <div class="cook-checkbox"></div>
+            <div class="cook-ing-text">40g Parmigiano</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 8. LOG A TRY ── -->
+  <div class="device">
+    <div class="device-label">08 — Log a Try</div>
+    <div class="screen" style="height:560px; overflow:hidden">
+      <div class="try-screen">
+        <div style="font-family:var(--ff-display); font-style:italic; font-size:26px; color:var(--ivory); margin-bottom:6px">Cacio e Pepe</div>
+        <div class="try-intro">How did it go? Be honest — your friends want to know.</div>
+        <div class="rating-card">
+          <div class="rating-label">Your Rating</div>
+          <div class="rating-bars">
+            <div class="rating-bar filled"></div>
+            <div class="rating-bar filled"></div>
+            <div class="rating-bar filled"></div>
+            <div class="rating-bar filled"></div>
+            <div class="rating-bar filled"></div>
+            <div class="rating-bar filled"></div>
+            <div class="rating-bar filled"></div>
+            <div class="rating-bar filled"></div>
+            <div class="rating-bar filled"></div>
+            <div class="rating-bar filled"></div>
+            <div class="rating-bar filled"></div>
+            <div class="rating-bar filled"></div>
+            <div class="rating-bar filled"></div>
+            <div class="rating-bar filled"></div>
+            <div class="rating-bar filled"></div>
+            <div class="rating-bar filled"></div>
+            <div class="rating-bar filled"></div>
+            <div class="rating-bar"></div>
+            <div class="rating-bar"></div>
+            <div class="rating-bar"></div>
+          </div>
+          <div><span class="rating-score">8.5</span><span class="rating-denom-small"> / 10</span></div>
+        </div>
+        <div class="try-note">Add a note (optional)… perfectly al dente, pepper bloom was key</div>
+        <div class="photo-picker">
+          <div class="photo-picker-label">+ Add a photo</div>
+        </div>
+        <div class="cta-btn" style="font-size:10px; padding:14px">Post to Feed</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 9. PROFILE ── -->
+  <div class="device">
+    <div class="device-label">09 — Profile</div>
+    <div class="screen tab-screen">
+      <div class="tab-header">
+        <div class="tab-eyebrow">Profile</div>
+        <div style="height:4px"></div>
+      </div>
+      <div class="tab-content">
+        <div class="profile-screen">
+          <div class="profile-header">
+            <div class="profile-avatar">J</div>
+            <div class="profile-name">Julia Child</div>
+            <div class="profile-handle">@juliachild</div>
+            <div class="profile-stats">
+              <div>
+                <div class="profile-stat-num">34</div>
+                <div class="profile-stat-label">Recipes</div>
+              </div>
+              <div>
+                <div class="profile-stat-num">128</div>
+                <div class="profile-stat-label">Tries</div>
+              </div>
+              <div>
+                <div class="profile-stat-num">412</div>
+                <div class="profile-stat-label">Following</div>
+              </div>
+              <div>
+                <div class="profile-stat-num">891</div>
+                <div class="profile-stat-label">Followers</div>
+              </div>
+            </div>
+          </div>
+          <div class="hairline"></div>
+          <div class="section-head" style="margin-top:16px">My Recipes</div>
+          <div class="recipe-grid" style="margin-top:8px">
+            <div class="recipe-card">
+              <div class="recipe-card-img"><div class="recipe-card-scrim"></div><div class="recipe-card-cuisine">French</div><div class="recipe-card-title">Boeuf Bourguignon</div></div>
+              <div class="recipe-card-meta"><div class="recipe-card-rating">9.7</div><div class="recipe-card-time">3 hr</div></div>
+            </div>
+            <div class="recipe-card">
+              <div class="recipe-card-img" style="background:linear-gradient(160deg,#1a1e1a 0%,#2a3222 100%)"><div class="recipe-card-scrim"></div><div class="recipe-card-cuisine">Italian</div><div class="recipe-card-title">Cacio e Pepe</div></div>
+              <div class="recipe-card-meta"><div class="recipe-card-rating">8.5</div><div class="recipe-card-time">25 min</div></div>
+            </div>
+          </div>
+          <div class="profile-signout">Sign Out</div>
+        </div>
+      </div>
+      <div class="tab-bar">
+        <div class="tab-item"><div class="tab-icon">⊟</div><div class="tab-name">Feed</div></div>
+        <div class="tab-item"><div class="tab-icon">◎</div><div class="tab-name">Explore</div></div>
+        <div class="tab-item"><div class="tab-icon">⊕</div><div class="tab-name">Add</div></div>
+        <div class="tab-item active"><div class="tab-icon">◯</div><div class="tab-name">Profile</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 10. MY FRIDGE ── -->
+  <div class="device">
+    <div class="device-label">10 — My Fridge</div>
+    <div class="screen tab-screen">
+      <div class="tab-header">
+        <div class="tab-eyebrow">Explore</div>
+        <div style="height:4px"></div>
+      </div>
+      <div class="tab-content">
+        <div class="explore-modes">
+          <div class="mode-tab">Browse</div>
+          <div class="mode-tab active">My Fridge</div>
+        </div>
+        <div class="fridge-screen">
+          <div class="fridge-prompt">What's in your fridge?</div>
+          <div class="fridge-sub">Add ingredients to find matching recipes</div>
+          <div class="fridge-add">+ Add an ingredient…</div>
+          <div class="ingredient-tags">
+            <div class="ing-tag active">pasta</div>
+            <div class="ing-tag active">lemon</div>
+            <div class="ing-tag active">parmesan</div>
+            <div class="ing-tag active">garlic</div>
+            <div class="ing-tag">chicken</div>
+            <div class="ing-tag">tomatoes</div>
+          </div>
+          <div class="section-head">4 matches found</div>
+          <div class="fridge-result">
+            <div>
+              <div class="fridge-result-title">Pasta al Limone</div>
+              <div style="font-family:var(--ff-mono); font-size:8px; color:var(--muted)">4 / 4 ingredients</div>
+            </div>
+            <div class="fridge-result-match">Perfect match</div>
+          </div>
+          <div class="fridge-result">
+            <div>
+              <div class="fridge-result-title">Cacio e Pepe</div>
+              <div style="font-family:var(--ff-mono); font-size:8px; color:var(--muted)">3 / 4 ingredients</div>
+            </div>
+            <div class="fridge-result-match" style="color:var(--muted)">Missing: pepper</div>
+          </div>
+          <div class="fridge-result">
+            <div>
+              <div class="fridge-result-title">Aglio e Olio</div>
+              <div style="font-family:var(--ff-mono); font-size:8px; color:var(--muted)">3 / 4 ingredients</div>
+            </div>
+            <div class="fridge-result-match" style="color:var(--muted)">Missing: parsley</div>
+          </div>
+        </div>
+      </div>
+      <div class="tab-bar">
+        <div class="tab-item"><div class="tab-icon">⊟</div><div class="tab-name">Feed</div></div>
+        <div class="tab-item active"><div class="tab-icon">◎</div><div class="tab-name">Explore</div></div>
+        <div class="tab-item"><div class="tab-icon">⊕</div><div class="tab-name">Add</div></div>
+        <div class="tab-item"><div class="tab-icon">◯</div><div class="tab-name">Profile</div></div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /grid -->
+</body>
+</html>
