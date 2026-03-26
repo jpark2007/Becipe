@@ -3,7 +3,7 @@ import {
   View, Text, TextInput, TouchableOpacity,
   KeyboardAvoidingView, Platform, ActivityIndicator, Alert, ScrollView,
 } from 'react-native';
-import { Link } from 'expo-router';
+import { Link, useRouter } from 'expo-router';
 import { supabase } from '@/lib/supabase';
 
 const INK = '#F8F4EE'; const CREAM = '#1C1712'; const MUTED = '#A09590';
@@ -25,26 +25,47 @@ function Field({ label, ...props }: any) {
 }
 
 export default function SignupScreen() {
+  const router = useRouter();
   const [email, setEmail]             = useState('');
   const [password, setPassword]       = useState('');
   const [username, setUsername]       = useState('');
   const [displayName, setDisplayName] = useState('');
   const [loading, setLoading]         = useState(false);
+  const [errorMsg, setErrorMsg]       = useState('');
 
   async function handleSignup() {
     if (!email || !password || !username || !displayName) {
-      Alert.alert('Missing fields', 'Please fill in all fields.'); return;
+      setErrorMsg('Please fill in all fields.'); return;
     }
     setLoading(true);
-    const { data, error } = await supabase.auth.signUp({ email, password });
-    if (error) { Alert.alert('Signup failed', error.message); setLoading(false); return; }
+    setErrorMsg('');
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          username: username.toLowerCase().trim(),
+          display_name: displayName.trim(),
+        },
+      },
+    });
+    if (error) { setErrorMsg(error.message); setLoading(false); return; }
+
     if (data.user) {
-      const { error: pe } = await supabase.from('profiles').insert({
+      // Upsert profile in case trigger hasn't run yet or email confirm delayed it
+      await supabase.from('profiles').upsert({
         id: data.user.id,
         username: username.toLowerCase().trim(),
         display_name: displayName.trim(),
-      });
-      if (pe) Alert.alert('Profile error', pe.message);
+      }, { onConflict: 'id' });
+
+      if (data.session) {
+        // Email confirmation disabled — signed in immediately
+        router.replace('/(tabs)/feed');
+      } else {
+        // Email confirmation required — go to verify screen
+        router.push({ pathname: '/(auth)/verify-email', params: { email } });
+      }
     }
     setLoading(false);
   }
@@ -68,6 +89,12 @@ export default function SignupScreen() {
         <Field label="USERNAME"  placeholder="@juliachild" value={username}     onChangeText={setUsername} autoCapitalize="none" />
         <Field label="EMAIL"     placeholder="your@email.com" value={email}     onChangeText={setEmail}    autoCapitalize="none" keyboardType="email-address" />
         <Field label="PASSWORD"  placeholder="••••••••"       value={password}  onChangeText={setPassword} secureTextEntry />
+
+        {errorMsg ? (
+          <Text style={{ fontFamily: 'Lora_400Regular', fontSize: 13, color: '#E05C3A', marginBottom: 16, lineHeight: 20 }}>
+            {errorMsg}
+          </Text>
+        ) : null}
 
         <TouchableOpacity
           style={{ backgroundColor: TERRA, paddingVertical: 17, alignItems: 'center', marginTop: 20 }}

@@ -24,6 +24,85 @@ function isVideoUrl(url: string): boolean {
   return url.includes('tiktok.com') || url.includes('instagram.com');
 }
 
+function parseDuration(dur?: string): number | null {
+  if (!dur) return null;
+  const h = dur.match(/(\d+)H/)?.[1] ?? '0';
+  const m = dur.match(/(\d+)M/)?.[1] ?? '0';
+  const total = parseInt(h) * 60 + parseInt(m);
+  return total > 0 ? total : null;
+}
+
+function parseSchemaRecipe(r: any, sourceUrl: string) {
+  const rawIngredients: string[] = r.recipeIngredient ?? [];
+  const units = ['cups','cup','tbsp','tsp','tablespoons','tablespoon','teaspoons','teaspoon','oz','lb','lbs','g','kg','ml','l','pound','pounds','ounce','ounces','cloves','clove','slices','slice','pieces','piece','bunch','pinch'];
+  const ingredients = rawIngredients.map((ing) => {
+    const parts = ing.trim().split(/\s+/);
+    const amount = parts[0] ?? '';
+    const hasUnit = units.includes((parts[1] ?? '').toLowerCase());
+    const unit = hasUnit ? parts[1] : '';
+    const name = parts.slice(hasUnit ? 2 : 1).join(' ');
+    return { amount, unit, name };
+  });
+
+  const stepsRaw: any[] = Array.isArray(r.recipeInstructions) ? r.recipeInstructions : r.recipeInstructions ? [r.recipeInstructions] : [];
+  const steps = stepsRaw
+    .flatMap((s: any) => s['@type'] === 'HowToSection' ? (s.itemListElement ?? []) : [s])
+    .map((s: any, i: number) => ({ order: i + 1, instruction: typeof s === 'string' ? s : (s.text ?? s.name ?? '') }))
+    .filter((s: any) => s.instruction.trim());
+
+  let hostname = '';
+  try { hostname = new URL(sourceUrl).hostname.replace('www.', ''); } catch {}
+
+  return {
+    title: r.name ?? '',
+    description: typeof r.description === 'string' ? r.description.slice(0, 400) : '',
+    prep_time_min: parseDuration(r.prepTime),
+    cook_time_min: parseDuration(r.cookTime),
+    servings: parseInt(String(Array.isArray(r.recipeYield) ? r.recipeYield[0] : r.recipeYield)) || null,
+    ingredients: ingredients.length ? ingredients : [{ amount: '', unit: '', name: '' }],
+    steps: steps.length ? steps : [{ order: 1, instruction: '' }],
+    tips: [] as { text: string }[],
+    source_url: sourceUrl,
+    source_name: hostname,
+    source_credit: '',
+    source_type: 'url' as const,
+    cuisine: Array.isArray(r.recipeCuisine) ? r.recipeCuisine[0] ?? '' : r.recipeCuisine ?? '',
+  };
+}
+
+async function parseRecipeFromUrl(url: string) {
+  const proxy = `https://corsproxy.io/?${encodeURIComponent(url)}`;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 8000);
+  let res: Response;
+  try {
+    res = await fetch(proxy, { signal: controller.signal });
+    clearTimeout(timer);
+  } catch (e: any) {
+    clearTimeout(timer);
+    if (e.name === 'AbortError') throw new Error('Request timed out. Try BBC Good Food, Food Network, or another recipe site.');
+    throw new Error('Could not reach that URL. Check the link and try again.');
+  }
+  if (!res.ok) throw new Error('Could not reach that URL. Check the link and try again.');
+  const html = await res.text();
+
+  const scriptRegex = /<script[^>]*type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi;
+  let match;
+  while ((match = scriptRegex.exec(html)) !== null) {
+    try {
+      const json = JSON.parse(match[1]);
+      const items: any[] = json['@graph'] ? json['@graph'] : Array.isArray(json) ? json : [json];
+      for (const item of items) {
+        const t = item['@type'];
+        if (t === 'Recipe' || (Array.isArray(t) && t.includes('Recipe'))) {
+          return parseSchemaRecipe(item, url);
+        }
+      }
+    } catch {}
+  }
+  throw new Error('No recipe found on that page. The site may not support structured data — try a different URL.');
+}
+
 export default function AddScreen() {
   const router = useRouter();
   const { user } = useAuthStore();
@@ -32,6 +111,7 @@ export default function AddScreen() {
   const [mode, setMode] = useState<Mode>('choose');
   const [importUrl, setImportUrl] = useState('');
   const [importing, setImporting] = useState(false);
+  const [importError, setImportError] = useState('');
   const [saving, setSaving] = useState(false);
 
   // Recipe fields
@@ -61,32 +141,64 @@ export default function AddScreen() {
   }, [hasShareIntent]);
 
   async function handleImport(url?: string) {
-    const targetUrl = url ?? importUrl;
-    if (!targetUrl.trim()) return;
+    const targetUrl = (url ?? importUrl).trim();
+    if (!targetUrl) return;
 
     setImporting(true);
+    setImportError('');
     try {
+      // Try Edge Function first (server-side, no CORS issues) with 12s timeout
       const fnName = isVideoUrl(targetUrl) ? 'parse-video' : 'parse-recipe';
-      const { data, error } = await supabase.functions.invoke(fnName, {
-        body: { url: targetUrl.trim() },
-      });
-      if (error) throw error;
+      const fnPromise = supabase.functions.invoke(fnName, { body: { url: targetUrl } });
+      const timeoutPromise = new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error('timeout')), 12000)
+      );
+      const { data, error } = await Promise.race([fnPromise, timeoutPromise]) as any;
+      if (error) throw new Error(error.message);
+      if (!data) throw new Error('No data returned from parser');
+
+      // Detect a blocked/empty parse (fallback result has no real ingredients)
+      const hasIngredients = data.ingredients?.length > 0 && data.ingredients[0].name;
+      const hasSteps = data.steps?.length > 0 && !data.steps[0].instruction.includes('could not be parsed');
+      if (!hasIngredients && !hasSteps) {
+        throw new Error('This site blocks automated imports. Try BBC Good Food, Serious Eats, Food Network, or another recipe site.');
+      }
 
       setTitle(data.title ?? '');
       setDescription(data.description ?? '');
       setCuisine(data.cuisine ?? '');
-      setPrepTime(String(data.prep_time_min ?? ''));
-      setCookTime(String(data.cook_time_min ?? ''));
-      setServings(String(data.servings ?? ''));
+      setPrepTime(data.prep_time_min != null ? String(data.prep_time_min) : '');
+      setCookTime(data.cook_time_min != null ? String(data.cook_time_min) : '');
+      setServings(data.servings != null ? String(data.servings) : '');
       setIngredients(data.ingredients?.length ? data.ingredients : [{ amount: '', unit: '', name: '' }]);
       setSteps(data.steps?.length ? data.steps : [{ order: 1, instruction: '' }]);
       setTips(data.tips ?? []);
       setSourceUrl(data.source_url ?? targetUrl);
       setSourceName(data.source_name ?? '');
       setSourceCredit(data.source_credit ?? '');
-      setSourceType(data.source_type ?? (isVideoUrl(targetUrl) ? (targetUrl.includes('tiktok') ? 'tiktok' : 'instagram') : 'url'));
-    } catch (e: any) {
-      Alert.alert('Import failed', e.message ?? 'Could not parse that URL');
+      setSourceType(data.source_type ?? 'url');
+      setMode('manual');
+    } catch (edgeFnError: any) {
+      // Edge function failed — fall back to client-side parser
+      try {
+        const data = await parseRecipeFromUrl(targetUrl);
+        setTitle(data.title);
+        setDescription(data.description);
+        setCuisine(data.cuisine);
+        setPrepTime(data.prep_time_min != null ? String(data.prep_time_min) : '');
+        setCookTime(data.cook_time_min != null ? String(data.cook_time_min) : '');
+        setServings(data.servings != null ? String(data.servings) : '');
+        setIngredients(data.ingredients);
+        setSteps(data.steps);
+        setTips(data.tips);
+        setSourceUrl(data.source_url);
+        setSourceName(data.source_name);
+        setSourceCredit(data.source_credit);
+        setSourceType(data.source_type);
+        setMode('manual');
+      } catch (fallbackError: any) {
+        setImportError(fallbackError.message ?? 'Could not parse that URL');
+      }
     } finally {
       setImporting(false);
     }
@@ -94,10 +206,18 @@ export default function AddScreen() {
 
   async function handleSave() {
     if (!title.trim()) {
-      Alert.alert('Title required', 'Please give your recipe a title.');
+      setImportError('Please give your recipe a title.');
       return;
     }
     setSaving(true);
+
+    // Ensure profile exists (guards against email-confirm timing gap)
+    await supabase.from('profiles').upsert({
+      id: user!.id,
+      username: user!.email?.split('@')[0] ?? user!.id.slice(0, 8),
+      display_name: user!.user_metadata?.display_name ?? user!.email?.split('@')[0] ?? 'Chef',
+    }, { onConflict: 'id', ignoreDuplicates: true });
+
     const { error } = await supabase.from('recipes').insert({
       created_by: user!.id,
       title: title.trim(),
@@ -120,7 +240,7 @@ export default function AddScreen() {
 
     setSaving(false);
     if (error) {
-      Alert.alert('Save failed', error.message);
+      setImportError(error.message);
     } else {
       router.replace('/(tabs)/profile');
     }
@@ -293,6 +413,12 @@ export default function AddScreen() {
             autoCapitalize="none"
             keyboardType="url"
           />
+
+          {importError ? (
+            <Text style={{ fontFamily: 'Lora_400Regular', fontSize: 13, color: '#E05C3A', marginBottom: 16, lineHeight: 20 }}>
+              {importError}
+            </Text>
+          ) : null}
 
           <TouchableOpacity
             style={{
