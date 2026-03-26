@@ -120,7 +120,7 @@ export default function RecipeDetailScreen() {
               <Text style={{
                 fontFamily: 'DMMono_400Regular',
                 fontSize: 11,
-                color: '#7A6E64',
+                color: '#A09590',
                 letterSpacing: 0.5,
               }}>
                 {totalTime} min total
@@ -130,7 +130,7 @@ export default function RecipeDetailScreen() {
               <Text style={{
                 fontFamily: 'DMMono_400Regular',
                 fontSize: 11,
-                color: '#7A6E64',
+                color: '#A09590',
                 letterSpacing: 0.5,
               }}>
                 Serves {recipe.servings}
@@ -153,7 +153,7 @@ export default function RecipeDetailScreen() {
             <Text style={{
               fontFamily: 'Lora_400Regular',
               fontSize: 14,
-              color: '#7A6E64',
+              color: '#A09590',
               lineHeight: 22,
               marginBottom: 24,
             }}>
@@ -214,7 +214,7 @@ export default function RecipeDetailScreen() {
                 fontFamily: 'DMMono_400Regular',
                 fontSize: 11,
                 letterSpacing: 1,
-                color: '#7A6E64',
+                color: '#A09590',
               }}>
                 Save
               </Text>
@@ -233,7 +233,7 @@ export default function RecipeDetailScreen() {
               fontSize: 10,
               letterSpacing: 2.5,
               textTransform: 'uppercase',
-              color: '#7A6E64',
+              color: '#A09590',
               marginBottom: 12,
             }}>
               Ingredients
@@ -279,7 +279,7 @@ export default function RecipeDetailScreen() {
               fontSize: 10,
               letterSpacing: 2.5,
               textTransform: 'uppercase',
-              color: '#7A6E64',
+              color: '#A09590',
               marginBottom: 16,
             }}>
               Instructions
@@ -336,14 +336,14 @@ export default function RecipeDetailScreen() {
                   fontSize: 10,
                   letterSpacing: 2.5,
                   textTransform: 'uppercase',
-                  color: '#7A6E64',
+                  color: '#A09590',
                 }}>
                   Tips & Notes
                 </Text>
                 <Text style={{
                   fontFamily: 'DMMono_400Regular',
                   fontSize: 11,
-                  color: '#7A6E64',
+                  color: '#A09590',
                 }}>
                   {tipsOpen ? '▲' : '▼'}
                 </Text>
@@ -352,7 +352,7 @@ export default function RecipeDetailScreen() {
                 <Text key={i} style={{
                   fontFamily: 'Lora_400Regular',
                   fontSize: 14,
-                  color: '#7A6E64',
+                  color: '#A09590',
                   lineHeight: 22,
                   marginBottom: 10,
                 }}>
@@ -367,7 +367,7 @@ export default function RecipeDetailScreen() {
             <Text style={{
               fontFamily: 'DMMono_400Regular',
               fontSize: 10,
-              color: '#7A6E64',
+              color: '#A09590',
               letterSpacing: 0.5,
               marginTop: 24,
               textAlign: 'center',
@@ -391,7 +391,7 @@ export default function RecipeDetailScreen() {
                   fontSize: 10,
                   letterSpacing: 2.5,
                   textTransform: 'uppercase',
-                  color: '#7A6E64',
+                  color: '#A09590',
                 }}>
                   Recent Tries
                 </Text>
@@ -439,7 +439,7 @@ export default function RecipeDetailScreen() {
                       <Text style={{
                         fontFamily: 'DMMono_400Regular',
                         fontSize: 10,
-                        color: '#7A6E64',
+                        color: '#A09590',
                       }}>
                         /10
                       </Text>
@@ -449,7 +449,7 @@ export default function RecipeDetailScreen() {
                     <Text style={{
                       fontFamily: 'Lora_400Regular',
                       fontSize: 14,
-                      color: '#7A6E64',
+                      color: '#A09590',
                       lineHeight: 21,
                     }}>
                       {t.note}

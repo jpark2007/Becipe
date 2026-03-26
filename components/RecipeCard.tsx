@@ -77,7 +77,7 @@ export function RecipeCard({ recipe, showCreator }: Props) {
           <Text style={styles.metaMuted}>{totalTime} min</Text>
         )}
         {recipe.difficulty && (
-          <Text style={[styles.metaMuted, { color: DIFFICULTY_COLOR[recipe.difficulty] ?? '#7A6E64' }]}>
+          <Text style={[styles.metaMuted, { color: DIFFICULTY_COLOR[recipe.difficulty] ?? '#A09590' }]}>
             {recipe.difficulty}
           </Text>
         )}
@@ -129,7 +129,7 @@ const styles = StyleSheet.create({
   cuisineTagText: {
     fontFamily: 'DMMono_400Regular',
     fontSize: 9,
-    color: '#7A6E64',
+    color: '#A09590',
     letterSpacing: 1.2,
   },
   titleOverlayContainer: {
@@ -153,7 +153,7 @@ const styles = StyleSheet.create({
   cuisineTagNoImage: {
     fontFamily: 'DMMono_400Regular',
     fontSize: 9,
-    color: '#7A6E64',
+    color: '#A09590',
     letterSpacing: 1.2,
     marginBottom: 6,
   },
@@ -179,7 +179,7 @@ const styles = StyleSheet.create({
   metaMuted: {
     fontFamily: 'DMMono_400Regular',
     fontSize: 11,
-    color: '#7A6E64',
+    color: '#A09590',
   },
   creatorRow: {
     paddingHorizontal: 14,
@@ -188,7 +188,7 @@ const styles = StyleSheet.create({
   creatorText: {
     fontFamily: 'Lora_400Regular',
     fontSize: 12,
-    color: '#7A6E64',
+    color: '#A09590',
   },
   hairline: {
     height: StyleSheet.hairlineWidth,

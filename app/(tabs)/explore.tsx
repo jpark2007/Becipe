@@ -165,7 +165,7 @@ export default function ExploreScreen() {
             fontSize: 12,
             letterSpacing: 1.5,
             textTransform: 'uppercase',
-            color: mode === 'browse' ? '#1C1712' : '#7A6E64',
+            color: mode === 'browse' ? '#1C1712' : '#A09590',
           }}>
             Browse
           </Text>
@@ -189,7 +189,7 @@ export default function ExploreScreen() {
             fontSize: 12,
             letterSpacing: 1.5,
             textTransform: 'uppercase',
-            color: mode === 'fridge' ? '#1C1712' : '#7A6E64',
+            color: mode === 'fridge' ? '#1C1712' : '#A09590',
           }}>
             My Fridge
           </Text>
@@ -228,7 +228,7 @@ export default function ExploreScreen() {
                   backgroundColor: 'transparent',
                 }}
                 placeholder="Search recipes..."
-                placeholderTextColor="#7A6E64"
+                placeholderTextColor="#A09590"
                 value={searchText}
                 onChangeText={setSearchText}
               />
@@ -247,7 +247,7 @@ export default function ExploreScreen() {
                         fontSize: 11,
                         letterSpacing: 1.2,
                         textTransform: 'uppercase',
-                        color: sort === opt.key ? '#C4622D' : '#7A6E64',
+                        color: sort === opt.key ? '#C4622D' : '#A09590',
                       }}>
                         {opt.key === 'smart' ? smartLabel : opt.label}
                       </Text>
@@ -280,7 +280,7 @@ export default function ExploreScreen() {
                         fontSize: 11,
                         letterSpacing: 1.2,
                         textTransform: 'uppercase',
-                        color: cuisine === c ? '#C4622D' : '#7A6E64',
+                        color: cuisine === c ? '#C4622D' : '#A09590',
                       }}>
                         {c}
                       </Text>
@@ -305,7 +305,7 @@ export default function ExploreScreen() {
               <ActivityIndicator color="#C4622D" style={{ marginTop: 32 }} />
             ) : (
               <Text style={{
-                color: '#7A6E64',
+                color: '#A09590',
                 textAlign: 'center',
                 marginTop: 32,
                 fontFamily: 'DMMono_400Regular',
@@ -352,7 +352,7 @@ export default function ExploreScreen() {
               <Text style={{
                 fontFamily: 'DMMono_400Regular',
                 fontSize: 11,
-                color: '#7A6E64',
+                color: '#A09590',
                 letterSpacing: 0.5,
                 marginBottom: 20,
               }}>
@@ -373,7 +373,7 @@ export default function ExploreScreen() {
                     backgroundColor: 'transparent',
                   }}
                   placeholder="Add ingredient..."
-                  placeholderTextColor="#7A6E64"
+                  placeholderTextColor="#A09590"
                   value={fridgeInput}
                   onChangeText={setFridgeInput}
                   onSubmitEditing={addFridgeIngredient}
@@ -410,9 +410,9 @@ export default function ExploreScreen() {
                         style={{
                           flexDirection: 'row',
                           alignItems: 'center',
-                          backgroundColor: '#E4DDD4',
+                          backgroundColor: '#F8F4EE',
                           borderWidth: 1,
-                          borderColor: '#D5CCC0',
+                          borderColor: '#BEB0A8',
                           paddingHorizontal: 12,
                           paddingVertical: 6,
                           gap: 6,
@@ -430,7 +430,7 @@ export default function ExploreScreen() {
                         <Text style={{
                           fontFamily: 'DMMono_400Regular',
                           fontSize: 13,
-                          color: '#7A6E64',
+                          color: '#A09590',
                         }}>
                           ×
                         </Text>
@@ -446,7 +446,7 @@ export default function ExploreScreen() {
           ListEmptyComponent={
             fridgeIngredients.length === 0 ? null : (
               <Text style={{
-                color: '#7A6E64',
+                color: '#A09590',
                 textAlign: 'center',
                 marginTop: 16,
                 fontFamily: 'DMMono_400Regular',

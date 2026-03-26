@@ -44,11 +44,11 @@ const styles = StyleSheet.create({
   },
   suffix: {
     fontFamily: 'DMMono_400Regular',
-    color: '#7A6E64',
+    color: '#A09590',
     marginLeft: 1,
   },
   countText: {
     fontFamily: 'DMMono_400Regular',
-    color: '#7A6E64',
+    color: '#A09590',
   },
 });

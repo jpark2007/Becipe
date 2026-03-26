@@ -89,7 +89,7 @@ export default function TryScreen() {
         <Text style={{
           fontFamily: 'Lora_400Regular',
           fontSize: 15,
-          color: '#7A6E64',
+          color: '#A09590',
           lineHeight: 23,
           marginBottom: 24,
         }}>
@@ -124,7 +124,7 @@ export default function TryScreen() {
             textAlignVertical: 'top',
           }}
           placeholder="Add a note... (optional)"
-          placeholderTextColor="#7A6E64"
+          placeholderTextColor="#A09590"
           value={note}
           onChangeText={setNote}
           multiline
@@ -154,7 +154,7 @@ export default function TryScreen() {
                 fontSize: 11,
                 letterSpacing: 2.5,
                 textTransform: 'uppercase',
-                color: '#7A6E64',
+                color: '#A09590',
                 marginBottom: 4,
               }}>
                 Add Photo
@@ -162,7 +162,7 @@ export default function TryScreen() {
               <Text style={{
                 fontFamily: 'DMMono_400Regular',
                 fontSize: 10,
-                color: '#7A6E64',
+                color: '#A09590',
                 letterSpacing: 0.5,
                 opacity: 0.6,
               }}>

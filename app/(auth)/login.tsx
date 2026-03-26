@@ -8,7 +8,7 @@ import { supabase } from '@/lib/supabase';
 
 const INK      = '#F8F4EE';
 const CREAM    = '#1C1712';
-const MUTED    = '#7A6E64';
+const MUTED    = '#A09590';
 const TERRA    = '#C4622D';
 const BORDER   = '#D5CCC0';
 const PH       = '#B5ACA4';

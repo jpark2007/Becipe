@@ -143,7 +143,7 @@ export default function ProfileScreen() {
             <Text style={{
               fontFamily: 'DMMono_400Regular',
               fontSize: 11,
-              color: '#7A6E64',
+              color: '#A09590',
               marginBottom: profile?.bio ? 12 : 20,
             }}>
               @{profile?.username}
@@ -174,7 +174,7 @@ export default function ProfileScreen() {
                 <Text style={{
                   fontFamily: 'DMMono_400Regular',
                   fontSize: 9,
-                  color: '#7A6E64',
+                  color: '#A09590',
                   letterSpacing: 1.2,
                   textTransform: 'uppercase',
                   marginTop: 2,
@@ -193,7 +193,7 @@ export default function ProfileScreen() {
                 <Text style={{
                   fontFamily: 'DMMono_400Regular',
                   fontSize: 9,
-                  color: '#7A6E64',
+                  color: '#A09590',
                   letterSpacing: 1.2,
                   textTransform: 'uppercase',
                   marginTop: 2,
@@ -212,7 +212,7 @@ export default function ProfileScreen() {
                 <Text style={{
                   fontFamily: 'DMMono_400Regular',
                   fontSize: 9,
-                  color: '#7A6E64',
+                  color: '#A09590',
                   letterSpacing: 1.2,
                   textTransform: 'uppercase',
                   marginTop: 2,
@@ -234,7 +234,7 @@ export default function ProfileScreen() {
             <Text style={{
               fontFamily: 'DMMono_400Regular',
               fontSize: 10,
-              color: '#7A6E64',
+              color: '#A09590',
               letterSpacing: 2,
               textTransform: 'uppercase',
             }}>
@@ -256,7 +256,7 @@ export default function ProfileScreen() {
           <Text style={{
             fontFamily: 'DMMono_400Regular',
             fontSize: 11,
-            color: '#7A6E64',
+            color: '#A09590',
             textAlign: 'center',
             letterSpacing: 0.5,
             lineHeight: 18,

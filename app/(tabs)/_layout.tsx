@@ -2,7 +2,7 @@ import { Tabs } from 'expo-router';
 import { Text } from 'react-native';
 
 const TERRA = '#C4622D';
-const MUTED = '#9A8E84';
+const MUTED = '#B5ADA8';
 const INK   = '#F8F4EE';
 
 function TabIcon({ char, focused }: { char: string; focused: boolean }) {

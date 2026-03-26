@@ -145,18 +145,18 @@ const styles = StyleSheet.create({
   username: {
     fontFamily: 'DMMono_400Regular',
     fontSize: 10,
-    color: '#7A6E64',
+    color: '#A09590',
   },
   verbText: {
     fontFamily: 'Lora_400Regular',
     fontSize: 11,
-    color: '#7A6E64',
+    color: '#A09590',
     marginTop: 1,
   },
   timestamp: {
     fontFamily: 'DMMono_400Regular',
     fontSize: 10,
-    color: '#7A6E64',
+    color: '#A09590',
     marginLeft: 8,
     alignSelf: 'flex-start',
     marginTop: 1,
@@ -183,7 +183,7 @@ const styles = StyleSheet.create({
   ratingSlash: {
     fontFamily: 'DMMono_400Regular',
     fontSize: 13,
-    color: '#7A6E64',
+    color: '#A09590',
     marginLeft: 2,
   },
   noteText: {

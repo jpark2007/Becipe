@@ -90,7 +90,7 @@ export default function CookScreen() {
       {/* ── Header ── */}
       <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingTop: 56, paddingBottom: 16 }}>
         <View style={{ flex: 1 }}>
-          <Text style={{ fontFamily: 'DMMono_400Regular', fontSize: 10, color: '#9A8E84', letterSpacing: 1.5, marginBottom: 10 }}>
+          <Text style={{ fontFamily: 'DMMono_400Regular', fontSize: 10, color: '#B5ADA8', letterSpacing: 1.5, marginBottom: 10 }}>
             {recipe.title.toUpperCase()}
           </Text>
           {/* Thin progress bar */}
@@ -102,12 +102,12 @@ export default function CookScreen() {
           style={{ marginLeft: 20, paddingVertical: 4, paddingHorizontal: 8 }}
           onPress={() => router.back()}
         >
-          <Text style={{ fontFamily: 'DMMono_400Regular', fontSize: 18, color: '#7A6E64' }}>×</Text>
+          <Text style={{ fontFamily: 'DMMono_400Regular', fontSize: 18, color: '#A09590' }}>×</Text>
         </TouchableOpacity>
       </View>
 
       {/* Step counter */}
-      <Text style={{ fontFamily: 'DMMono_400Regular', fontSize: 10, color: '#9A8E84', letterSpacing: 2, textAlign: 'center', marginBottom: 8 }}>
+      <Text style={{ fontFamily: 'DMMono_400Regular', fontSize: 10, color: '#B5ADA8', letterSpacing: 2, textAlign: 'center', marginBottom: 8 }}>
         {stepIndex + 1} — {steps.length}
       </Text>
 
@@ -143,7 +143,7 @@ export default function CookScreen() {
           onPress={() => goTo(stepIndex - 1)}
           disabled={stepIndex === 0}
         >
-          <Text style={{ fontFamily: 'DMMono_400Regular', fontSize: 11, color: '#7A6E64', letterSpacing: 2 }}>← PREV</Text>
+          <Text style={{ fontFamily: 'DMMono_400Regular', fontSize: 11, color: '#A09590', letterSpacing: 2 }}>← PREV</Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={{
@@ -164,10 +164,10 @@ export default function CookScreen() {
           style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 12 }}
           onPress={() => setIngredientsOpen(o => !o)}
         >
-          <Text style={{ fontFamily: 'DMMono_400Regular', fontSize: 9, color: '#7A6E64', letterSpacing: 2.5 }}>
+          <Text style={{ fontFamily: 'DMMono_400Regular', fontSize: 9, color: '#A09590', letterSpacing: 2.5 }}>
             INGREDIENTS ({ingredients.length})
           </Text>
-          <Text style={{ fontFamily: 'DMMono_400Regular', fontSize: 10, color: '#9A8E84' }}>
+          <Text style={{ fontFamily: 'DMMono_400Regular', fontSize: 10, color: '#B5ADA8' }}>
             {ingredientsOpen ? '▲' : '▼'}
           </Text>
         </TouchableOpacity>
@@ -189,7 +189,7 @@ export default function CookScreen() {
                 </View>
                 <Text style={{
                   fontFamily: 'DMMono_400Regular', fontSize: 12,
-                  color: checked[i] ? '#B5ACA4' : '#7A6E64',
+                  color: checked[i] ? '#B5ACA4' : '#A09590',
                   textDecorationLine: checked[i] ? 'line-through' : 'none',
                 }}>
                   {ing.amount}{ing.unit ? ` ${ing.unit}` : ''} {ing.name}
@@ -207,13 +207,13 @@ export default function CookScreen() {
             style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 10 }}
             onPress={() => setTipsOpen(o => !o)}
           >
-            <Text style={{ fontFamily: 'DMMono_400Regular', fontSize: 9, color: '#9A8E84', letterSpacing: 2.5 }}>TIPS</Text>
+            <Text style={{ fontFamily: 'DMMono_400Regular', fontSize: 9, color: '#B5ADA8', letterSpacing: 2.5 }}>TIPS</Text>
             <Text style={{ fontFamily: 'DMMono_400Regular', fontSize: 10, color: '#C8BFB8' }}>{tipsOpen ? '▲' : '▼'}</Text>
           </TouchableOpacity>
           {tipsOpen && (
             <ScrollView style={{ maxHeight: 110, paddingHorizontal: 20, paddingBottom: 12 }}>
               {tips.map((tip, i) => (
-                <Text key={i} style={{ fontFamily: 'Lora_400Regular', fontSize: 12, color: '#9A8E84', marginBottom: 6, lineHeight: 18 }}>
+                <Text key={i} style={{ fontFamily: 'Lora_400Regular', fontSize: 12, color: '#B5ADA8', marginBottom: 6, lineHeight: 18 }}>
                   {tip.text}
                 </Text>
               ))}

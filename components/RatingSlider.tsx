@@ -51,7 +51,7 @@ const styles = StyleSheet.create({
   label: {
     fontFamily: 'DMMono_400Regular',
     fontSize: 9,
-    color: '#7A6E64',
+    color: '#A09590',
     letterSpacing: 1.6,
   },
   scoreRow: {
@@ -67,7 +67,7 @@ const styles = StyleSheet.create({
   scoreSuffix: {
     fontFamily: 'DMMono_400Regular',
     fontSize: 16,
-    color: '#7A6E64',
+    color: '#A09590',
   },
   barsRow: {
     flexDirection: 'row',

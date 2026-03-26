@@ -11,7 +11,7 @@ module.exports = {
           'orange-light':'#E4956A',   // warm peach hover
           cream:         '#F8F4EE',   // warm light bg
           charcoal:      '#1C1712',   // dark warm brown (primary text)
-          muted:         '#7A6E64',   // warm grey (secondary text)
+          muted:         '#A09590',   // warm grey (secondary text)
           border:        '#D5CCC0',   // hairline light border
           card:          '#EEE8DF',   // raised card surface
           'card-high':   '#E4DDD4',   // further elevated surface

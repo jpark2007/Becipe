@@ -75,10 +75,10 @@ export default function FeedScreen() {
         }
         ListEmptyComponent={
           <View style={{ alignItems: 'center', paddingVertical: 64 }}>
-            <Text style={{ fontFamily: 'CormorantGaramond_400Regular', fontSize: 32, color: '#9A8E84', marginBottom: 12 }}>
+            <Text style={{ fontFamily: 'CormorantGaramond_400Regular', fontSize: 32, color: '#B5ADA8', marginBottom: 12 }}>
               Nothing yet
             </Text>
-            <Text style={{ fontFamily: 'Lora_400Regular', fontSize: 14, color: '#7A6E64', textAlign: 'center', paddingHorizontal: 40, lineHeight: 22 }}>
+            <Text style={{ fontFamily: 'Lora_400Regular', fontSize: 14, color: '#A09590', textAlign: 'center', paddingHorizontal: 40, lineHeight: 22 }}>
               Follow friends or try a recipe to see activity here
             </Text>
           </View>
