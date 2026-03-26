@@ -81,7 +81,7 @@ export default function TryScreen() {
 
   return (
     <KeyboardAvoidingView
-      style={{ flex: 1, backgroundColor: '#0C0A08' }}
+      style={{ flex: 1, backgroundColor: '#F8F4EE' }}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <ScrollView contentContainerStyle={{ padding: 20 }}>
@@ -89,7 +89,7 @@ export default function TryScreen() {
         <Text style={{
           fontFamily: 'Lora_400Regular',
           fontSize: 15,
-          color: '#7A6E64',
+          color: '#A09590',
           lineHeight: 23,
           marginBottom: 24,
         }}>
@@ -98,9 +98,9 @@ export default function TryScreen() {
 
         {/* Rating card */}
         <View style={{
-          backgroundColor: '#161210',
+          backgroundColor: '#EEE8DF',
           borderWidth: 1,
-          borderColor: '#272018',
+          borderColor: '#D5CCC0',
           padding: 16,
           marginBottom: 16,
         }}>
@@ -110,12 +110,12 @@ export default function TryScreen() {
         {/* Note input */}
         <TextInput
           style={{
-            backgroundColor: '#161210',
+            backgroundColor: '#EEE8DF',
             borderWidth: 1,
-            borderColor: '#272018',
+            borderColor: '#D5CCC0',
             paddingHorizontal: 16,
             paddingVertical: 14,
-            color: '#EDE8DC',
+            color: '#1C1712',
             fontFamily: 'Lora_400Regular',
             fontSize: 15,
             lineHeight: 23,
@@ -124,7 +124,7 @@ export default function TryScreen() {
             textAlignVertical: 'top',
           }}
           placeholder="Add a note... (optional)"
-          placeholderTextColor="#7A6E64"
+          placeholderTextColor="#A09590"
           value={note}
           onChangeText={setNote}
           multiline
@@ -135,7 +135,7 @@ export default function TryScreen() {
         <TouchableOpacity
           style={{
             borderWidth: 1,
-            borderColor: '#272018',
+            borderColor: '#D5CCC0',
             borderStyle: 'dashed',
             height: 160,
             alignItems: 'center',
@@ -154,7 +154,7 @@ export default function TryScreen() {
                 fontSize: 11,
                 letterSpacing: 2.5,
                 textTransform: 'uppercase',
-                color: '#7A6E64',
+                color: '#A09590',
                 marginBottom: 4,
               }}>
                 Add Photo
@@ -162,7 +162,7 @@ export default function TryScreen() {
               <Text style={{
                 fontFamily: 'DMMono_400Regular',
                 fontSize: 10,
-                color: '#7A6E64',
+                color: '#A09590',
                 letterSpacing: 0.5,
                 opacity: 0.6,
               }}>

@@ -9,12 +9,12 @@ module.exports = {
           // ── Dark editorial palette ──────────────────────
           orange:        '#C4622D',   // terracotta accent
           'orange-light':'#E4956A',   // warm peach hover
-          cream:         '#0C0A08',   // ink black (all backgrounds)
-          charcoal:      '#EDE8DC',   // warm ivory (primary text)
-          muted:         '#7A6E64',   // warm grey (secondary text)
-          border:        '#272018',   // hairline dark border
-          card:          '#161210',   // raised card surface
-          'card-high':   '#201C18',   // further elevated surface
+          cream:         '#F8F4EE',   // warm light bg
+          charcoal:      '#1C1712',   // dark warm brown (primary text)
+          muted:         '#A09590',   // warm grey (secondary text)
+          border:        '#D5CCC0',   // hairline light border
+          card:          '#EEE8DF',   // raised card surface
+          'card-high':   '#E4DDD4',   // further elevated surface
         },
       },
       fontFamily: {

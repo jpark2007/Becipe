@@ -99,7 +99,7 @@ export function FeedCard({ item }: FeedCardProps) {
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: '#161210',
+    backgroundColor: '#EEE8DF',
     marginBottom: 2,
   },
   header: {
@@ -140,23 +140,23 @@ const styles = StyleSheet.create({
   displayName: {
     fontFamily: 'DMMono_500Medium',
     fontSize: 11,
-    color: '#EDE8DC',
+    color: '#1C1712',
   },
   username: {
     fontFamily: 'DMMono_400Regular',
     fontSize: 10,
-    color: '#7A6E64',
+    color: '#A09590',
   },
   verbText: {
     fontFamily: 'Lora_400Regular',
     fontSize: 11,
-    color: '#7A6E64',
+    color: '#A09590',
     marginTop: 1,
   },
   timestamp: {
     fontFamily: 'DMMono_400Regular',
     fontSize: 10,
-    color: '#7A6E64',
+    color: '#A09590',
     marginLeft: 8,
     alignSelf: 'flex-start',
     marginTop: 1,
@@ -183,19 +183,19 @@ const styles = StyleSheet.create({
   ratingSlash: {
     fontFamily: 'DMMono_400Regular',
     fontSize: 13,
-    color: '#7A6E64',
+    color: '#A09590',
     marginLeft: 2,
   },
   noteText: {
     fontFamily: 'Lora_400Regular',
     fontSize: 13,
-    color: '#EDE8DC',
+    color: '#1C1712',
     lineHeight: 20,
     marginBottom: 10,
   },
   divider: {
     height: StyleSheet.hairlineWidth,
-    backgroundColor: '#272018',
+    backgroundColor: '#D5CCC0',
     marginBottom: 10,
   },
   recipeLinkRow: {
@@ -206,7 +206,7 @@ const styles = StyleSheet.create({
   recipeTitle: {
     fontFamily: 'CormorantGaramond_400Regular',
     fontSize: 18,
-    color: '#EDE8DC',
+    color: '#1C1712',
     flex: 1,
     marginRight: 10,
   },
@@ -218,6 +218,6 @@ const styles = StyleSheet.create({
   },
   hairline: {
     height: StyleSheet.hairlineWidth,
-    backgroundColor: '#272018',
+    backgroundColor: '#D5CCC0',
   },
 });

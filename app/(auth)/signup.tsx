@@ -6,8 +6,8 @@ import {
 import { Link } from 'expo-router';
 import { supabase } from '@/lib/supabase';
 
-const INK = '#0C0A08'; const CREAM = '#EDE8DC'; const MUTED = '#7A6E64';
-const TERRA = '#C4622D'; const BORDER = '#272018'; const PH = '#3A342C';
+const INK = '#F8F4EE'; const CREAM = '#1C1712'; const MUTED = '#A09590';
+const TERRA = '#C4622D'; const BORDER = '#D5CCC0'; const PH = '#B5ACA4';
 
 function Field({ label, ...props }: any) {
   return (
@@ -74,8 +74,8 @@ export default function SignupScreen() {
           onPress={handleSignup} disabled={loading}
         >
           {loading
-            ? <ActivityIndicator color={CREAM} />
-            : <Text style={{ fontFamily: 'DMMono_500Medium', fontSize: 11, color: CREAM, letterSpacing: 3.5 }}>CREATE ACCOUNT</Text>
+            ? <ActivityIndicator color="#EDE8DC" />
+            : <Text style={{ fontFamily: 'DMMono_500Medium', fontSize: 11, color: '#EDE8DC', letterSpacing: 3.5 }}>CREATE ACCOUNT</Text>
           }
         </TouchableOpacity>
 
