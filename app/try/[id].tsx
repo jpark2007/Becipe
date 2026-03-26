@@ -81,7 +81,7 @@ export default function TryScreen() {
 
   return (
     <KeyboardAvoidingView
-      style={{ flex: 1, backgroundColor: '#0C0A08' }}
+      style={{ flex: 1, backgroundColor: '#F8F4EE' }}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <ScrollView contentContainerStyle={{ padding: 20 }}>
@@ -98,9 +98,9 @@ export default function TryScreen() {
 
         {/* Rating card */}
         <View style={{
-          backgroundColor: '#161210',
+          backgroundColor: '#EEE8DF',
           borderWidth: 1,
-          borderColor: '#272018',
+          borderColor: '#D5CCC0',
           padding: 16,
           marginBottom: 16,
         }}>
@@ -110,12 +110,12 @@ export default function TryScreen() {
         {/* Note input */}
         <TextInput
           style={{
-            backgroundColor: '#161210',
+            backgroundColor: '#EEE8DF',
             borderWidth: 1,
-            borderColor: '#272018',
+            borderColor: '#D5CCC0',
             paddingHorizontal: 16,
             paddingVertical: 14,
-            color: '#EDE8DC',
+            color: '#1C1712',
             fontFamily: 'Lora_400Regular',
             fontSize: 15,
             lineHeight: 23,
@@ -135,7 +135,7 @@ export default function TryScreen() {
         <TouchableOpacity
           style={{
             borderWidth: 1,
-            borderColor: '#272018',
+            borderColor: '#D5CCC0',
             borderStyle: 'dashed',
             height: 160,
             alignItems: 'center',

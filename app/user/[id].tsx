@@ -78,7 +78,7 @@ export default function UserProfileScreen() {
 
   if (isLoading || !data) {
     return (
-      <View style={{ flex: 1, backgroundColor: '#0C0A08', alignItems: 'center', justifyContent: 'center' }}>
+      <View style={{ flex: 1, backgroundColor: '#F8F4EE', alignItems: 'center', justifyContent: 'center' }}>
         <ActivityIndicator color="#C4622D" />
       </View>
     );
@@ -96,17 +96,17 @@ export default function UserProfileScreen() {
           <RecipeCard recipe={item} />
         </View>
       )}
-      style={{ backgroundColor: '#0C0A08' }}
+      style={{ backgroundColor: '#F8F4EE' }}
       ListHeaderComponent={
         <View>
           {/* Header section */}
           <View style={{
-            backgroundColor: '#161210',
+            backgroundColor: '#EEE8DF',
             paddingHorizontal: 24,
             paddingTop: 40,
             paddingBottom: 24,
             borderBottomWidth: 1,
-            borderBottomColor: '#272018',
+            borderBottomColor: '#D5CCC0',
           }}>
             {/* Avatar + Follow row */}
             <View style={{ flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 20 }}>
@@ -163,7 +163,7 @@ export default function UserProfileScreen() {
             <Text style={{
               fontFamily: 'CormorantGaramond_600SemiBold',
               fontSize: 32,
-              color: '#EDE8DC',
+              color: '#1C1712',
               marginBottom: 4,
             }}>
               {profile?.display_name}
@@ -183,7 +183,7 @@ export default function UserProfileScreen() {
               <Text style={{
                 fontFamily: 'Lora_400Regular',
                 fontSize: 14,
-                color: '#EDE8DC',
+                color: '#1C1712',
                 lineHeight: 22,
                 marginBottom: 20,
               }}>
@@ -197,7 +197,7 @@ export default function UserProfileScreen() {
                 <Text style={{
                   fontFamily: 'DMMono_500Medium',
                   fontSize: 20,
-                  color: '#EDE8DC',
+                  color: '#1C1712',
                 }}>
                   {recipes.length}
                 </Text>
@@ -216,7 +216,7 @@ export default function UserProfileScreen() {
                 <Text style={{
                   fontFamily: 'DMMono_500Medium',
                   fontSize: 20,
-                  color: '#EDE8DC',
+                  color: '#1C1712',
                 }}>
                   {followerCount}
                 </Text>
@@ -235,7 +235,7 @@ export default function UserProfileScreen() {
                 <Text style={{
                   fontFamily: 'DMMono_500Medium',
                   fontSize: 20,
-                  color: '#EDE8DC',
+                  color: '#1C1712',
                 }}>
                   {followingCount}
                 </Text>
@@ -259,7 +259,7 @@ export default function UserProfileScreen() {
             paddingTop: 24,
             paddingBottom: 12,
             borderBottomWidth: 1,
-            borderBottomColor: '#272018',
+            borderBottomColor: '#D5CCC0',
           }}>
             <Text style={{
               fontFamily: 'DMMono_400Regular',

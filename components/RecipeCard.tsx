@@ -98,7 +98,7 @@ export function RecipeCard({ recipe, showCreator }: Props) {
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: '#161210',
+    backgroundColor: '#EEE8DF',
     borderWidth: 0,
   },
   imageContainer: {
@@ -145,7 +145,7 @@ const styles = StyleSheet.create({
     lineHeight: 30,
   },
   noImageContainer: {
-    backgroundColor: '#161210',
+    backgroundColor: '#EEE8DF',
     paddingHorizontal: 14,
     paddingTop: 16,
     paddingBottom: 12,
@@ -160,7 +160,7 @@ const styles = StyleSheet.create({
   titleNoImage: {
     fontFamily: 'CormorantGaramond_400Regular',
     fontSize: 24,
-    color: '#EDE8DC',
+    color: '#1C1712',
     lineHeight: 28,
   },
   metaRow: {
@@ -192,6 +192,6 @@ const styles = StyleSheet.create({
   },
   hairline: {
     height: StyleSheet.hairlineWidth,
-    backgroundColor: '#272018',
+    backgroundColor: '#D5CCC0',
   },
 });

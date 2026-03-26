@@ -128,11 +128,11 @@ export default function AddScreen() {
 
   if (mode === 'choose') {
     return (
-      <View style={{ flex: 1, backgroundColor: '#0C0A08', paddingHorizontal: 24, justifyContent: 'center' }}>
+      <View style={{ flex: 1, backgroundColor: '#F8F4EE', paddingHorizontal: 24, justifyContent: 'center' }}>
         <Text style={{
           fontFamily: 'CormorantGaramond_600SemiBold',
           fontSize: 34,
-          color: '#EDE8DC',
+          color: '#1C1712',
           marginBottom: 6,
         }}>
           Add a Recipe
@@ -150,7 +150,7 @@ export default function AddScreen() {
         {/* Create Manually */}
         <TouchableOpacity
           style={{
-            backgroundColor: '#161210',
+            backgroundColor: '#EEE8DF',
             borderLeftWidth: 4,
             borderLeftColor: '#C4622D',
             padding: 20,
@@ -180,7 +180,7 @@ export default function AddScreen() {
         {/* Import from URL */}
         <TouchableOpacity
           style={{
-            backgroundColor: '#161210',
+            backgroundColor: '#EEE8DF',
             borderLeftWidth: 4,
             borderLeftColor: '#C4622D',
             padding: 20,
@@ -210,7 +210,7 @@ export default function AddScreen() {
         {/* Import from TikTok / Instagram */}
         <TouchableOpacity
           style={{
-            backgroundColor: '#161210',
+            backgroundColor: '#EEE8DF',
             borderLeftWidth: 4,
             borderLeftColor: '#C4622D',
             padding: 20,
@@ -242,7 +242,7 @@ export default function AddScreen() {
   if (mode === 'import' && !title) {
     return (
       <KeyboardAvoidingView
-        style={{ flex: 1, backgroundColor: '#0C0A08' }}
+        style={{ flex: 1, backgroundColor: '#F8F4EE' }}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         <View style={{ flex: 1, paddingHorizontal: 24, justifyContent: 'center' }}>
@@ -260,7 +260,7 @@ export default function AddScreen() {
           <Text style={{
             fontFamily: 'CormorantGaramond_600SemiBold',
             fontSize: 34,
-            color: '#EDE8DC',
+            color: '#1C1712',
             marginBottom: 6,
           }}>
             Import Recipe
@@ -278,9 +278,9 @@ export default function AddScreen() {
           <TextInput
             style={{
               borderBottomWidth: 1,
-              borderBottomColor: '#272018',
+              borderBottomColor: '#D5CCC0',
               paddingVertical: 12,
-              color: '#EDE8DC',
+              color: '#1C1712',
               fontFamily: 'Lora_400Regular',
               fontSize: 15,
               backgroundColor: 'transparent',
@@ -296,7 +296,7 @@ export default function AddScreen() {
 
           <TouchableOpacity
             style={{
-              backgroundColor: importing || !importUrl.trim() ? '#201C18' : '#C4622D',
+              backgroundColor: importing || !importUrl.trim() ? '#E4DDD4' : '#C4622D',
               paddingVertical: 16,
               alignItems: 'center',
             }}
@@ -325,7 +325,7 @@ export default function AddScreen() {
   // Recipe form (manual or post-import)
   return (
     <KeyboardAvoidingView
-      style={{ flex: 1, backgroundColor: '#0C0A08' }}
+      style={{ flex: 1, backgroundColor: '#F8F4EE' }}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <ScrollView contentContainerStyle={{ padding: 16 }}>
@@ -368,9 +368,9 @@ export default function AddScreen() {
 
         {sourceCredit && (
           <View style={{
-            backgroundColor: '#161210',
+            backgroundColor: '#EEE8DF',
             borderWidth: 1,
-            borderColor: '#272018',
+            borderColor: '#D5CCC0',
             padding: 12,
             marginBottom: 16,
           }}>
@@ -389,9 +389,9 @@ export default function AddScreen() {
         <TextInput
           style={{
             borderBottomWidth: 1,
-            borderBottomColor: '#272018',
+            borderBottomColor: '#D5CCC0',
             paddingVertical: 10,
-            color: '#EDE8DC',
+            color: '#1C1712',
             fontFamily: 'CormorantGaramond_600SemiBold',
             fontSize: 26,
             backgroundColor: 'transparent',
@@ -407,9 +407,9 @@ export default function AddScreen() {
         <TextInput
           style={{
             borderBottomWidth: 1,
-            borderBottomColor: '#272018',
+            borderBottomColor: '#D5CCC0',
             paddingVertical: 10,
-            color: '#EDE8DC',
+            color: '#1C1712',
             fontFamily: 'Lora_400Regular',
             fontSize: 14,
             backgroundColor: 'transparent',
@@ -428,9 +428,9 @@ export default function AddScreen() {
             style={{
               flex: 1,
               borderBottomWidth: 1,
-              borderBottomColor: '#272018',
+              borderBottomColor: '#D5CCC0',
               paddingVertical: 8,
-              color: '#EDE8DC',
+              color: '#1C1712',
               fontFamily: 'DMMono_400Regular',
               fontSize: 13,
               backgroundColor: 'transparent',
@@ -446,9 +446,9 @@ export default function AddScreen() {
             style={{
               flex: 1,
               borderBottomWidth: 1,
-              borderBottomColor: '#272018',
+              borderBottomColor: '#D5CCC0',
               paddingVertical: 8,
-              color: '#EDE8DC',
+              color: '#1C1712',
               fontFamily: 'DMMono_400Regular',
               fontSize: 13,
               backgroundColor: 'transparent',
@@ -464,9 +464,9 @@ export default function AddScreen() {
             style={{
               flex: 1,
               borderBottomWidth: 1,
-              borderBottomColor: '#272018',
+              borderBottomColor: '#D5CCC0',
               paddingVertical: 8,
-              color: '#EDE8DC',
+              color: '#1C1712',
               fontFamily: 'DMMono_400Regular',
               fontSize: 13,
               backgroundColor: 'transparent',
@@ -501,7 +501,7 @@ export default function AddScreen() {
                 paddingVertical: 10,
                 alignItems: 'center',
                 borderWidth: 1,
-                borderColor: difficulty === d ? '#C4622D' : '#272018',
+                borderColor: difficulty === d ? '#C4622D' : '#D5CCC0',
               }}
             >
               <Text style={{
@@ -538,7 +538,7 @@ export default function AddScreen() {
                   paddingHorizontal: 12,
                   paddingVertical: 6,
                   borderWidth: 1,
-                  borderColor: cuisine === c ? '#C4622D' : '#272018',
+                  borderColor: cuisine === c ? '#C4622D' : '#D5CCC0',
                 }}
               >
                 <Text style={{
@@ -571,7 +571,7 @@ export default function AddScreen() {
               style={{
                 width: 56,
                 borderBottomWidth: 1,
-                borderBottomColor: '#272018',
+                borderBottomColor: '#D5CCC0',
                 paddingVertical: 8,
                 color: '#C4622D',
                 fontFamily: 'DMMono_500Medium',
@@ -592,7 +592,7 @@ export default function AddScreen() {
               style={{
                 width: 56,
                 borderBottomWidth: 1,
-                borderBottomColor: '#272018',
+                borderBottomColor: '#D5CCC0',
                 paddingVertical: 8,
                 color: '#C4622D',
                 fontFamily: 'DMMono_500Medium',
@@ -613,9 +613,9 @@ export default function AddScreen() {
               style={{
                 flex: 1,
                 borderBottomWidth: 1,
-                borderBottomColor: '#272018',
+                borderBottomColor: '#D5CCC0',
                 paddingVertical: 8,
-                color: '#EDE8DC',
+                color: '#1C1712',
                 fontFamily: 'Lora_400Regular',
                 fontSize: 14,
                 backgroundColor: 'transparent',
@@ -689,9 +689,9 @@ export default function AddScreen() {
               style={{
                 flex: 1,
                 borderBottomWidth: 1,
-                borderBottomColor: '#272018',
+                borderBottomColor: '#D5CCC0',
                 paddingVertical: 8,
-                color: '#EDE8DC',
+                color: '#1C1712',
                 fontFamily: 'Lora_400Regular',
                 fontSize: 14,
                 backgroundColor: 'transparent',
@@ -747,9 +747,9 @@ export default function AddScreen() {
               style={{
                 flex: 1,
                 borderBottomWidth: 1,
-                borderBottomColor: '#272018',
+                borderBottomColor: '#D5CCC0',
                 paddingVertical: 8,
-                color: '#EDE8DC',
+                color: '#1C1712',
                 fontFamily: 'Lora_400Regular',
                 fontSize: 14,
                 backgroundColor: 'transparent',

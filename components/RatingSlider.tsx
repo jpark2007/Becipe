@@ -83,6 +83,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#C4622D',
   },
   barEmpty: {
-    backgroundColor: '#272018',
+    backgroundColor: '#D5CCC0',
   },
 });

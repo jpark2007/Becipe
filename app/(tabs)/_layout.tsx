@@ -2,8 +2,8 @@ import { Tabs } from 'expo-router';
 import { Text } from 'react-native';
 
 const TERRA = '#C4622D';
-const MUTED = '#4A4038';
-const INK   = '#0C0A08';
+const MUTED = '#9A8E84';
+const INK   = '#F8F4EE';
 
 function TabIcon({ char, focused }: { char: string; focused: boolean }) {
   return (
@@ -28,13 +28,13 @@ export default function TabLayout() {
         tabBarStyle: {
           backgroundColor: INK,
           borderTopWidth: 1,
-          borderTopColor: '#1E1A15',
+          borderTopColor: '#D8D0C8',
           height: 70,
           paddingBottom: 12,
           paddingTop: 8,
         },
-        headerStyle: { backgroundColor: INK, borderBottomWidth: 1, borderBottomColor: '#1E1A15' } as any,
-        headerTintColor: '#EDE8DC',
+        headerStyle: { backgroundColor: INK, borderBottomWidth: 1, borderBottomColor: '#D8D0C8' } as any,
+        headerTintColor: '#1C1712',
         headerTitleStyle: { fontFamily: 'DMMono_400Regular', fontSize: 11, letterSpacing: 2.5 },
       }}
     >

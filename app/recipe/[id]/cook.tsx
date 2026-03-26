@@ -74,7 +74,7 @@ export default function CookScreen() {
 
   if (isLoading || !recipe) {
     return (
-      <View style={{ flex: 1, backgroundColor: '#0C0A08', alignItems: 'center', justifyContent: 'center' }}>
+      <View style={{ flex: 1, backgroundColor: '#F8F4EE', alignItems: 'center', justifyContent: 'center' }}>
         <ActivityIndicator color="#C4622D" />
       </View>
     );
@@ -85,16 +85,16 @@ export default function CookScreen() {
   const isDone = stepIndex === steps.length - 1;
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#0C0A08' }}>
+    <View style={{ flex: 1, backgroundColor: '#F8F4EE' }}>
 
       {/* ── Header ── */}
       <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingTop: 56, paddingBottom: 16 }}>
         <View style={{ flex: 1 }}>
-          <Text style={{ fontFamily: 'DMMono_400Regular', fontSize: 10, color: '#4A4038', letterSpacing: 1.5, marginBottom: 10 }}>
+          <Text style={{ fontFamily: 'DMMono_400Regular', fontSize: 10, color: '#9A8E84', letterSpacing: 1.5, marginBottom: 10 }}>
             {recipe.title.toUpperCase()}
           </Text>
           {/* Thin progress bar */}
-          <View style={{ height: 1, backgroundColor: '#272018' }}>
+          <View style={{ height: 1, backgroundColor: '#D5CCC0' }}>
             <View style={{ height: 1, backgroundColor: '#C4622D', width: `${progress * 100}%` }} />
           </View>
         </View>
@@ -107,7 +107,7 @@ export default function CookScreen() {
       </View>
 
       {/* Step counter */}
-      <Text style={{ fontFamily: 'DMMono_400Regular', fontSize: 10, color: '#4A4038', letterSpacing: 2, textAlign: 'center', marginBottom: 8 }}>
+      <Text style={{ fontFamily: 'DMMono_400Regular', fontSize: 10, color: '#9A8E84', letterSpacing: 2, textAlign: 'center', marginBottom: 8 }}>
         {stepIndex + 1} — {steps.length}
       </Text>
 
@@ -118,14 +118,14 @@ export default function CookScreen() {
             <Text style={{
               fontFamily: 'CormorantGaramond_400Regular',
               fontSize: 32,
-              color: '#EDE8DC',
+              color: '#1C1712',
               lineHeight: 44,
               textAlign: 'center',
             }}>
               {currentStep?.instruction}
             </Text>
             {/* Swipe hint */}
-            <Text style={{ fontFamily: 'DMMono_400Regular', fontSize: 9, color: '#2E2820', textAlign: 'center', marginTop: 32, letterSpacing: 1.5 }}>
+            <Text style={{ fontFamily: 'DMMono_400Regular', fontSize: 9, color: '#C8BFB8', textAlign: 'center', marginTop: 32, letterSpacing: 1.5 }}>
               SWIPE TO NAVIGATE
             </Text>
           </View>
@@ -137,7 +137,7 @@ export default function CookScreen() {
         <TouchableOpacity
           style={{
             flex: 1, paddingVertical: 14, alignItems: 'center',
-            borderWidth: 1, borderColor: stepIndex === 0 ? '#1E1A15' : '#272018',
+            borderWidth: 1, borderColor: stepIndex === 0 ? '#D8D0C8' : '#D5CCC0',
             opacity: stepIndex === 0 ? 0.3 : 1,
           }}
           onPress={() => goTo(stepIndex - 1)}
@@ -159,7 +159,7 @@ export default function CookScreen() {
       </View>
 
       {/* ── Ingredients collapsible ── */}
-      <View style={{ borderTopWidth: 1, borderTopColor: '#1A1612' }}>
+      <View style={{ borderTopWidth: 1, borderTopColor: '#D8D2CB' }}>
         <TouchableOpacity
           style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 12 }}
           onPress={() => setIngredientsOpen(o => !o)}
@@ -167,7 +167,7 @@ export default function CookScreen() {
           <Text style={{ fontFamily: 'DMMono_400Regular', fontSize: 9, color: '#7A6E64', letterSpacing: 2.5 }}>
             INGREDIENTS ({ingredients.length})
           </Text>
-          <Text style={{ fontFamily: 'DMMono_400Regular', fontSize: 10, color: '#4A4038' }}>
+          <Text style={{ fontFamily: 'DMMono_400Regular', fontSize: 10, color: '#9A8E84' }}>
             {ingredientsOpen ? '▲' : '▼'}
           </Text>
         </TouchableOpacity>
@@ -181,7 +181,7 @@ export default function CookScreen() {
               >
                 <View style={{
                   width: 14, height: 14, borderWidth: 1,
-                  borderColor: checked[i] ? '#C4622D' : '#2E2820',
+                  borderColor: checked[i] ? '#C4622D' : '#C8BFB8',
                   backgroundColor: checked[i] ? '#C4622D' : 'transparent',
                   marginRight: 12, alignItems: 'center', justifyContent: 'center',
                 }}>
@@ -189,7 +189,7 @@ export default function CookScreen() {
                 </View>
                 <Text style={{
                   fontFamily: 'DMMono_400Regular', fontSize: 12,
-                  color: checked[i] ? '#3A342C' : '#7A6E64',
+                  color: checked[i] ? '#B5ACA4' : '#7A6E64',
                   textDecorationLine: checked[i] ? 'line-through' : 'none',
                 }}>
                   {ing.amount}{ing.unit ? ` ${ing.unit}` : ''} {ing.name}
@@ -202,18 +202,18 @@ export default function CookScreen() {
 
       {/* ── Tips collapsible ── */}
       {tips.length > 0 && (
-        <View style={{ borderTopWidth: 1, borderTopColor: '#141008' }}>
+        <View style={{ borderTopWidth: 1, borderTopColor: '#DDD5CD' }}>
           <TouchableOpacity
             style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 10 }}
             onPress={() => setTipsOpen(o => !o)}
           >
-            <Text style={{ fontFamily: 'DMMono_400Regular', fontSize: 9, color: '#4A4038', letterSpacing: 2.5 }}>TIPS</Text>
-            <Text style={{ fontFamily: 'DMMono_400Regular', fontSize: 10, color: '#2E2820' }}>{tipsOpen ? '▲' : '▼'}</Text>
+            <Text style={{ fontFamily: 'DMMono_400Regular', fontSize: 9, color: '#9A8E84', letterSpacing: 2.5 }}>TIPS</Text>
+            <Text style={{ fontFamily: 'DMMono_400Regular', fontSize: 10, color: '#C8BFB8' }}>{tipsOpen ? '▲' : '▼'}</Text>
           </TouchableOpacity>
           {tipsOpen && (
             <ScrollView style={{ maxHeight: 110, paddingHorizontal: 20, paddingBottom: 12 }}>
               {tips.map((tip, i) => (
-                <Text key={i} style={{ fontFamily: 'Lora_400Regular', fontSize: 12, color: '#4A4038', marginBottom: 6, lineHeight: 18 }}>
+                <Text key={i} style={{ fontFamily: 'Lora_400Regular', fontSize: 12, color: '#9A8E84', marginBottom: 6, lineHeight: 18 }}>
                   {tip.text}
                 </Text>
               ))}

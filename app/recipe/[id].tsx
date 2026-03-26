@@ -66,7 +66,7 @@ export default function RecipeDetailScreen() {
 
   if (isLoading || !recipe) {
     return (
-      <View style={{ flex: 1, backgroundColor: '#0C0A08', alignItems: 'center', justifyContent: 'center' }}>
+      <View style={{ flex: 1, backgroundColor: '#F8F4EE', alignItems: 'center', justifyContent: 'center' }}>
         <ActivityIndicator color="#C4622D" />
       </View>
     );
@@ -75,7 +75,7 @@ export default function RecipeDetailScreen() {
   const totalTime = (recipe.prep_time_min ?? 0) + (recipe.cook_time_min ?? 0);
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#0C0A08' }}>
+    <View style={{ flex: 1, backgroundColor: '#F8F4EE' }}>
       <ScrollView>
         {recipe.cover_image_url && (
           <Image
@@ -104,7 +104,7 @@ export default function RecipeDetailScreen() {
           <Text style={{
             fontFamily: 'CormorantGaramond_600SemiBold',
             fontSize: 36,
-            color: '#EDE8DC',
+            color: '#1C1712',
             lineHeight: 42,
             marginBottom: 12,
           }}>
@@ -224,7 +224,7 @@ export default function RecipeDetailScreen() {
           {/* Ingredients section */}
           <View style={{
             borderTopWidth: 1,
-            borderTopColor: '#272018',
+            borderTopColor: '#D5CCC0',
             paddingTop: 16,
             marginBottom: 8,
           }}>
@@ -245,7 +245,7 @@ export default function RecipeDetailScreen() {
               alignItems: 'center',
               paddingVertical: 12,
               borderBottomWidth: 1,
-              borderBottomColor: '#272018',
+              borderBottomColor: '#D5CCC0',
             }}>
               <Text style={{
                 fontFamily: 'DMMono_500Medium',
@@ -258,7 +258,7 @@ export default function RecipeDetailScreen() {
               <Text style={{
                 fontFamily: 'Lora_400Regular',
                 fontSize: 15,
-                color: '#EDE8DC',
+                color: '#1C1712',
                 flex: 1,
               }}>
                 {ing.name}
@@ -269,7 +269,7 @@ export default function RecipeDetailScreen() {
           {/* Instructions section */}
           <View style={{
             borderTopWidth: 1,
-            borderTopColor: '#272018',
+            borderTopColor: '#D5CCC0',
             paddingTop: 16,
             marginTop: 24,
             marginBottom: 8,
@@ -308,7 +308,7 @@ export default function RecipeDetailScreen() {
               <Text style={{
                 fontFamily: 'Lora_400Regular',
                 fontSize: 15,
-                color: '#EDE8DC',
+                color: '#1C1712',
                 flex: 1,
                 lineHeight: 24,
               }}>
@@ -327,7 +327,7 @@ export default function RecipeDetailScreen() {
                   justifyContent: 'space-between',
                   paddingVertical: 16,
                   borderTopWidth: 1,
-                  borderTopColor: '#272018',
+                  borderTopColor: '#D5CCC0',
                 }}
                 onPress={() => setTipsOpen(o => !o)}
               >
@@ -382,7 +382,7 @@ export default function RecipeDetailScreen() {
             <View style={{ marginTop: 32 }}>
               <View style={{
                 borderTopWidth: 1,
-                borderTopColor: '#272018',
+                borderTopColor: '#D5CCC0',
                 paddingTop: 16,
                 marginBottom: 16,
               }}>
@@ -398,9 +398,9 @@ export default function RecipeDetailScreen() {
               </View>
               {recipe.tries.slice(0, 5).map((t: any, i: number) => (
                 <View key={i} style={{
-                  backgroundColor: '#161210',
+                  backgroundColor: '#EEE8DF',
                   borderWidth: 1,
-                  borderColor: '#272018',
+                  borderColor: '#D5CCC0',
                   padding: 16,
                   marginBottom: 8,
                 }}>
@@ -423,7 +423,7 @@ export default function RecipeDetailScreen() {
                     <Text style={{
                       fontFamily: 'DMMono_400Regular',
                       fontSize: 12,
-                      color: '#EDE8DC',
+                      color: '#1C1712',
                       flex: 1,
                     }}>
                       {t.author?.display_name}

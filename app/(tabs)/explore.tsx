@@ -144,13 +144,13 @@ export default function ExploreScreen() {
   const smartLabel = getSmartSortLabel();
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#0C0A08' }}>
+    <View style={{ flex: 1, backgroundColor: '#F8F4EE' }}>
       {/* Mode toggle */}
       <View style={{
         flexDirection: 'row',
-        backgroundColor: '#161210',
+        backgroundColor: '#EEE8DF',
         borderBottomWidth: 1,
-        borderBottomColor: '#272018',
+        borderBottomColor: '#D5CCC0',
         paddingHorizontal: 24,
         paddingTop: 16,
         paddingBottom: 0,
@@ -165,7 +165,7 @@ export default function ExploreScreen() {
             fontSize: 12,
             letterSpacing: 1.5,
             textTransform: 'uppercase',
-            color: mode === 'browse' ? '#EDE8DC' : '#7A6E64',
+            color: mode === 'browse' ? '#1C1712' : '#7A6E64',
           }}>
             Browse
           </Text>
@@ -189,7 +189,7 @@ export default function ExploreScreen() {
             fontSize: 12,
             letterSpacing: 1.5,
             textTransform: 'uppercase',
-            color: mode === 'fridge' ? '#EDE8DC' : '#7A6E64',
+            color: mode === 'fridge' ? '#1C1712' : '#7A6E64',
           }}>
             My Fridge
           </Text>
@@ -218,10 +218,10 @@ export default function ExploreScreen() {
               <TextInput
                 style={{
                   borderBottomWidth: 1,
-                  borderBottomColor: '#272018',
+                  borderBottomColor: '#D5CCC0',
                   paddingHorizontal: 0,
                   paddingVertical: 10,
-                  color: '#EDE8DC',
+                  color: '#1C1712',
                   fontFamily: 'Lora_400Regular',
                   fontSize: 15,
                   marginBottom: 20,
@@ -344,7 +344,7 @@ export default function ExploreScreen() {
               <Text style={{
                 fontFamily: 'CormorantGaramond_400Regular',
                 fontSize: 26,
-                color: '#EDE8DC',
+                color: '#1C1712',
                 marginBottom: 6,
               }}>
                 What's in my fridge?
@@ -365,9 +365,9 @@ export default function ExploreScreen() {
                   style={{
                     flex: 1,
                     borderBottomWidth: 1,
-                    borderBottomColor: '#272018',
+                    borderBottomColor: '#D5CCC0',
                     paddingVertical: 10,
-                    color: '#EDE8DC',
+                    color: '#1C1712',
                     fontFamily: 'Lora_400Regular',
                     fontSize: 15,
                     backgroundColor: 'transparent',
@@ -410,9 +410,9 @@ export default function ExploreScreen() {
                         style={{
                           flexDirection: 'row',
                           alignItems: 'center',
-                          backgroundColor: '#201C18',
+                          backgroundColor: '#E4DDD4',
                           borderWidth: 1,
-                          borderColor: '#272018',
+                          borderColor: '#D5CCC0',
                           paddingHorizontal: 12,
                           paddingVertical: 6,
                           gap: 6,
@@ -423,7 +423,7 @@ export default function ExploreScreen() {
                           fontFamily: 'DMMono_400Regular',
                           fontSize: 11,
                           letterSpacing: 0.8,
-                          color: '#EDE8DC',
+                          color: '#1C1712',
                         }}>
                           {ing}
                         </Text>
