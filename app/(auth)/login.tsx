@@ -3,7 +3,7 @@ import {
   View, Text, TextInput, TouchableOpacity,
   KeyboardAvoidingView, Platform, ActivityIndicator, Alert,
 } from 'react-native';
-import { Link } from 'expo-router';
+import { Link, useRouter } from 'expo-router';
 import { supabase } from '@/lib/supabase';
 
 const INK      = '#F8F4EE';
@@ -14,15 +14,22 @@ const BORDER   = '#D5CCC0';
 const PH       = '#B5ACA4';
 
 export default function LoginScreen() {
+  const router = useRouter();
   const [email, setEmail]       = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading]   = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
 
   async function handleLogin() {
     if (!email || !password) return;
     setLoading(true);
+    setErrorMsg('');
     const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) Alert.alert('Login failed', error.message);
+    if (error) {
+      setErrorMsg(error.message);
+    } else {
+      router.replace('/(tabs)/feed');
+    }
     setLoading(false);
   }
 
@@ -68,6 +75,12 @@ export default function LoginScreen() {
               value={password} onChangeText={setPassword} secureTextEntry autoComplete="password"
             />
           </View>
+
+          {errorMsg ? (
+            <Text style={{ fontFamily: 'Lora_400Regular', fontSize: 13, color: '#E05C3A', marginBottom: 16, lineHeight: 20 }}>
+              {errorMsg}
+            </Text>
+          ) : null}
 
           <TouchableOpacity
             style={{ backgroundColor: TERRA, paddingVertical: 17, alignItems: 'center' }}
