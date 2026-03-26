@@ -51,14 +51,14 @@ export default function FeedScreen() {
 
   if (isLoading) {
     return (
-      <View style={{ flex: 1, backgroundColor: '#0C0A08', alignItems: 'center', justifyContent: 'center' }}>
+      <View style={{ flex: 1, backgroundColor: '#F8F4EE', alignItems: 'center', justifyContent: 'center' }}>
         <ActivityIndicator color="#C4622D" />
       </View>
     );
   }
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#0C0A08' }}>
+    <View style={{ flex: 1, backgroundColor: '#F8F4EE' }}>
       <FlatList
         data={data as any[]}
         keyExtractor={(item) => item.id}
@@ -67,18 +67,18 @@ export default function FeedScreen() {
         refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor="#C4622D" />}
         ListHeaderComponent={
           <View style={{ marginBottom: 20 }}>
-            <Text style={{ fontFamily: 'CormorantGaramond_600SemiBold', fontSize: 38, color: '#EDE8DC' }}>
+            <Text style={{ fontFamily: 'CormorantGaramond_600SemiBold', fontSize: 38, color: '#1C1712' }}>
               Your Feed
             </Text>
-            <View style={{ height: 1, backgroundColor: '#272018', marginTop: 12 }} />
+            <View style={{ height: 1, backgroundColor: '#D5CCC0', marginTop: 12 }} />
           </View>
         }
         ListEmptyComponent={
           <View style={{ alignItems: 'center', paddingVertical: 64 }}>
-            <Text style={{ fontFamily: 'CormorantGaramond_400Regular', fontSize: 32, color: '#4A4038', marginBottom: 12 }}>
+            <Text style={{ fontFamily: 'CormorantGaramond_400Regular', fontSize: 32, color: '#B5ADA8', marginBottom: 12 }}>
               Nothing yet
             </Text>
-            <Text style={{ fontFamily: 'Lora_400Regular', fontSize: 14, color: '#7A6E64', textAlign: 'center', paddingHorizontal: 40, lineHeight: 22 }}>
+            <Text style={{ fontFamily: 'Lora_400Regular', fontSize: 14, color: '#A09590', textAlign: 'center', paddingHorizontal: 40, lineHeight: 22 }}>
               Follow friends or try a recipe to see activity here
             </Text>
           </View>

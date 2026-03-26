@@ -73,14 +73,14 @@ export default function RootLayout() {
   // Fonts enhance the UI progressively — don't block render on web
 
   return (
-    <GestureHandlerRootView style={{ flex: 1, backgroundColor: '#0C0A08' }}>
+    <GestureHandlerRootView style={{ flex: 1, backgroundColor: '#F8F4EE' }}>
       <QueryClientProvider client={queryClient}>
         <AuthGate />
-        <StatusBar style="light" />
+        <StatusBar style="dark" />
         <Stack
           screenOptions={{
             headerShown: false,
-            contentStyle: { backgroundColor: '#0C0A08' },
+            contentStyle: { backgroundColor: '#F8F4EE' },
           }}
         >
           <Stack.Screen name="(auth)" />
@@ -90,8 +90,8 @@ export default function RootLayout() {
             options={{
               headerShown: true,
               title: '',
-              headerStyle: { backgroundColor: '#0C0A08' },
-              headerTintColor: '#EDE8DC',
+              headerStyle: { backgroundColor: '#F8F4EE' },
+              headerTintColor: '#1C1712',
             }}
           />
           <Stack.Screen
@@ -104,8 +104,8 @@ export default function RootLayout() {
               presentation: 'modal',
               headerShown: true,
               title: 'Log a Try',
-              headerStyle: { backgroundColor: '#0C0A08' },
-              headerTintColor: '#EDE8DC',
+              headerStyle: { backgroundColor: '#F8F4EE' },
+              headerTintColor: '#1C1712',
             }}
           />
           <Stack.Screen
@@ -113,8 +113,8 @@ export default function RootLayout() {
             options={{
               headerShown: true,
               title: '',
-              headerStyle: { backgroundColor: '#0C0A08' },
-              headerTintColor: '#EDE8DC',
+              headerStyle: { backgroundColor: '#F8F4EE' },
+              headerTintColor: '#1C1712',
             }}
           />
         </Stack>

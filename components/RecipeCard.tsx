@@ -77,7 +77,7 @@ export function RecipeCard({ recipe, showCreator }: Props) {
           <Text style={styles.metaMuted}>{totalTime} min</Text>
         )}
         {recipe.difficulty && (
-          <Text style={[styles.metaMuted, { color: DIFFICULTY_COLOR[recipe.difficulty] ?? '#7A6E64' }]}>
+          <Text style={[styles.metaMuted, { color: DIFFICULTY_COLOR[recipe.difficulty] ?? '#A09590' }]}>
             {recipe.difficulty}
           </Text>
         )}
@@ -98,7 +98,7 @@ export function RecipeCard({ recipe, showCreator }: Props) {
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: '#161210',
+    backgroundColor: '#EEE8DF',
     borderWidth: 0,
   },
   imageContainer: {
@@ -129,7 +129,7 @@ const styles = StyleSheet.create({
   cuisineTagText: {
     fontFamily: 'DMMono_400Regular',
     fontSize: 9,
-    color: '#7A6E64',
+    color: '#A09590',
     letterSpacing: 1.2,
   },
   titleOverlayContainer: {
@@ -145,7 +145,7 @@ const styles = StyleSheet.create({
     lineHeight: 30,
   },
   noImageContainer: {
-    backgroundColor: '#161210',
+    backgroundColor: '#EEE8DF',
     paddingHorizontal: 14,
     paddingTop: 16,
     paddingBottom: 12,
@@ -153,14 +153,14 @@ const styles = StyleSheet.create({
   cuisineTagNoImage: {
     fontFamily: 'DMMono_400Regular',
     fontSize: 9,
-    color: '#7A6E64',
+    color: '#A09590',
     letterSpacing: 1.2,
     marginBottom: 6,
   },
   titleNoImage: {
     fontFamily: 'CormorantGaramond_400Regular',
     fontSize: 24,
-    color: '#EDE8DC',
+    color: '#1C1712',
     lineHeight: 28,
   },
   metaRow: {
@@ -179,7 +179,7 @@ const styles = StyleSheet.create({
   metaMuted: {
     fontFamily: 'DMMono_400Regular',
     fontSize: 11,
-    color: '#7A6E64',
+    color: '#A09590',
   },
   creatorRow: {
     paddingHorizontal: 14,
@@ -188,10 +188,10 @@ const styles = StyleSheet.create({
   creatorText: {
     fontFamily: 'Lora_400Regular',
     fontSize: 12,
-    color: '#7A6E64',
+    color: '#A09590',
   },
   hairline: {
     height: StyleSheet.hairlineWidth,
-    backgroundColor: '#272018',
+    backgroundColor: '#D5CCC0',
   },
 });
