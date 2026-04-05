@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "Becipe",
-    "slug": "becipe",
+    "name": "Dishr",
+    "slug": "dishr",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "scheme": "becipe",
+    "scheme": "dishr",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "splash": {
@@ -15,14 +15,14 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.becipe.app"
+      "bundleIdentifier": "com.dishr.app"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#FF6B35"
       },
-      "package": "com.becipe.app",
+      "package": "com.dishr.app",
       "intentFilters": [
         {
           "action": "android.intent.action.SEND",
@@ -51,7 +51,7 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "Allow Becipe to access your photos to add pictures to recipes."
+          "photosPermission": "Allow Dishr to access your photos to add pictures to recipes."
         }
       ]
     ],

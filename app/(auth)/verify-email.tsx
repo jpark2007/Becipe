@@ -90,7 +90,7 @@ export default function VerifyEmailScreen() {
         {checking
           ? <ActivityIndicator color={CREAM} />
           : <Text style={{ fontFamily: 'DMMono_500Medium', fontSize: 11, color: CREAM, letterSpacing: 3.5 }}>
-              CONTINUE TO BECIPE
+              CONTINUE TO DISHR
             </Text>
         }
       </TouchableOpacity>

@@ -43,7 +43,7 @@ export default function LoginScreen() {
         {/* ── Wordmark ── */}
         <View>
           <Text style={{ fontFamily: 'CormorantGaramond_600SemiBold', fontSize: 76, color: CREAM, lineHeight: 76 }}>
-            Becipe
+            Dishr
           </Text>
           <Text style={{ fontFamily: 'DMMono_400Regular', fontSize: 10, color: MUTED, letterSpacing: 4, marginTop: 10 }}>
             COOK · SHARE · DISCOVER

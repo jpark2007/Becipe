@@ -80,7 +80,7 @@ export default function SignupScreen() {
             NEW ACCOUNT
           </Text>
           <Text style={{ fontFamily: 'CormorantGaramond_600SemiBold', fontSize: 48, color: CREAM, lineHeight: 48 }}>
-            Join Becipe
+            Join Dishr
           </Text>
           <View style={{ height: 1, backgroundColor: BORDER, marginTop: 20, width: '25%' }} />
         </View>
