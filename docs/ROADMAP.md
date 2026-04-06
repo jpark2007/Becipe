@@ -79,6 +79,23 @@ Last updated: 2026-04-05
 | App Store readiness | 10% | Need assets, legal, store listing |
 | **Overall to launch** | **~55%** | Code works, but social features + content + polish needed |
 
+## Work Order
+
+### Waiting on Supabase access — then do in this order:
+1. [ ] End-to-end test all current features (auth, feed, explore, import, cook mode, tries)
+2. [ ] Test current TikTok/Instagram import with real URLs — see what actually works/fails
+3. [ ] Test current URL import with various recipe sites
+4. [ ] TikTok/Instagram + URL import upgrade — LLM via OpenRouter (see docs/PLAN-tiktok-import-upgrade.md)
+5. [ ] Input validation + error boundary (security hardening)
+6. [ ] Push notification infrastructure (client + server)
+7. [ ] Seed data script (~1K recipes for launch content)
+
+### Later (after core features tested and solid)
+- [ ] Social sharing out (share recipe to Instagram Story, Facebook — needs recipe card UI)
+- [ ] Sentry + PostHog integration
+- [ ] UI redo (after seeing app running, testing flows)
+- [ ] Onboarding flow (after final UI)
+
 ## Blockers
 
 | Blocker | Owner | Status |
