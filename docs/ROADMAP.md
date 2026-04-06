@@ -26,17 +26,31 @@ Last updated: 2026-04-05
 - [x] Rename from Becipe to Dishr
 
 ### Not Started — Needed Before Launch
+
+**Security (HIGH PRIORITY):**
+- [ ] Fix feed_items RLS policy — currently allows unauthenticated inserts (`with check (true)` → change to `auth.uid() is not null`)
+- [ ] Add rate limiting on edge functions (parse-recipe, parse-video) — prevent abuse/DoS
+- [ ] Input validation/sanitization on all user inputs (XSS prevention)
+- [ ] URL validation in edge functions (format check + reject non-http URLs before fetching)
+- [ ] Photo upload validation (file type + size limits)
+- [ ] Move Instagram access token to proper secret handling (currently in URL query string)
+- [ ] Error boundary component (global crash handler)
+- [ ] No API keys in frontend — VERIFIED CLEAN, keep it that way
+
+**Features:**
 - [ ] Drew added to Supabase project (waiting on jpark2007)
 - [ ] Supabase project unpaused and accessible
-- [ ] Upgrade TikTok/Instagram import (whisper transcription + LLM parsing to replace caption heuristics)
+- [ ] Upgrade TikTok/Instagram import (caption + LLM via OpenRouter — see docs/PLAN-tiktok-import-upgrade.md)
 - [ ] Push notifications (Expo Notifications — new followers, tries on your recipes, recipe comments)
 - [ ] Seed data script (scrape ~1K recipes from Schema.org sites for launch content)
-- [ ] Input validation/sanitization (XSS prevention)
-- [ ] Photo upload validation (file type + size limits)
-- [ ] Error boundary component (global crash handler)
+
+**Monitoring & Quality:**
 - [ ] Error tracking (Sentry — free tier, has Expo SDK)
 - [ ] Analytics (PostHog — free tier 1M events/mo; track signups, shares, tries, retention)
 - [ ] Basic smoke tests
+- [ ] Review caching strategy (React Query 2-min stale time may need tuning)
+
+**Launch Prep:**
 - [ ] App Store assets (screenshots, description, keywords)
 - [ ] Privacy policy + terms of service
 - [ ] GitHub repo rename to Dishr (jpark2007 to do)
