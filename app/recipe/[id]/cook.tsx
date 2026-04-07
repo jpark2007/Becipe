@@ -44,8 +44,9 @@ export default function CookScreen() {
   });
 
   useEffect(() => {
-    activateKeepAwakeAsync('cook-mode');
-    return () => { deactivateKeepAwake('cook-mode'); };
+    let activated = false;
+    activateKeepAwakeAsync('cook-mode').then(() => { activated = true; });
+    return () => { if (activated) deactivateKeepAwake('cook-mode'); };
   }, []);
 
   const steps = (recipe?.steps ?? []) as Step[];

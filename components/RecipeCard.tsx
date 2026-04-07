@@ -70,7 +70,7 @@ export function RecipeCard({ recipe, showCreator }: Props) {
 
       {/* ── Meta row ── */}
       <View style={styles.metaRow}>
-        {recipe.avg_rating !== undefined && (
+        {recipe.avg_rating != null && (
           <Text style={styles.rating}>{recipe.avg_rating.toFixed(1)}/10</Text>
         )}
         {totalTime !== null && (

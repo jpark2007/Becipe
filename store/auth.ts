@@ -6,14 +6,18 @@ interface AuthState {
   session: Session | null;
   user: User | null;
   profile: Profile | null;
+  isAuthReady: boolean;
   setSession: (session: Session | null) => void;
   setProfile: (profile: Profile | null) => void;
+  setAuthReady: () => void;
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
   session: null,
   user: null,
   profile: null,
+  isAuthReady: false,
   setSession: (session) => set({ session, user: session?.user ?? null }),
   setProfile: (profile) => set({ profile }),
+  setAuthReady: () => set({ isAuthReady: true }),
 }));

@@ -7,9 +7,12 @@ import {
   ScrollView,
   TouchableOpacity,
   ActivityIndicator,
+  Image,
 } from 'react-native';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useRouter } from 'expo-router';
 import { supabase } from '@/lib/supabase';
+import { useAuthStore } from '@/store/auth';
 import { RecipeCard } from '@/components/RecipeCard';
 import {
   CUISINES,
@@ -74,6 +77,38 @@ async function fetchRecipes(sort: SortOption, cuisine: Cuisine, search: string) 
   return enriched;
 }
 
+async function fetchProfiles(search: string, excludeUserId?: string) {
+  let query = supabase
+    .from('profiles')
+    .select('id, display_name, username, avatar_url, created_at');
+
+  if (excludeUserId) {
+    query = query.neq('id', excludeUserId);
+  }
+
+  if (search.trim()) {
+    const term = `%${search.trim()}%`;
+    query = query.or(`username.ilike.${term},display_name.ilike.${term}`);
+  } else {
+    query = query.order('created_at', { ascending: false });
+  }
+
+  query = query.limit(50);
+
+  const { data, error } = await query;
+  if (error) throw error;
+  return data ?? [];
+}
+
+async function fetchFollowing(userId: string) {
+  const { data, error } = await supabase
+    .from('follows')
+    .select('following_id')
+    .eq('follower_id', userId);
+  if (error) throw error;
+  return new Set((data ?? []).map((f: any) => f.following_id));
+}
+
 async function fetchByIngredients(ingredients: string[]) {
   if (!ingredients.length) return [];
 
@@ -113,13 +148,20 @@ async function fetchByIngredients(ingredients: string[]) {
   return data ?? [];
 }
 
+type ExploreTab = 'browse' | 'fridge' | 'people';
+
 export default function ExploreScreen() {
+  const router = useRouter();
+  const queryClient = useQueryClient();
+  const user = useAuthStore((s) => s.user);
+
   const [sort, setSort] = useState<SortOption>('smart');
   const [cuisine, setCuisine] = useState<Cuisine>('All');
   const [searchText, setSearchText] = useState('');
-  const [mode, setMode] = useState<'browse' | 'fridge'>('browse');
+  const [mode, setMode] = useState<ExploreTab>('browse');
   const [fridgeInput, setFridgeInput] = useState('');
   const [fridgeIngredients, setFridgeIngredients] = useState<string[]>([]);
+  const [peopleSearch, setPeopleSearch] = useState('');
 
   const { data: recipes, isLoading } = useQuery({
     queryKey: ['explore', sort, cuisine, searchText],
@@ -131,6 +173,47 @@ export default function ExploreScreen() {
     queryKey: ['fridge', fridgeIngredients],
     queryFn: () => fetchByIngredients(fridgeIngredients),
     enabled: mode === 'fridge' && fridgeIngredients.length > 0,
+  });
+
+  const { data: profiles, isLoading: peopleLoading } = useQuery({
+    queryKey: ['people', peopleSearch],
+    queryFn: () => fetchProfiles(peopleSearch, user?.id),
+    enabled: mode === 'people',
+  });
+
+  const { data: followingSet } = useQuery({
+    queryKey: ['following', user?.id],
+    queryFn: () => fetchFollowing(user!.id),
+    enabled: mode === 'people' && !!user?.id,
+  });
+
+  const followMutation = useMutation({
+    mutationFn: async (targetId: string) => {
+      const { error } = await supabase.from('follows').insert({
+        follower_id: user!.id,
+        following_id: targetId,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['following', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['people'] });
+    },
+  });
+
+  const unfollowMutation = useMutation({
+    mutationFn: async (targetId: string) => {
+      const { error } = await supabase
+        .from('follows')
+        .delete()
+        .eq('follower_id', user!.id)
+        .eq('following_id', targetId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['following', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['people'] });
+    },
   });
 
   function addFridgeIngredient() {
@@ -204,9 +287,180 @@ export default function ExploreScreen() {
             }} />
           )}
         </TouchableOpacity>
+        <TouchableOpacity
+          onPress={() => setMode('people')}
+          style={{ paddingBottom: 12 }}
+        >
+          <Text style={{
+            fontFamily: 'DMMono_400Regular',
+            fontSize: 12,
+            letterSpacing: 1.5,
+            textTransform: 'uppercase',
+            color: mode === 'people' ? '#1C1712' : '#A09590',
+          }}>
+            People
+          </Text>
+          {mode === 'people' && (
+            <View style={{
+              position: 'absolute',
+              bottom: 0,
+              left: 0,
+              right: 0,
+              height: 2,
+              backgroundColor: '#C4622D',
+            }} />
+          )}
+        </TouchableOpacity>
       </View>
 
-      {mode === 'browse' ? (
+      {mode === 'people' ? (
+        <FlatList
+          data={(profiles as any[]) ?? []}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={{ padding: 16 }}
+          ListHeaderComponent={
+            <View>
+              <TextInput
+                style={{
+                  borderBottomWidth: 1,
+                  borderBottomColor: '#D5CCC0',
+                  paddingHorizontal: 0,
+                  paddingVertical: 10,
+                  color: '#1C1712',
+                  fontFamily: 'Lora_400Regular',
+                  fontSize: 15,
+                  marginBottom: 20,
+                  backgroundColor: 'transparent',
+                }}
+                placeholder="Search by name or username..."
+                placeholderTextColor="#A09590"
+                value={peopleSearch}
+                onChangeText={setPeopleSearch}
+              />
+              {!peopleSearch.trim() && (
+                <Text style={{
+                  fontFamily: 'DMMono_500Medium',
+                  fontSize: 11,
+                  letterSpacing: 1.5,
+                  textTransform: 'uppercase',
+                  color: '#A09590',
+                  marginBottom: 12,
+                }}>
+                  Suggested cooks
+                </Text>
+              )}
+            </View>
+          }
+          renderItem={({ item }) => {
+            const isFollowing = followingSet?.has(item.id) ?? false;
+            const isSelf = user?.id === item.id;
+            const initial = (item.display_name?.[0] || item.username?.[0] || '?').toUpperCase();
+
+            return (
+              <TouchableOpacity
+                onPress={() => router.push(`/user/${item.id}`)}
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  paddingVertical: 10,
+                  borderBottomWidth: 1,
+                  borderBottomColor: '#D5CCC0',
+                }}
+              >
+                {item.avatar_url ? (
+                  <Image
+                    source={{ uri: item.avatar_url }}
+                    style={{ width: 40, height: 40, borderRadius: 4, backgroundColor: '#EEE8DF' }}
+                  />
+                ) : (
+                  <View style={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: 4,
+                    backgroundColor: '#C4622D',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}>
+                    <Text style={{
+                      fontFamily: 'DMMono_500Medium',
+                      fontSize: 16,
+                      color: '#F8F4EE',
+                    }}>
+                      {initial}
+                    </Text>
+                  </View>
+                )}
+
+                <View style={{ flex: 1, marginLeft: 12 }}>
+                  <Text style={{
+                    fontFamily: 'DMMono_500Medium',
+                    fontSize: 12,
+                    color: '#1C1712',
+                  }}>
+                    {item.display_name || item.username}
+                  </Text>
+                  {item.username && (
+                    <Text style={{
+                      fontFamily: 'DMMono_400Regular',
+                      fontSize: 10,
+                      color: '#A09590',
+                      marginTop: 2,
+                    }}>
+                      @{item.username}
+                    </Text>
+                  )}
+                </View>
+
+                {!isSelf && (
+                  <TouchableOpacity
+                    onPress={() => {
+                      if (isFollowing) {
+                        unfollowMutation.mutate(item.id);
+                      } else {
+                        followMutation.mutate(item.id);
+                      }
+                    }}
+                    style={{
+                      paddingHorizontal: 14,
+                      paddingVertical: 6,
+                      borderWidth: 1,
+                      borderColor: '#C4622D',
+                      backgroundColor: isFollowing ? 'transparent' : '#C4622D',
+                      borderRadius: 4,
+                    }}
+                  >
+                    <Text style={{
+                      fontFamily: 'DMMono_500Medium',
+                      fontSize: 10,
+                      letterSpacing: 1,
+                      textTransform: 'uppercase',
+                      color: isFollowing ? '#C4622D' : '#F8F4EE',
+                    }}>
+                      {isFollowing ? 'Following' : 'Follow'}
+                    </Text>
+                  </TouchableOpacity>
+                )}
+              </TouchableOpacity>
+            );
+          }}
+          ListEmptyComponent={
+            peopleLoading ? (
+              <ActivityIndicator color="#C4622D" style={{ marginTop: 32 }} />
+            ) : (
+              <Text style={{
+                color: '#A09590',
+                textAlign: 'center',
+                marginTop: 32,
+                fontFamily: 'DMMono_400Regular',
+                fontSize: 12,
+                letterSpacing: 1,
+              }}>
+                No users found
+              </Text>
+            )
+          }
+        />
+      ) : mode === 'browse' ? (
         <FlatList
           data={recipes as any[]}
           keyExtractor={(item) => item.id}
