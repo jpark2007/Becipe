@@ -18,11 +18,11 @@ import { queryClient } from '@/lib/query-client';
 import type { Ingredient, Step, Tip } from '@/lib/database.types';
 import { CUISINES } from '@/lib/smart-sort';
 
-type Mode = 'choose' | 'manual' | 'import';
+type Mode = 'choose' | 'manual' | 'import' | 'social-import';
 type Difficulty = 'easy' | 'medium' | 'hard';
 
-function isVideoUrl(url: string): boolean {
-  return url.includes('tiktok.com') || url.includes('instagram.com');
+function isSocialUrl(url: string): boolean {
+  return /tiktok\.com|instagram\.com|facebook\.com|fb\.watch|twitter\.com|x\.com|youtube\.com|youtu\.be/.test(url);
 }
 
 export default function AddScreen() {
@@ -50,14 +50,25 @@ export default function AddScreen() {
   const [sourceUrl, setSourceUrl] = useState('');
   const [sourceName, setSourceName] = useState('');
   const [sourceCredit, setSourceCredit] = useState('');
-  const [sourceType, setSourceType] = useState<'manual' | 'url' | 'tiktok' | 'instagram'>('manual');
+  const [sourceType, setSourceType] = useState<'manual' | 'url' | 'tiktok' | 'instagram' | 'facebook' | 'x' | 'youtube'>('manual');
+  const [needsCaption, setNeedsCaption] = useState(false);
+  const [pastedCaption, setPastedCaption] = useState('');
 
   // Auto-trigger import when share intent arrives
   useEffect(() => {
-    if (hasShareIntent && shareIntent?.webUrl) {
-      setImportUrl(shareIntent.webUrl);
-      setMode('import');
-      handleImport(shareIntent.webUrl);
+    if (hasShareIntent && shareIntent) {
+      const url = shareIntent.webUrl ?? '';
+      const sharedText = shareIntent.text ?? '';
+      if (url) {
+        setImportUrl(url);
+        setMode(isSocialUrl(url) ? 'social-import' : 'import');
+        // Pass shared text as caption — this is how we get captions from social apps
+        handleImport(url, sharedText || undefined);
+      } else if (sharedText) {
+        // User shared text only (no URL) — treat as pasted caption
+        setMode('social-import');
+        setPastedCaption(sharedText);
+      }
       resetShareIntent();
     }
   }, [hasShareIntent]);
@@ -79,17 +90,18 @@ export default function AddScreen() {
     setMode('manual');
   }
 
-  async function tryEdgeFunction(targetUrl: string) {
-    const fnName = isVideoUrl(targetUrl) ? 'parse-video' : 'parse-recipe';
+  async function tryEdgeFunction(targetUrl: string, caption?: string) {
+    const fnName = isSocialUrl(targetUrl) ? 'parse-video' : 'parse-recipe';
     const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL ?? '';
     const supabaseKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? '';
 
-    // Edge functions deployed with --no-verify-jwt, so we just need the apikey
-    // for Supabase gateway routing. No session JWT required.
     const fnUrl = `${supabaseUrl}/functions/v1/${fnName}`;
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 15000);
+    const timer = setTimeout(() => controller.abort(), 30000);
     try {
+      const body: Record<string, string> = { url: targetUrl };
+      if (caption) body.caption = caption;
+
       const res = await fetch(fnUrl, {
         method: 'POST',
         headers: {
@@ -97,13 +109,16 @@ export default function AddScreen() {
           'Authorization': `Bearer ${supabaseKey}`,
           'apikey': supabaseKey,
         },
-        body: JSON.stringify({ url: targetUrl }),
+        body: JSON.stringify(body),
         signal: controller.signal,
       });
       clearTimeout(timer);
       if (!res.ok) {
-        const body = await res.text().catch(() => '');
-        throw new Error(`Import failed (${res.status}): ${body}`);
+        const responseBody = await res.json().catch(() => ({}));
+        if (responseBody.error === 'caption_needed') {
+          throw Object.assign(new Error('caption_needed'), { partial: responseBody.partial });
+        }
+        throw new Error(`Import failed (${res.status}): ${responseBody.error || responseBody.message || ''}`);
       }
       const data = await res.json();
       if (!data) throw new Error('No data');
@@ -118,24 +133,44 @@ export default function AddScreen() {
     }
   }
 
-  async function handleImport(url?: string) {
+  async function handleImport(url?: string, caption?: string) {
     const targetUrl = (url ?? importUrl).trim();
     if (!targetUrl) return;
 
+    const isSocial = isSocialUrl(targetUrl) || mode === 'social-import';
+
     setImporting(true);
     setImportError('');
+    setNeedsCaption(false);
     try {
-      const data = await tryEdgeFunction(targetUrl);
+      const data = await tryEdgeFunction(targetUrl, caption);
       applyParsedData(data, targetUrl);
     } catch (err: any) {
       const msg = err.message ?? '';
       let userMessage: string;
-      if (msg.includes('No auth session')) {
+      if (msg === 'caption_needed') {
+        // Show paste-caption UI
+        setNeedsCaption(true);
+        if (err.partial) {
+          setSourceUrl(err.partial.source_url ?? targetUrl);
+          setSourceType(err.partial.source_type ?? 'tiktok');
+          setSourceName(err.partial.source_name ?? '');
+          setSourceCredit(err.partial.source_credit ?? '');
+        }
+        userMessage = 'We couldn\'t read the recipe from the caption. Paste the recipe text or caption below.';
+      } else if (msg.includes('No auth session')) {
         userMessage = 'Please sign in again to import recipes.';
-      } else if (msg.includes('Empty parse')) {
-        userMessage = 'That site blocks automated imports. Try BBC Good Food, Serious Eats, Food Network, or Simply Recipes — those work great.';
       } else if (msg.includes('AbortError') || msg.includes('abort')) {
-        userMessage = 'Import timed out — the site may be slow. Try again or use a different recipe site.';
+        userMessage = 'Import timed out — try again.';
+      } else if (isSocial) {
+        userMessage = 'Could not extract the recipe — the post may be private. You can fill it in manually below.';
+        setSourceUrl(targetUrl);
+        setSourceType(targetUrl.includes('tiktok.com') ? 'tiktok' : 'instagram');
+        const platformNames: Record<string, string> = { 'tiktok.com': 'TikTok', 'instagram.com': 'Instagram', 'facebook.com': 'Facebook', 'fb.watch': 'Facebook', 'twitter.com': 'X', 'x.com': 'X', 'youtube.com': 'YouTube', 'youtu.be': 'YouTube' };
+        setSourceName(Object.entries(platformNames).find(([k]) => targetUrl.includes(k))?.[1] ?? '');
+        setMode('manual');
+      } else if (msg.includes('Empty parse')) {
+        userMessage = 'That site blocks automated imports. Try BBC Good Food, Serious Eats, Food Network, or Simply Recipes.';
       } else {
         userMessage = 'Could not import that recipe. Try a URL from BBC Good Food, Serious Eats, or Food Network.';
       }
@@ -146,7 +181,10 @@ export default function AddScreen() {
   }
 
   async function handleSave() {
-    if (!title.trim()) {
+    const cleanTitle = title.trim().slice(0, 200);
+    const cleanDescription = description.trim().slice(0, 2000);
+
+    if (!cleanTitle) {
       setImportError('Please give your recipe a title.');
       return;
     }
@@ -180,16 +218,25 @@ export default function AddScreen() {
         },
         body: JSON.stringify({
           created_by: user!.id,
-          title: title.trim(),
-          description: description.trim() || null,
+          title: cleanTitle,
+          description: cleanDescription || null,
           cuisine: cuisine || null,
           difficulty,
           prep_time_min: prepTime ? parseInt(prepTime) : null,
           cook_time_min: cookTime ? parseInt(cookTime) : null,
           servings: servings ? parseInt(servings) : null,
-          ingredients: ingredients.filter(i => i.name.trim()),
-          steps: steps.filter(s => s.instruction.trim()),
-          tips: tips.filter(t => t.text.trim()),
+          ingredients: ingredients.filter(i => i.name.trim()).map(i => ({
+            amount: i.amount.trim().slice(0, 50),
+            unit: i.unit.trim().slice(0, 50),
+            name: i.name.trim().slice(0, 500),
+          })),
+          steps: steps.filter(s => s.instruction.trim()).map(s => ({
+            order: s.order,
+            instruction: s.instruction.trim().slice(0, 2000),
+          })),
+          tips: tips.filter(t => t.text.trim()).map(t => ({
+            text: t.text.trim().slice(0, 1000),
+          })),
           source_url: sourceUrl || null,
           source_name: sourceName || null,
           source_credit: sourceCredit || null,
@@ -298,7 +345,7 @@ export default function AddScreen() {
           </Text>
         </TouchableOpacity>
 
-        {/* Import from TikTok / Instagram */}
+        {/* Import from Social */}
         <TouchableOpacity
           style={{
             backgroundColor: '#EEE8DF',
@@ -306,7 +353,7 @@ export default function AddScreen() {
             borderLeftColor: '#C4622D',
             padding: 20,
           }}
-          onPress={() => setMode('import')}
+          onPress={() => setMode('social-import')}
         >
           <Text style={{
             fontFamily: 'DMMono_400Regular',
@@ -316,14 +363,14 @@ export default function AddScreen() {
             color: '#C4622D',
             marginBottom: 6,
           }}>
-            Import from TikTok / Instagram
+            Import from Social
           </Text>
           <Text style={{
             fontFamily: 'CormorantGaramond_400Regular',
             fontSize: 18,
             color: '#A09590',
           }}>
-            Paste a video link or share directly from the app
+            Share directly from TikTok, Instagram, and more
           </Text>
         </TouchableOpacity>
       </View>
@@ -417,6 +464,211 @@ export default function AddScreen() {
             )}
           </TouchableOpacity>
         </View>
+      </KeyboardAvoidingView>
+    );
+  }
+
+  if (mode === 'social-import' && !title) {
+    return (
+      <KeyboardAvoidingView
+        style={{ flex: 1, backgroundColor: '#F8F4EE' }}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
+        <ScrollView contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 24, justifyContent: 'center' }}>
+          <TouchableOpacity onPress={() => { setMode('choose'); setImportError(''); setImportUrl(''); setNeedsCaption(false); setPastedCaption(''); }} style={{ marginBottom: 32 }}>
+            <Text style={{
+              fontFamily: 'DMMono_400Regular',
+              fontSize: 12,
+              color: '#C4622D',
+              letterSpacing: 0.5,
+            }}>
+              Back
+            </Text>
+          </TouchableOpacity>
+
+          <Text style={{
+            fontFamily: 'CormorantGaramond_600SemiBold',
+            fontSize: 34,
+            color: '#1C1712',
+            marginBottom: 6,
+          }}>
+            Import from Social
+          </Text>
+          <Text style={{
+            fontFamily: 'DMMono_400Regular',
+            fontSize: 11,
+            color: '#A09590',
+            letterSpacing: 0.5,
+            marginBottom: 28,
+          }}>
+            Share a recipe post directly to Dishr
+          </Text>
+
+          {/* Share intent instructions */}
+          <View style={{
+            backgroundColor: '#EEE8DF',
+            borderWidth: 1,
+            borderColor: '#D5CCC0',
+            padding: 16,
+            marginBottom: 24,
+          }}>
+            <Text style={{
+              fontFamily: 'DMMono_400Regular',
+              fontSize: 10,
+              letterSpacing: 2,
+              textTransform: 'uppercase',
+              color: '#C4622D',
+              marginBottom: 12,
+            }}>
+              How to import
+            </Text>
+            <Text style={{
+              fontFamily: 'Lora_400Regular',
+              fontSize: 14,
+              color: '#1C1712',
+              lineHeight: 22,
+            }}>
+              1. Open the recipe post in TikTok, Instagram, Facebook, or X{'\n'}
+              2. Tap the Share button{'\n'}
+              3. Choose "Dishr" from the share menu{'\n\n'}
+              The recipe will be extracted automatically.
+            </Text>
+          </View>
+
+          {importing && !needsCaption ? (
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, paddingVertical: 16, marginBottom: 16 }}>
+              <ActivityIndicator color="#C4622D" />
+              <Text style={{ fontFamily: 'DMMono_400Regular', fontSize: 11, color: '#A09590', letterSpacing: 1 }}>
+                Extracting recipe...
+              </Text>
+            </View>
+          ) : null}
+
+          {importError ? (
+            <Text style={{ fontFamily: 'Lora_400Regular', fontSize: 13, color: '#E05C3A', marginBottom: 16, lineHeight: 20 }}>
+              {importError}
+            </Text>
+          ) : null}
+
+          {/* Paste caption fallback */}
+          {needsCaption ? (
+            <>
+              <TextInput
+                style={{
+                  borderWidth: 1,
+                  borderColor: '#D5CCC0',
+                  padding: 12,
+                  color: '#1C1712',
+                  fontFamily: 'Lora_400Regular',
+                  fontSize: 14,
+                  backgroundColor: '#EEE8DF',
+                  marginBottom: 16,
+                  minHeight: 100,
+                  textAlignVertical: 'top',
+                }}
+                placeholder="Paste the recipe caption or ingredients here..."
+                placeholderTextColor="#A09590"
+                value={pastedCaption}
+                onChangeText={setPastedCaption}
+                multiline
+              />
+              <TouchableOpacity
+                style={{
+                  backgroundColor: importing || !pastedCaption.trim() ? 'transparent' : '#C4622D',
+                  borderWidth: 1,
+                  borderColor: importing || !pastedCaption.trim() ? '#BEB0A8' : '#C4622D',
+                  paddingVertical: 16,
+                  alignItems: 'center',
+                  marginBottom: 12,
+                }}
+                onPress={() => handleImport(undefined, pastedCaption)}
+                disabled={importing || !pastedCaption.trim()}
+              >
+                {importing ? (
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                    <ActivityIndicator color="#A09590" />
+                    <Text style={{ fontFamily: 'DMMono_400Regular', fontSize: 11, color: '#A09590', letterSpacing: 1 }}>
+                      Extracting recipe...
+                    </Text>
+                  </View>
+                ) : (
+                  <Text style={{
+                    fontFamily: 'DMMono_400Regular',
+                    fontSize: 12,
+                    letterSpacing: 2,
+                    textTransform: 'uppercase',
+                    color: pastedCaption.trim() ? '#EDE8DC' : '#A09590',
+                  }}>
+                    Extract Recipe
+                  </Text>
+                )}
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={{ paddingVertical: 10, alignItems: 'center' }}
+                onPress={() => { setMode('manual'); }}
+              >
+                <Text style={{ fontFamily: 'DMMono_400Regular', fontSize: 11, color: '#C4622D', letterSpacing: 1 }}>
+                  Skip — fill in manually
+                </Text>
+              </TouchableOpacity>
+            </>
+          ) : null}
+
+          {/* Divider */}
+          {!needsCaption ? (
+            <>
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 20, marginTop: 4 }}>
+                <View style={{ flex: 1, height: 1, backgroundColor: '#D5CCC0' }} />
+                <Text style={{ fontFamily: 'DMMono_400Regular', fontSize: 10, color: '#A09590', marginHorizontal: 12, letterSpacing: 1 }}>
+                  OR PASTE A LINK
+                </Text>
+                <View style={{ flex: 1, height: 1, backgroundColor: '#D5CCC0' }} />
+              </View>
+
+              <TextInput
+                style={{
+                  borderBottomWidth: 1,
+                  borderBottomColor: '#D5CCC0',
+                  paddingVertical: 12,
+                  color: '#1C1712',
+                  fontFamily: 'Lora_400Regular',
+                  fontSize: 15,
+                  backgroundColor: 'transparent',
+                  marginBottom: 16,
+                }}
+                placeholder="https://www.tiktok.com/..."
+                placeholderTextColor="#A09590"
+                value={importUrl}
+                onChangeText={setImportUrl}
+                autoCapitalize="none"
+                keyboardType="url"
+              />
+
+              <TouchableOpacity
+                style={{
+                  backgroundColor: importing || !importUrl.trim() ? 'transparent' : '#C4622D',
+                  borderWidth: 1,
+                  borderColor: importing || !importUrl.trim() ? '#BEB0A8' : '#C4622D',
+                  paddingVertical: 16,
+                  alignItems: 'center',
+                  marginBottom: 24,
+                }}
+                onPress={() => handleImport()}
+                disabled={importing || !importUrl.trim()}
+              >
+                <Text style={{
+                  fontFamily: 'DMMono_400Regular',
+                  fontSize: 12,
+                  letterSpacing: 2,
+                  textTransform: 'uppercase',
+                  color: importUrl.trim() ? '#EDE8DC' : '#A09590',
+                }}>
+                  Import
+                </Text>
+              </TouchableOpacity>
+            </>
+          ) : null}
+        </ScrollView>
       </KeyboardAvoidingView>
     );
   }
