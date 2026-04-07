@@ -145,15 +145,64 @@ async function fallbackParse(html: string, url: string): Promise<ParsedRecipe> {
   };
 }
 
+// Simple in-memory rate limiter (per-IP, resets on cold start)
+const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
+const RATE_LIMIT = 20; // requests per window
+const RATE_WINDOW = 60_000; // 1 minute
+
+function checkRateLimit(ip: string): boolean {
+  const now = Date.now();
+  const entry = rateLimitMap.get(ip);
+  if (!entry || now > entry.resetAt) {
+    rateLimitMap.set(ip, { count: 1, resetAt: now + RATE_WINDOW });
+    return true;
+  }
+  entry.count++;
+  return entry.count <= RATE_LIMIT;
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
+  }
+
+  const clientIp = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown';
+  if (!checkRateLimit(clientIp)) {
+    return new Response(JSON.stringify({ error: 'Too many requests. Please wait a moment.' }), {
+      status: 429,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
   }
 
   try {
     const { url } = await req.json();
     if (!url || typeof url !== 'string') {
       return new Response(JSON.stringify({ error: 'url is required' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Validate URL format
+    let parsedUrl: URL;
+    try {
+      parsedUrl = new URL(url);
+    } catch {
+      return new Response(JSON.stringify({ error: 'Invalid URL format' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+    if (!['http:', 'https:'].includes(parsedUrl.protocol)) {
+      return new Response(JSON.stringify({ error: 'URL must use http or https' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+    // Prevent SSRF: block private/internal IPs
+    const hostname = parsedUrl.hostname;
+    if (hostname === 'localhost' || hostname.startsWith('127.') || hostname.startsWith('10.') || hostname.startsWith('192.168.') || hostname === '0.0.0.0' || hostname.includes('169.254.') || hostname.endsWith('.local')) {
+      return new Response(JSON.stringify({ error: 'URL not allowed' }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });

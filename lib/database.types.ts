@@ -24,7 +24,7 @@ export interface Database {
           source_url: string | null;
           source_name: string | null;
           source_credit: string | null;
-          source_type: 'manual' | 'url' | 'tiktok' | 'instagram';
+          source_type: 'manual' | 'url' | 'tiktok' | 'instagram' | 'facebook' | 'x' | 'youtube';
           ingredients: Ingredient[];
           steps: Step[];
           tips: Tip[];

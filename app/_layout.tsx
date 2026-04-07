@@ -20,6 +20,7 @@ import {
 import { queryClient } from '@/lib/query-client';
 import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/store/auth';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 
 function AuthGate() {
   const router = useRouter();
@@ -83,44 +84,46 @@ export default function RootLayout() {
   // We show a loading overlay on top until auth resolves, then AuthGate navigates.
   return (
     <GestureHandlerRootView style={{ flex: 1, backgroundColor: '#F8F4EE' }}>
-      <QueryClientProvider client={queryClient}>
-        <AuthGate />
-        <StatusBar style="dark" />
-        <Stack
-          screenOptions={{
-            headerShown: false,
-            contentStyle: { backgroundColor: '#F8F4EE' },
-          }}
-        >
-          <Stack.Screen name="(auth)" />
-          <Stack.Screen name="(tabs)" />
-          <Stack.Screen name="recipe/[id]" options={{ headerShown: false }} />
-          <Stack.Screen
-            name="try/[id]"
-            options={{
-              presentation: 'modal',
-              headerShown: true,
-              title: 'Log a Try',
-              headerStyle: { backgroundColor: '#F8F4EE' },
-              headerTintColor: '#1C1712',
+      <ErrorBoundary>
+        <QueryClientProvider client={queryClient}>
+          <AuthGate />
+          <StatusBar style="dark" />
+          <Stack
+            screenOptions={{
+              headerShown: false,
+              contentStyle: { backgroundColor: '#F8F4EE' },
             }}
-          />
-          <Stack.Screen
-            name="user/[id]"
-            options={{
-              headerShown: true,
-              title: '',
-              headerStyle: { backgroundColor: '#F8F4EE' },
-              headerTintColor: '#1C1712',
-            }}
-          />
-        </Stack>
-        {!isAuthReady && (
-          <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: '#F8F4EE', alignItems: 'center', justifyContent: 'center' }}>
-            <ActivityIndicator color="#C4622D" />
-          </View>
-        )}
-      </QueryClientProvider>
+          >
+            <Stack.Screen name="(auth)" />
+            <Stack.Screen name="(tabs)" />
+            <Stack.Screen name="recipe/[id]" options={{ headerShown: false }} />
+            <Stack.Screen
+              name="try/[id]"
+              options={{
+                presentation: 'modal',
+                headerShown: true,
+                title: 'Log a Try',
+                headerStyle: { backgroundColor: '#F8F4EE' },
+                headerTintColor: '#1C1712',
+              }}
+            />
+            <Stack.Screen
+              name="user/[id]"
+              options={{
+                headerShown: true,
+                title: '',
+                headerStyle: { backgroundColor: '#F8F4EE' },
+                headerTintColor: '#1C1712',
+              }}
+            />
+          </Stack>
+          {!isAuthReady && (
+            <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: '#F8F4EE', alignItems: 'center', justifyContent: 'center' }}>
+              <ActivityIndicator color="#C4622D" />
+            </View>
+          )}
+        </QueryClientProvider>
+      </ErrorBoundary>
     </GestureHandlerRootView>
   );
 }

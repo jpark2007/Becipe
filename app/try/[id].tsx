@@ -31,7 +31,7 @@ export default function TryScreen() {
 
   async function pickPhoto() {
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: ['images'],
       quality: 0.8,
       aspect: [4, 3],
       allowsEditing: true,
@@ -51,9 +51,19 @@ export default function TryScreen() {
         const path = `tries/${user!.id}/${Date.now()}.${ext}`;
         const response = await fetch(photoUri);
         const blob = await response.blob();
+        // Validate file size (max 5MB)
+        if (blob.size > 5 * 1024 * 1024) {
+          throw new Error('Photo must be under 5MB');
+        }
+        // Validate file type
+        const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/heic'];
+        const mimeType = blob.type || `image/${ext}`;
+        if (!allowedTypes.includes(mimeType)) {
+          throw new Error('Only JPEG, PNG, WebP, or HEIC photos are allowed');
+        }
         const { error: uploadError } = await supabase.storage
           .from('recipe-photos')
-          .upload(path, blob, { contentType: `image/${ext}` });
+          .upload(path, blob, { contentType: mimeType });
         if (uploadError) throw uploadError;
 
         const { data } = supabase.storage.from('recipe-photos').getPublicUrl(path);

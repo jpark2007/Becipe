@@ -5,11 +5,24 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-function detectPlatform(url: string): 'tiktok' | 'instagram' | null {
+type Platform = 'tiktok' | 'instagram' | 'facebook' | 'x' | 'youtube';
+
+function detectPlatform(url: string): Platform | null {
   if (url.includes('tiktok.com')) return 'tiktok';
   if (url.includes('instagram.com')) return 'instagram';
+  if (url.includes('facebook.com') || url.includes('fb.watch')) return 'facebook';
+  if (url.includes('twitter.com') || url.includes('x.com')) return 'x';
+  if (url.includes('youtube.com') || url.includes('youtu.be')) return 'youtube';
   return null;
 }
+
+const PLATFORM_NAMES: Record<Platform, string> = {
+  tiktok: 'TikTok',
+  instagram: 'Instagram',
+  facebook: 'Facebook',
+  x: 'X',
+  youtube: 'YouTube',
+};
 
 async function getTikTokCaption(url: string): Promise<{ caption: string; author: string } | null> {
   try {
@@ -128,13 +141,37 @@ Rules:
   return JSON.parse(jsonMatch[0]);
 }
 
+// Simple in-memory rate limiter (per-IP, resets on cold start)
+const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
+const RATE_LIMIT = 20; // requests per window
+const RATE_WINDOW = 60_000; // 1 minute
+
+function checkRateLimit(ip: string): boolean {
+  const now = Date.now();
+  const entry = rateLimitMap.get(ip);
+  if (!entry || now > entry.resetAt) {
+    rateLimitMap.set(ip, { count: 1, resetAt: now + RATE_WINDOW });
+    return true;
+  }
+  entry.count++;
+  return entry.count <= RATE_LIMIT;
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
   }
 
+  const clientIp = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown';
+  if (!checkRateLimit(clientIp)) {
+    return new Response(JSON.stringify({ error: 'Too many requests. Please wait a moment.' }), {
+      status: 429,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
+
   try {
-    const { url } = await req.json();
+    const { url, caption: userCaption } = await req.json();
     if (!url) {
       return new Response(JSON.stringify({ error: 'url is required' }), {
         status: 400,
@@ -142,24 +179,67 @@ serve(async (req) => {
       });
     }
 
-    const platform = detectPlatform(url);
-    if (!platform) {
-      return new Response(JSON.stringify({ error: 'URL must be a TikTok or Instagram link' }), {
+    // Validate URL format
+    let parsedUrl: URL;
+    try {
+      parsedUrl = new URL(url);
+    } catch {
+      return new Response(JSON.stringify({ error: 'Invalid URL format' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+    if (!['http:', 'https:'].includes(parsedUrl.protocol)) {
+      return new Response(JSON.stringify({ error: 'URL must use http or https' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+    // Prevent SSRF: block private/internal IPs
+    const hostname = parsedUrl.hostname;
+    if (hostname === 'localhost' || hostname.startsWith('127.') || hostname.startsWith('10.') || hostname.startsWith('192.168.') || hostname === '0.0.0.0' || hostname.includes('169.254.') || hostname.endsWith('.local')) {
+      return new Response(JSON.stringify({ error: 'URL not allowed' }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    const videoData = platform === 'tiktok'
-      ? await getTikTokCaption(url)
-      : await getInstagramCaption(url);
+    const platform = detectPlatform(url);
+    if (!platform) {
+      return new Response(JSON.stringify({ error: 'URL must be from a supported platform (TikTok, Instagram, Facebook, X, YouTube)' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
 
-    const caption = videoData?.caption ?? '';
+    // Try to scrape caption for platforms that support it
+    let videoData: { caption: string; author: string } | null = null;
+    if (platform === 'tiktok') {
+      videoData = await getTikTokCaption(url);
+    } else if (platform === 'instagram') {
+      videoData = await getInstagramCaption(url);
+    }
+    // facebook, x, youtube: no free scraping — rely on client-provided caption from share intent
+
     const author = videoData?.author ?? '';
+    // Use client-provided caption if available, otherwise use scraped caption
+    const caption = userCaption?.trim() || videoData?.caption || '';
 
-    if (!caption) {
+    // Check if caption is too weak (just hashtags, very short, etc.)
+    const strippedCaption = caption.replace(/#\w+/g, '').trim();
+    const isCaptionWeak = !strippedCaption || strippedCaption.length < 20;
+
+    if (!caption || (isCaptionWeak && !userCaption)) {
       return new Response(JSON.stringify({
-        error: `Could not fetch caption from ${platform}. The post may be private or the link may be invalid.`,
+        error: 'caption_needed',
+        message: `The caption is empty or just hashtags. Paste the recipe text to continue.`,
+        partial: {
+          author,
+          source_type: platform,
+          source_url: url,
+          source_name: PLATFORM_NAMES[platform],
+          source_credit: author ? `@${author}` : null,
+        },
       }), {
         status: 422,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -188,7 +268,7 @@ serve(async (req) => {
       source_type: platform,
       source_credit: author ? `@${author}` : null,
       source_url: url,
-      source_name: platform === 'tiktok' ? 'TikTok' : 'Instagram',
+      source_name: PLATFORM_NAMES[platform],
     };
 
     return new Response(JSON.stringify(result), {
