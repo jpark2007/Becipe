@@ -1,5 +1,6 @@
 import '../global.css';
 import { useEffect } from 'react';
+import { View, ActivityIndicator } from 'react-native';
 import { Stack, useRouter, useSegments, useRootNavigationState } from 'expo-router';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -23,16 +24,22 @@ import { useAuthStore } from '@/store/auth';
 function AuthGate() {
   const router = useRouter();
   const segments = useSegments();
-  const { session, setSession, setProfile } = useAuthStore();
+  const { session, setSession, setProfile, isAuthReady, setAuthReady } = useAuthStore();
   const navigationState = useRootNavigationState();
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
+      setAuthReady(); // Auth resolved — safe to render screens
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       setSession(session);
+
+      // When auth state changes (login, token refresh, etc.), invalidate all
+      // cached queries so screens refetch with the fresh token.
+      queryClient.invalidateQueries();
+
       if (session?.user) {
         const { data } = await supabase
           .from('profiles')
@@ -49,14 +56,14 @@ function AuthGate() {
   }, []);
 
   useEffect(() => {
-    if (!navigationState?.key) return; // wait until navigator is ready
+    if (!isAuthReady || !navigationState?.key) return;
     const inAuthGroup = segments[0] === '(auth)';
     if (!session && !inAuthGroup) {
       router.replace('/(auth)/login');
     } else if (session && inAuthGroup) {
       router.replace('/(tabs)/feed');
     }
-  }, [session, segments, navigationState?.key]);
+  }, [session, segments, navigationState?.key, isAuthReady]);
 
   return null;
 }
@@ -70,8 +77,10 @@ export default function RootLayout() {
     Lora_400Regular,
   });
 
-  // Fonts enhance the UI progressively — don't block render on web
+  const isAuthReady = useAuthStore((s) => s.isAuthReady);
 
+  // Expo Router requires <Stack> to always be rendered (it defines the route tree).
+  // We show a loading overlay on top until auth resolves, then AuthGate navigates.
   return (
     <GestureHandlerRootView style={{ flex: 1, backgroundColor: '#F8F4EE' }}>
       <QueryClientProvider client={queryClient}>
@@ -85,19 +94,7 @@ export default function RootLayout() {
         >
           <Stack.Screen name="(auth)" />
           <Stack.Screen name="(tabs)" />
-          <Stack.Screen
-            name="recipe/[id]"
-            options={{
-              headerShown: true,
-              title: '',
-              headerStyle: { backgroundColor: '#F8F4EE' },
-              headerTintColor: '#1C1712',
-            }}
-          />
-          <Stack.Screen
-            name="recipe/[id]/cook"
-            options={{ presentation: 'fullScreenModal', headerShown: false }}
-          />
+          <Stack.Screen name="recipe/[id]" options={{ headerShown: false }} />
           <Stack.Screen
             name="try/[id]"
             options={{
@@ -118,6 +115,11 @@ export default function RootLayout() {
             }}
           />
         </Stack>
+        {!isAuthReady && (
+          <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: '#F8F4EE', alignItems: 'center', justifyContent: 'center' }}>
+            <ActivityIndicator color="#C4622D" />
+          </View>
+        )}
       </QueryClientProvider>
     </GestureHandlerRootView>
   );

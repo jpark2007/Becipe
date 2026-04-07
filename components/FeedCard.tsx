@@ -63,7 +63,7 @@ export function FeedCard({ item }: FeedCardProps) {
       {/* ── Footer ── */}
       <View style={styles.footer}>
         {/* Rating */}
-        {item.try?.rating !== undefined && (
+        {item.try?.rating != null && (
           <View style={styles.ratingRow}>
             <Text style={styles.ratingLarge}>{item.try.rating.toFixed(1)}</Text>
             <Text style={styles.ratingSlash}>/10</Text>
