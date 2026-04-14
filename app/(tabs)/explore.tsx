@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState } from 'react';
 import {
   View,
   Text,
@@ -14,6 +14,7 @@ import { useRouter } from 'expo-router';
 import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/store/auth';
 import { RecipeCard } from '@/components/RecipeCard';
+import { COLORS, FONTS } from '@/lib/theme';
 import {
   CUISINES,
   type Cuisine,
@@ -117,7 +118,6 @@ async function fetchByIngredients(ingredients: string[]) {
   });
 
   if (error) {
-    // Fallback: manual query
     const { data: flat } = await supabase
       .from('recipe_ingredients_flat')
       .select('recipe_id, ingredient_name')
@@ -227,90 +227,45 @@ export default function ExploreScreen() {
   const smartLabel = getSmartSortLabel();
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#F8F4EE' }}>
+    <View style={{ flex: 1, backgroundColor: COLORS.surface }}>
       {/* Mode toggle */}
       <View style={{
         flexDirection: 'row',
-        backgroundColor: '#EEE8DF',
+        backgroundColor: COLORS.surfaceContainer,
         borderBottomWidth: 1,
-        borderBottomColor: '#D5CCC0',
+        borderBottomColor: COLORS.outlineVariant + '33',
         paddingHorizontal: 24,
         paddingTop: 16,
         paddingBottom: 0,
         gap: 32,
       }}>
-        <TouchableOpacity
-          onPress={() => setMode('browse')}
-          style={{ paddingBottom: 12 }}
-        >
-          <Text style={{
-            fontFamily: 'DMMono_400Regular',
-            fontSize: 12,
-            letterSpacing: 1.5,
-            textTransform: 'uppercase',
-            color: mode === 'browse' ? '#1C1712' : '#A09590',
-          }}>
-            Browse
-          </Text>
-          {mode === 'browse' && (
-            <View style={{
-              position: 'absolute',
-              bottom: 0,
-              left: 0,
-              right: 0,
-              height: 2,
-              backgroundColor: '#C4622D',
-            }} />
-          )}
-        </TouchableOpacity>
-        <TouchableOpacity
-          onPress={() => setMode('fridge')}
-          style={{ paddingBottom: 12 }}
-        >
-          <Text style={{
-            fontFamily: 'DMMono_400Regular',
-            fontSize: 12,
-            letterSpacing: 1.5,
-            textTransform: 'uppercase',
-            color: mode === 'fridge' ? '#1C1712' : '#A09590',
-          }}>
-            My Fridge
-          </Text>
-          {mode === 'fridge' && (
-            <View style={{
-              position: 'absolute',
-              bottom: 0,
-              left: 0,
-              right: 0,
-              height: 2,
-              backgroundColor: '#C4622D',
-            }} />
-          )}
-        </TouchableOpacity>
-        <TouchableOpacity
-          onPress={() => setMode('people')}
-          style={{ paddingBottom: 12 }}
-        >
-          <Text style={{
-            fontFamily: 'DMMono_400Regular',
-            fontSize: 12,
-            letterSpacing: 1.5,
-            textTransform: 'uppercase',
-            color: mode === 'people' ? '#1C1712' : '#A09590',
-          }}>
-            People
-          </Text>
-          {mode === 'people' && (
-            <View style={{
-              position: 'absolute',
-              bottom: 0,
-              left: 0,
-              right: 0,
-              height: 2,
-              backgroundColor: '#C4622D',
-            }} />
-          )}
-        </TouchableOpacity>
+        {(['browse', 'fridge', 'people'] as ExploreTab[]).map((tab) => (
+          <TouchableOpacity
+            key={tab}
+            onPress={() => setMode(tab)}
+            style={{ paddingBottom: 12 }}
+          >
+            <Text style={{
+              fontFamily: FONTS.mono,
+              fontSize: 12,
+              letterSpacing: 1.5,
+              textTransform: 'uppercase',
+              color: mode === tab ? COLORS.onSurface : COLORS.onSurfaceVariant,
+            }}>
+              {tab === 'fridge' ? 'My Fridge' : tab.charAt(0).toUpperCase() + tab.slice(1)}
+            </Text>
+            {mode === tab && (
+              <View style={{
+                position: 'absolute',
+                bottom: 0,
+                left: 0,
+                right: 0,
+                height: 2,
+                backgroundColor: COLORS.primaryContainer,
+              }} />
+            )}
+          </TouchableOpacity>
+        ))}
       </View>
 
       {mode === 'people' ? (
@@ -323,27 +278,27 @@ export default function ExploreScreen() {
               <TextInput
                 style={{
                   borderBottomWidth: 1,
-                  borderBottomColor: '#D5CCC0',
+                  borderBottomColor: COLORS.outlineVariant,
                   paddingHorizontal: 0,
                   paddingVertical: 10,
-                  color: '#1C1712',
-                  fontFamily: 'Lora_400Regular',
+                  color: COLORS.onSurface,
+                  fontFamily: FONTS.body,
                   fontSize: 15,
                   marginBottom: 20,
                   backgroundColor: 'transparent',
                 }}
                 placeholder="Search by name or username..."
-                placeholderTextColor="#A09590"
+                placeholderTextColor={COLORS.outlineVariant}
                 value={peopleSearch}
                 onChangeText={setPeopleSearch}
               />
               {!peopleSearch.trim() && (
                 <Text style={{
-                  fontFamily: 'DMMono_500Medium',
+                  fontFamily: FONTS.monoMedium,
                   fontSize: 11,
                   letterSpacing: 1.5,
                   textTransform: 'uppercase',
-                  color: '#A09590',
+                  color: COLORS.onSurfaceVariant,
                   marginBottom: 12,
                 }}>
                   Suggested cooks
@@ -364,27 +319,27 @@ export default function ExploreScreen() {
                   alignItems: 'center',
                   paddingVertical: 10,
                   borderBottomWidth: 1,
-                  borderBottomColor: '#D5CCC0',
+                  borderBottomColor: COLORS.outlineVariant + '33',
                 }}
               >
                 {item.avatar_url ? (
                   <Image
                     source={{ uri: item.avatar_url }}
-                    style={{ width: 40, height: 40, borderRadius: 4, backgroundColor: '#EEE8DF' }}
+                    style={{ width: 40, height: 40, borderRadius: 4, backgroundColor: COLORS.surfaceContainer }}
                   />
                 ) : (
                   <View style={{
                     width: 40,
                     height: 40,
                     borderRadius: 4,
-                    backgroundColor: '#C4622D',
+                    backgroundColor: COLORS.primaryContainer,
                     alignItems: 'center',
                     justifyContent: 'center',
                   }}>
                     <Text style={{
-                      fontFamily: 'DMMono_500Medium',
+                      fontFamily: FONTS.monoMedium,
                       fontSize: 16,
-                      color: '#F8F4EE',
+                      color: COLORS.onPrimary,
                     }}>
                       {initial}
                     </Text>
@@ -393,17 +348,17 @@ export default function ExploreScreen() {
 
                 <View style={{ flex: 1, marginLeft: 12 }}>
                   <Text style={{
-                    fontFamily: 'DMMono_500Medium',
-                    fontSize: 12,
-                    color: '#1C1712',
+                    fontFamily: FONTS.bodySemiBold,
+                    fontSize: 13,
+                    color: COLORS.onSurface,
                   }}>
                     {item.display_name || item.username}
                   </Text>
                   {item.username && (
                     <Text style={{
-                      fontFamily: 'DMMono_400Regular',
-                      fontSize: 10,
-                      color: '#A09590',
+                      fontFamily: FONTS.mono,
+                      fontSize: 11,
+                      color: COLORS.onSurfaceVariant,
                       marginTop: 2,
                     }}>
                       @{item.username}
@@ -424,17 +379,17 @@ export default function ExploreScreen() {
                       paddingHorizontal: 14,
                       paddingVertical: 6,
                       borderWidth: 1,
-                      borderColor: '#C4622D',
-                      backgroundColor: isFollowing ? 'transparent' : '#C4622D',
-                      borderRadius: 4,
+                      borderColor: COLORS.primary,
+                      backgroundColor: isFollowing ? 'transparent' : COLORS.primary,
+                      borderRadius: 2,
                     }}
                   >
                     <Text style={{
-                      fontFamily: 'DMMono_500Medium',
+                      fontFamily: FONTS.monoMedium,
                       fontSize: 10,
                       letterSpacing: 1,
                       textTransform: 'uppercase',
-                      color: isFollowing ? '#C4622D' : '#F8F4EE',
+                      color: isFollowing ? COLORS.primary : COLORS.onPrimary,
                     }}>
                       {isFollowing ? 'Following' : 'Follow'}
                     </Text>
@@ -445,13 +400,13 @@ export default function ExploreScreen() {
           }}
           ListEmptyComponent={
             peopleLoading ? (
-              <ActivityIndicator color="#C4622D" style={{ marginTop: 32 }} />
+              <ActivityIndicator color={COLORS.primaryContainer} style={{ marginTop: 32 }} />
             ) : (
               <Text style={{
-                color: '#A09590',
+                color: COLORS.onSurfaceVariant,
                 textAlign: 'center',
                 marginTop: 32,
-                fontFamily: 'DMMono_400Regular',
+                fontFamily: FONTS.mono,
                 fontSize: 12,
                 letterSpacing: 1,
               }}>
@@ -472,17 +427,19 @@ export default function ExploreScreen() {
               <TextInput
                 style={{
                   borderBottomWidth: 1,
-                  borderBottomColor: '#D5CCC0',
+                  borderBottomColor: COLORS.outlineVariant,
                   paddingHorizontal: 0,
-                  paddingVertical: 10,
-                  color: '#1C1712',
-                  fontFamily: 'Lora_400Regular',
-                  fontSize: 15,
+                  paddingVertical: 8,
+                  color: COLORS.onSurface,
+                  fontFamily: FONTS.mono,
+                  fontSize: 12,
+                  letterSpacing: 2,
                   marginBottom: 20,
                   backgroundColor: 'transparent',
+                  textTransform: 'uppercase',
                 }}
-                placeholder="Search recipes..."
-                placeholderTextColor="#A09590"
+                placeholder="SEARCH RECIPES"
+                placeholderTextColor={COLORS.outlineVariant}
                 value={searchText}
                 onChangeText={setSearchText}
               />
@@ -497,11 +454,9 @@ export default function ExploreScreen() {
                       style={{ paddingBottom: 8 }}
                     >
                       <Text style={{
-                        fontFamily: 'DMMono_400Regular',
-                        fontSize: 11,
-                        letterSpacing: 1.2,
-                        textTransform: 'uppercase',
-                        color: sort === opt.key ? '#C4622D' : '#A09590',
+                        fontFamily: FONTS.bodyMedium,
+                        fontSize: 13,
+                        color: sort === opt.key ? COLORS.onSurface : COLORS.onSurface + '66',
                       }}>
                         {opt.key === 'smart' ? smartLabel : opt.label}
                       </Text>
@@ -511,8 +466,8 @@ export default function ExploreScreen() {
                           bottom: 0,
                           left: 0,
                           right: 0,
-                          height: 1,
-                          backgroundColor: '#C4622D',
+                          height: 2,
+                          backgroundColor: COLORS.primaryContainer,
                         }} />
                       )}
                     </TouchableOpacity>
@@ -522,32 +477,25 @@ export default function ExploreScreen() {
 
               {/* Cuisine chips */}
               <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 20 }}>
-                <View style={{ flexDirection: 'row', gap: 24, paddingRight: 16 }}>
+                <View style={{ flexDirection: 'row', gap: 8, paddingRight: 16 }}>
                   {CUISINES.map((c) => (
                     <TouchableOpacity
                       key={c}
                       onPress={() => setCuisine(c)}
-                      style={{ paddingBottom: 8 }}
+                      style={{
+                        paddingHorizontal: 16,
+                        paddingVertical: 8,
+                        borderRadius: 100,
+                        backgroundColor: cuisine === c ? COLORS.primary : COLORS.secondaryContainer,
+                      }}
                     >
                       <Text style={{
-                        fontFamily: 'DMMono_400Regular',
-                        fontSize: 11,
-                        letterSpacing: 1.2,
-                        textTransform: 'uppercase',
-                        color: cuisine === c ? '#C4622D' : '#A09590',
+                        fontFamily: FONTS.bodyMedium,
+                        fontSize: 13,
+                        color: cuisine === c ? COLORS.onPrimary : COLORS.onSurface,
                       }}>
                         {c}
                       </Text>
-                      {cuisine === c && (
-                        <View style={{
-                          position: 'absolute',
-                          bottom: 0,
-                          left: 0,
-                          right: 0,
-                          height: 1,
-                          backgroundColor: '#C4622D',
-                        }} />
-                      )}
                     </TouchableOpacity>
                   ))}
                 </View>
@@ -556,13 +504,13 @@ export default function ExploreScreen() {
           }
           ListEmptyComponent={
             isLoading ? (
-              <ActivityIndicator color="#C4622D" style={{ marginTop: 32 }} />
+              <ActivityIndicator color={COLORS.primaryContainer} style={{ marginTop: 32 }} />
             ) : (
               <Text style={{
-                color: '#A09590',
+                color: COLORS.onSurfaceVariant,
                 textAlign: 'center',
                 marginTop: 32,
-                fontFamily: 'DMMono_400Regular',
+                fontFamily: FONTS.mono,
                 fontSize: 12,
                 letterSpacing: 1,
               }}>
@@ -579,8 +527,8 @@ export default function ExploreScreen() {
             <View>
               {item.match_count !== undefined && (
                 <Text style={{
-                  color: '#C4622D',
-                  fontFamily: 'DMMono_400Regular',
+                  color: COLORS.primary,
+                  fontFamily: FONTS.mono,
                   fontSize: 11,
                   letterSpacing: 0.8,
                   paddingHorizontal: 16,
@@ -596,18 +544,18 @@ export default function ExploreScreen() {
           ListHeaderComponent={
             <View>
               <Text style={{
-                fontFamily: 'CormorantGaramond_400Regular',
+                fontFamily: FONTS.headlineBold,
                 fontSize: 26,
-                color: '#1C1712',
+                color: COLORS.onSurface,
                 marginBottom: 6,
               }}>
                 What's in my fridge?
               </Text>
               <Text style={{
-                fontFamily: 'DMMono_400Regular',
-                fontSize: 11,
-                color: '#A09590',
-                letterSpacing: 0.5,
+                fontFamily: FONTS.body,
+                fontSize: 14,
+                color: COLORS.onSurfaceVariant,
+                lineHeight: 21,
                 marginBottom: 20,
               }}>
                 Add ingredients you have and we'll find matching recipes
@@ -619,15 +567,15 @@ export default function ExploreScreen() {
                   style={{
                     flex: 1,
                     borderBottomWidth: 1,
-                    borderBottomColor: '#D5CCC0',
+                    borderBottomColor: COLORS.outlineVariant,
                     paddingVertical: 10,
-                    color: '#1C1712',
-                    fontFamily: 'Lora_400Regular',
+                    color: COLORS.onSurface,
+                    fontFamily: FONTS.body,
                     fontSize: 15,
                     backgroundColor: 'transparent',
                   }}
                   placeholder="Add ingredient..."
-                  placeholderTextColor="#A09590"
+                  placeholderTextColor={COLORS.outlineVariant}
                   value={fridgeInput}
                   onChangeText={setFridgeInput}
                   onSubmitEditing={addFridgeIngredient}
@@ -638,16 +586,17 @@ export default function ExploreScreen() {
                     paddingHorizontal: 16,
                     paddingVertical: 10,
                     borderWidth: 1,
-                    borderColor: '#C4622D',
+                    borderColor: COLORS.primary,
+                    borderRadius: 2,
                   }}
                   onPress={addFridgeIngredient}
                 >
                   <Text style={{
-                    fontFamily: 'DMMono_400Regular',
+                    fontFamily: FONTS.mono,
                     fontSize: 11,
                     letterSpacing: 1.2,
                     textTransform: 'uppercase',
-                    color: '#C4622D',
+                    color: COLORS.primary,
                   }}>
                     Add
                   </Text>
@@ -664,27 +613,28 @@ export default function ExploreScreen() {
                         style={{
                           flexDirection: 'row',
                           alignItems: 'center',
-                          backgroundColor: '#F8F4EE',
+                          backgroundColor: COLORS.surfaceContainerLow,
                           borderWidth: 1,
-                          borderColor: '#BEB0A8',
+                          borderColor: COLORS.outlineVariant,
                           paddingHorizontal: 12,
                           paddingVertical: 6,
+                          borderRadius: 100,
                           gap: 6,
                         }}
                         onPress={() => setFridgeIngredients(prev => prev.filter(i => i !== ing))}
                       >
                         <Text style={{
-                          fontFamily: 'DMMono_400Regular',
+                          fontFamily: FONTS.mono,
                           fontSize: 11,
                           letterSpacing: 0.8,
-                          color: '#1C1712',
+                          color: COLORS.onSurface,
                         }}>
                           {ing}
                         </Text>
                         <Text style={{
-                          fontFamily: 'DMMono_400Regular',
+                          fontFamily: FONTS.mono,
                           fontSize: 13,
-                          color: '#A09590',
+                          color: COLORS.onSurfaceVariant,
                         }}>
                           ×
                         </Text>
@@ -694,16 +644,16 @@ export default function ExploreScreen() {
                 </ScrollView>
               )}
 
-              {fridgeLoading && <ActivityIndicator color="#C4622D" style={{ marginBottom: 16 }} />}
+              {fridgeLoading && <ActivityIndicator color={COLORS.primaryContainer} style={{ marginBottom: 16 }} />}
             </View>
           }
           ListEmptyComponent={
             fridgeIngredients.length === 0 ? null : (
               <Text style={{
-                color: '#A09590',
+                color: COLORS.onSurfaceVariant,
                 textAlign: 'center',
                 marginTop: 16,
-                fontFamily: 'DMMono_400Regular',
+                fontFamily: FONTS.mono,
                 fontSize: 12,
                 letterSpacing: 1,
               }}>
