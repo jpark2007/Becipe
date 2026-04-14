@@ -17,6 +17,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/store/auth';
 import { RatingSlider } from '@/components/RatingSlider';
+import { COLORS, FONTS } from '@/lib/theme';
 
 export default function TryScreen() {
   const { id: recipeId } = useLocalSearchParams<{ id: string }>();
@@ -51,11 +52,9 @@ export default function TryScreen() {
         const path = `tries/${user!.id}/${Date.now()}.${ext}`;
         const response = await fetch(photoUri);
         const blob = await response.blob();
-        // Validate file size (max 5MB)
         if (blob.size > 5 * 1024 * 1024) {
           throw new Error('Photo must be under 5MB');
         }
-        // Validate file type
         const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/heic'];
         const mimeType = blob.type || `image/${ext}`;
         if (!allowedTypes.includes(mimeType)) {
@@ -91,15 +90,15 @@ export default function TryScreen() {
 
   return (
     <KeyboardAvoidingView
-      style={{ flex: 1, backgroundColor: '#F8F4EE' }}
+      style={{ flex: 1, backgroundColor: COLORS.surface }}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <ScrollView contentContainerStyle={{ padding: 20 }}>
         {/* Intro text */}
         <Text style={{
-          fontFamily: 'Lora_400Regular',
+          fontFamily: FONTS.body,
           fontSize: 15,
-          color: '#A09590',
+          color: COLORS.onSurfaceVariant,
           lineHeight: 23,
           marginBottom: 24,
         }}>
@@ -108,9 +107,8 @@ export default function TryScreen() {
 
         {/* Rating card */}
         <View style={{
-          backgroundColor: '#EEE8DF',
-          borderWidth: 1,
-          borderColor: '#D5CCC0',
+          backgroundColor: COLORS.surfaceContainer,
+          borderRadius: 4,
           padding: 16,
           marginBottom: 16,
         }}>
@@ -120,21 +118,19 @@ export default function TryScreen() {
         {/* Note input */}
         <TextInput
           style={{
-            backgroundColor: '#EEE8DF',
-            borderWidth: 1,
-            borderColor: '#D5CCC0',
-            paddingHorizontal: 16,
-            paddingVertical: 14,
-            color: '#1C1712',
-            fontFamily: 'Lora_400Regular',
+            fontFamily: FONTS.body,
             fontSize: 15,
+            color: COLORS.onSurface,
+            borderBottomWidth: 1,
+            borderBottomColor: COLORS.outlineVariant,
+            paddingBottom: 10,
+            marginBottom: 32,
+            minHeight: 80,
             lineHeight: 23,
-            marginBottom: 16,
-            minHeight: 100,
             textAlignVertical: 'top',
           }}
           placeholder="Add a note... (optional)"
-          placeholderTextColor="#A09590"
+          placeholderTextColor={COLORS.outlineVariant}
           value={note}
           onChangeText={setNote}
           multiline
@@ -144,10 +140,10 @@ export default function TryScreen() {
         {/* Photo picker */}
         <TouchableOpacity
           style={{
-            borderWidth: 1,
-            borderColor: '#D5CCC0',
-            borderStyle: 'dashed',
-            height: 160,
+            width: '100%',
+            height: 220,
+            backgroundColor: COLORS.surfaceContainerLow,
+            borderRadius: 4,
             alignItems: 'center',
             justifyContent: 'center',
             marginBottom: 24,
@@ -160,21 +156,22 @@ export default function TryScreen() {
           ) : (
             <View style={{ alignItems: 'center' }}>
               <Text style={{
-                fontFamily: 'DMMono_400Regular',
-                fontSize: 11,
-                letterSpacing: 2.5,
+                fontFamily: FONTS.mono,
+                fontSize: 10,
+                letterSpacing: 2,
+                color: COLORS.onSurfaceVariant,
                 textTransform: 'uppercase',
-                color: '#A09590',
-                marginBottom: 4,
+                marginTop: 8,
               }}>
                 Add Photo
               </Text>
               <Text style={{
-                fontFamily: 'DMMono_400Regular',
+                fontFamily: FONTS.mono,
                 fontSize: 10,
-                color: '#A09590',
+                color: COLORS.onSurfaceVariant,
                 letterSpacing: 0.5,
                 opacity: 0.6,
+                marginTop: 4,
               }}>
                 optional
               </Text>
@@ -185,22 +182,23 @@ export default function TryScreen() {
         {/* Submit button */}
         <TouchableOpacity
           style={{
-            backgroundColor: '#C4622D',
-            paddingVertical: 18,
+            backgroundColor: COLORS.primary,
+            paddingVertical: 16,
             alignItems: 'center',
+            borderRadius: 2,
           }}
           onPress={() => mutation.mutate()}
           disabled={mutation.isPending || uploading}
         >
           {(mutation.isPending || uploading) ? (
-            <ActivityIndicator color="#EDE8DC" />
+            <ActivityIndicator color={COLORS.onPrimary} />
           ) : (
             <Text style={{
-              fontFamily: 'DMMono_400Regular',
-              fontSize: 12,
-              letterSpacing: 2.5,
+              fontFamily: FONTS.bodyBold,
+              fontSize: 11,
+              letterSpacing: 2,
               textTransform: 'uppercase',
-              color: '#EDE8DC',
+              color: COLORS.onPrimary,
             }}>
               Post to Feed
             </Text>
