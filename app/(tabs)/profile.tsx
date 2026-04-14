@@ -11,6 +11,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/store/auth';
 import { RecipeCard } from '@/components/RecipeCard';
+import { COLORS, FONTS } from '@/lib/theme';
 
 async function fetchProfile(userId: string) {
   const [profileRes, recipesRes, followersRes, followingRes] = await Promise.all([
@@ -57,8 +58,8 @@ export default function ProfileScreen() {
 
   if (isLoading || !data) {
     return (
-      <View style={{ flex: 1, backgroundColor: '#F8F4EE', alignItems: 'center', justifyContent: 'center' }}>
-        <ActivityIndicator color="#C4622D" />
+      <View style={{ flex: 1, backgroundColor: COLORS.surface, alignItems: 'center', justifyContent: 'center' }}>
+        <ActivityIndicator color={COLORS.primaryContainer} />
       </View>
     );
   }
@@ -74,38 +75,42 @@ export default function ProfileScreen() {
           <RecipeCard recipe={item} />
         </View>
       )}
-      style={{ backgroundColor: '#F8F4EE' }}
+      style={{ backgroundColor: COLORS.surface }}
       ListHeaderComponent={
         <View>
           {/* Header section */}
           <View style={{
-            backgroundColor: '#EEE8DF',
+            backgroundColor: COLORS.surfaceContainer,
             paddingHorizontal: 24,
             paddingTop: 40,
             paddingBottom: 24,
             borderBottomWidth: 1,
-            borderBottomColor: '#D5CCC0',
+            borderBottomColor: COLORS.outlineVariant + '33',
           }}>
             {/* Avatar row */}
             <View style={{ flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 20 }}>
               <View style={{
-                width: 60,
-                height: 60,
-                backgroundColor: '#C4622D',
+                width: 100,
+                height: 100,
+                borderRadius: 50,
+                borderWidth: 3,
+                borderColor: COLORS.surfaceContainerLow,
+                overflow: 'hidden',
+                backgroundColor: COLORS.primaryContainer,
                 alignItems: 'center',
                 justifyContent: 'center',
               }}>
                 {profile?.avatar_url ? (
                   <Image
                     source={{ uri: profile.avatar_url }}
-                    style={{ width: 60, height: 60 }}
+                    style={{ width: 100, height: 100 }}
                     resizeMode="cover"
                   />
                 ) : (
                   <Text style={{
-                    fontFamily: 'CormorantGaramond_600SemiBold',
-                    fontSize: 28,
-                    color: '#EDE8DC',
+                    fontFamily: FONTS.headlineBold,
+                    fontSize: 40,
+                    color: COLORS.onPrimary,
                   }}>
                     {profile?.display_name?.[0]?.toUpperCase()}
                   </Text>
@@ -117,12 +122,20 @@ export default function ProfileScreen() {
                   { text: 'Cancel', style: 'cancel' },
                   { text: 'Sign Out', style: 'destructive', onPress: handleSignOut },
                 ])}
+                style={{
+                  borderWidth: 1,
+                  borderColor: COLORS.outlineVariant,
+                  paddingVertical: 10,
+                  paddingHorizontal: 20,
+                  borderRadius: 2,
+                }}
               >
                 <Text style={{
-                  fontFamily: 'DMMono_400Regular',
-                  fontSize: 12,
+                  fontFamily: FONTS.mono,
+                  fontSize: 11,
                   letterSpacing: 1,
-                  color: '#C4622D',
+                  color: COLORS.onSurfaceVariant,
+                  textTransform: 'uppercase',
                 }}>
                   Sign Out
                 </Text>
@@ -131,9 +144,10 @@ export default function ProfileScreen() {
 
             {/* Name */}
             <Text style={{
-              fontFamily: 'CormorantGaramond_600SemiBold',
-              fontSize: 32,
-              color: '#1C1712',
+              fontFamily: FONTS.headlineBold,
+              fontSize: 36,
+              color: COLORS.onSurface,
+              lineHeight: 40,
               marginBottom: 4,
             }}>
               {profile?.display_name}
@@ -141,9 +155,10 @@ export default function ProfileScreen() {
 
             {/* Username */}
             <Text style={{
-              fontFamily: 'DMMono_400Regular',
-              fontSize: 11,
-              color: '#A09590',
+              fontFamily: FONTS.mono,
+              fontSize: 12,
+              color: COLORS.primary,
+              marginTop: 4,
               marginBottom: profile?.bio ? 12 : 20,
             }}>
               @{profile?.username}
@@ -151,10 +166,11 @@ export default function ProfileScreen() {
 
             {profile?.bio && (
               <Text style={{
-                fontFamily: 'Lora_400Regular',
+                fontFamily: FONTS.body,
                 fontSize: 14,
-                color: '#1C1712',
+                color: COLORS.onSurfaceVariant,
                 lineHeight: 22,
+                marginTop: 8,
                 marginBottom: 20,
               }}>
                 {profile.bio}
@@ -163,63 +179,31 @@ export default function ProfileScreen() {
 
             {/* Stats */}
             <View style={{ flexDirection: 'row', gap: 32 }}>
-              <View>
-                <Text style={{
-                  fontFamily: 'DMMono_500Medium',
-                  fontSize: 20,
-                  color: '#1C1712',
-                }}>
-                  {recipes.length}
-                </Text>
-                <Text style={{
-                  fontFamily: 'DMMono_400Regular',
-                  fontSize: 9,
-                  color: '#A09590',
-                  letterSpacing: 1.2,
-                  textTransform: 'uppercase',
-                  marginTop: 2,
-                }}>
-                  Recipes
-                </Text>
-              </View>
-              <View>
-                <Text style={{
-                  fontFamily: 'DMMono_500Medium',
-                  fontSize: 20,
-                  color: '#1C1712',
-                }}>
-                  {followerCount}
-                </Text>
-                <Text style={{
-                  fontFamily: 'DMMono_400Regular',
-                  fontSize: 9,
-                  color: '#A09590',
-                  letterSpacing: 1.2,
-                  textTransform: 'uppercase',
-                  marginTop: 2,
-                }}>
-                  Followers
-                </Text>
-              </View>
-              <View>
-                <Text style={{
-                  fontFamily: 'DMMono_500Medium',
-                  fontSize: 20,
-                  color: '#1C1712',
-                }}>
-                  {followingCount}
-                </Text>
-                <Text style={{
-                  fontFamily: 'DMMono_400Regular',
-                  fontSize: 9,
-                  color: '#A09590',
-                  letterSpacing: 1.2,
-                  textTransform: 'uppercase',
-                  marginTop: 2,
-                }}>
-                  Following
-                </Text>
-              </View>
+              {[
+                { value: recipes.length, label: 'Recipes' },
+                { value: followerCount, label: 'Followers' },
+                { value: followingCount, label: 'Following' },
+              ].map(({ value, label }) => (
+                <View key={label}>
+                  <Text style={{
+                    fontFamily: FONTS.mono,
+                    fontSize: 18,
+                    color: COLORS.onSurface,
+                  }}>
+                    {value}
+                  </Text>
+                  <Text style={{
+                    fontFamily: FONTS.bodyBold,
+                    fontSize: 9,
+                    letterSpacing: 1.5,
+                    textTransform: 'uppercase',
+                    color: COLORS.onSurfaceVariant,
+                    marginTop: 2,
+                  }}>
+                    {label}
+                  </Text>
+                </View>
+              ))}
             </View>
           </View>
 
@@ -229,14 +213,16 @@ export default function ProfileScreen() {
             paddingTop: 24,
             paddingBottom: 12,
             borderBottomWidth: 1,
-            borderBottomColor: '#D5CCC0',
+            borderBottomColor: COLORS.outlineVariant + '33',
           }}>
             <Text style={{
-              fontFamily: 'DMMono_400Regular',
-              fontSize: 10,
-              color: '#A09590',
-              letterSpacing: 2,
-              textTransform: 'uppercase',
+              fontFamily: FONTS.bodyBold,
+              fontSize: 13,
+              color: COLORS.onSurface,
+              borderBottomWidth: 2,
+              borderBottomColor: COLORS.primaryContainer,
+              paddingBottom: 8,
+              alignSelf: 'flex-start',
             }}>
               Recipes
             </Text>
@@ -246,17 +232,17 @@ export default function ProfileScreen() {
       ListEmptyComponent={
         <View style={{ alignItems: 'center', paddingVertical: 48, paddingHorizontal: 32 }}>
           <Text style={{
-            fontFamily: 'CormorantGaramond_600SemiBold',
+            fontFamily: FONTS.headlineBold,
             fontSize: 22,
-            color: '#1C1712',
+            color: COLORS.onSurface,
             marginBottom: 8,
           }}>
             No recipes yet
           </Text>
           <Text style={{
-            fontFamily: 'DMMono_400Regular',
+            fontFamily: FONTS.mono,
             fontSize: 11,
-            color: '#A09590',
+            color: COLORS.onSurfaceVariant,
             textAlign: 'center',
             letterSpacing: 0.5,
             lineHeight: 18,
