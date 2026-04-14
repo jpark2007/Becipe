@@ -17,6 +17,7 @@ import { useAuthStore } from '@/store/auth';
 import { queryClient } from '@/lib/query-client';
 import type { Ingredient, Step, Tip } from '@/lib/database.types';
 import { CUISINES } from '@/lib/smart-sort';
+import { COLORS, FONTS } from '@/lib/theme';
 
 type Mode = 'choose' | 'manual' | 'import' | 'social-import';
 type Difficulty = 'easy' | 'medium' | 'hard';
@@ -266,19 +267,19 @@ export default function AddScreen() {
 
   if (mode === 'choose') {
     return (
-      <View style={{ flex: 1, backgroundColor: '#F8F4EE', paddingHorizontal: 24, justifyContent: 'center' }}>
+      <View style={{ flex: 1, backgroundColor: COLORS.surface, paddingHorizontal: 24, justifyContent: 'center' }}>
         <Text style={{
-          fontFamily: 'CormorantGaramond_600SemiBold',
+          fontFamily: FONTS.headlineBold,
           fontSize: 34,
-          color: '#1C1712',
+          color: COLORS.onSurface,
           marginBottom: 6,
         }}>
           Add a Recipe
         </Text>
         <Text style={{
-          fontFamily: 'DMMono_400Regular',
+          fontFamily: FONTS.mono,
           fontSize: 11,
-          color: '#A09590',
+          color: COLORS.onSurfaceVariant,
           letterSpacing: 0.5,
           marginBottom: 40,
         }}>
@@ -288,28 +289,28 @@ export default function AddScreen() {
         {/* Create Manually */}
         <TouchableOpacity
           style={{
-            backgroundColor: '#EEE8DF',
+            backgroundColor: COLORS.surfaceContainer,
             borderLeftWidth: 4,
-            borderLeftColor: '#C4622D',
+            borderLeftColor: COLORS.primaryContainer,
             padding: 20,
             marginBottom: 2,
           }}
           onPress={() => { setSourceType('manual'); setMode('manual'); }}
         >
           <Text style={{
-            fontFamily: 'DMMono_400Regular',
+            fontFamily: FONTS.mono,
             fontSize: 10,
             letterSpacing: 2,
             textTransform: 'uppercase',
-            color: '#C4622D',
+            color: COLORS.primaryContainer,
             marginBottom: 6,
           }}>
             Create Manually
           </Text>
           <Text style={{
-            fontFamily: 'CormorantGaramond_400Regular',
+            fontFamily: FONTS.headline,
             fontSize: 18,
-            color: '#A09590',
+            color: COLORS.onSurfaceVariant,
           }}>
             Write your own recipe from scratch
           </Text>
@@ -318,28 +319,28 @@ export default function AddScreen() {
         {/* Import from URL */}
         <TouchableOpacity
           style={{
-            backgroundColor: '#EEE8DF',
+            backgroundColor: COLORS.surfaceContainer,
             borderLeftWidth: 4,
-            borderLeftColor: '#C4622D',
+            borderLeftColor: COLORS.primaryContainer,
             padding: 20,
             marginBottom: 2,
           }}
           onPress={() => setMode('import')}
         >
           <Text style={{
-            fontFamily: 'DMMono_400Regular',
+            fontFamily: FONTS.mono,
             fontSize: 10,
             letterSpacing: 2,
             textTransform: 'uppercase',
-            color: '#C4622D',
+            color: COLORS.primaryContainer,
             marginBottom: 6,
           }}>
             Import from URL
           </Text>
           <Text style={{
-            fontFamily: 'CormorantGaramond_400Regular',
+            fontFamily: FONTS.headline,
             fontSize: 18,
-            color: '#A09590',
+            color: COLORS.onSurfaceVariant,
           }}>
             Paste a link from any recipe website
           </Text>
@@ -348,27 +349,27 @@ export default function AddScreen() {
         {/* Import from Social */}
         <TouchableOpacity
           style={{
-            backgroundColor: '#EEE8DF',
+            backgroundColor: COLORS.surfaceContainer,
             borderLeftWidth: 4,
-            borderLeftColor: '#C4622D',
+            borderLeftColor: COLORS.primaryContainer,
             padding: 20,
           }}
           onPress={() => setMode('social-import')}
         >
           <Text style={{
-            fontFamily: 'DMMono_400Regular',
+            fontFamily: FONTS.mono,
             fontSize: 10,
             letterSpacing: 2,
             textTransform: 'uppercase',
-            color: '#C4622D',
+            color: COLORS.primaryContainer,
             marginBottom: 6,
           }}>
             Import from Social
           </Text>
           <Text style={{
-            fontFamily: 'CormorantGaramond_400Regular',
+            fontFamily: FONTS.headline,
             fontSize: 18,
-            color: '#A09590',
+            color: COLORS.onSurfaceVariant,
           }}>
             Share directly from TikTok, Instagram, and more
           </Text>
@@ -380,15 +381,15 @@ export default function AddScreen() {
   if (mode === 'import' && !title) {
     return (
       <KeyboardAvoidingView
-        style={{ flex: 1, backgroundColor: '#F8F4EE' }}
+        style={{ flex: 1, backgroundColor: COLORS.surface }}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         <View style={{ flex: 1, paddingHorizontal: 24, justifyContent: 'center' }}>
           <TouchableOpacity onPress={() => setMode('choose')} style={{ marginBottom: 32 }}>
             <Text style={{
-              fontFamily: 'DMMono_400Regular',
+              fontFamily: FONTS.mono,
               fontSize: 12,
-              color: '#C4622D',
+              color: COLORS.primaryContainer,
               letterSpacing: 0.5,
             }}>
               Back
@@ -396,17 +397,17 @@ export default function AddScreen() {
           </TouchableOpacity>
 
           <Text style={{
-            fontFamily: 'CormorantGaramond_600SemiBold',
+            fontFamily: FONTS.headlineBold,
             fontSize: 34,
-            color: '#1C1712',
+            color: COLORS.onSurface,
             marginBottom: 6,
           }}>
             Import Recipe
           </Text>
           <Text style={{
-            fontFamily: 'DMMono_400Regular',
+            fontFamily: FONTS.mono,
             fontSize: 11,
-            color: '#A09590',
+            color: COLORS.onSurfaceVariant,
             letterSpacing: 0.5,
             marginBottom: 32,
           }}>
@@ -416,16 +417,16 @@ export default function AddScreen() {
           <TextInput
             style={{
               borderBottomWidth: 1,
-              borderBottomColor: '#D5CCC0',
+              borderBottomColor: COLORS.outlineVariant,
               paddingVertical: 12,
-              color: '#1C1712',
-              fontFamily: 'Lora_400Regular',
+              color: COLORS.onSurface,
+              fontFamily: FONTS.body,
               fontSize: 15,
               backgroundColor: 'transparent',
               marginBottom: 24,
             }}
             placeholder="https://..."
-            placeholderTextColor="#A09590"
+            placeholderTextColor={COLORS.onSurfaceVariant}
             value={importUrl}
             onChangeText={setImportUrl}
             autoCapitalize="none"
@@ -433,16 +434,16 @@ export default function AddScreen() {
           />
 
           {importError ? (
-            <Text style={{ fontFamily: 'Lora_400Regular', fontSize: 13, color: '#E05C3A', marginBottom: 16, lineHeight: 20 }}>
+            <Text style={{ fontFamily: FONTS.body, fontSize: 13, color: COLORS.error, marginBottom: 16, lineHeight: 20 }}>
               {importError}
             </Text>
           ) : null}
 
           <TouchableOpacity
             style={{
-              backgroundColor: importing || !importUrl.trim() ? 'transparent' : '#C4622D',
+              backgroundColor: importing || !importUrl.trim() ? 'transparent' : COLORS.primaryContainer,
               borderWidth: 1,
-              borderColor: importing || !importUrl.trim() ? '#BEB0A8' : '#C4622D',
+              borderColor: importing || !importUrl.trim() ? COLORS.outlineVariant : COLORS.primaryContainer,
               paddingVertical: 16,
               alignItems: 'center',
             }}
@@ -450,14 +451,14 @@ export default function AddScreen() {
             disabled={importing || !importUrl.trim()}
           >
             {importing ? (
-              <ActivityIndicator color="#A09590" />
+              <ActivityIndicator color={COLORS.onSurfaceVariant} />
             ) : (
               <Text style={{
-                fontFamily: 'DMMono_400Regular',
+                fontFamily: FONTS.mono,
                 fontSize: 12,
                 letterSpacing: 2,
                 textTransform: 'uppercase',
-                color: importUrl.trim() ? '#EDE8DC' : '#A09590',
+                color: importUrl.trim() ? COLORS.onPrimary : COLORS.onSurfaceVariant,
               }}>
                 Import
               </Text>
@@ -471,15 +472,15 @@ export default function AddScreen() {
   if (mode === 'social-import' && !title) {
     return (
       <KeyboardAvoidingView
-        style={{ flex: 1, backgroundColor: '#F8F4EE' }}
+        style={{ flex: 1, backgroundColor: COLORS.surface }}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         <ScrollView contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 24, justifyContent: 'center' }}>
           <TouchableOpacity onPress={() => { setMode('choose'); setImportError(''); setImportUrl(''); setNeedsCaption(false); setPastedCaption(''); }} style={{ marginBottom: 32 }}>
             <Text style={{
-              fontFamily: 'DMMono_400Regular',
+              fontFamily: FONTS.mono,
               fontSize: 12,
-              color: '#C4622D',
+              color: COLORS.primaryContainer,
               letterSpacing: 0.5,
             }}>
               Back
@@ -487,17 +488,17 @@ export default function AddScreen() {
           </TouchableOpacity>
 
           <Text style={{
-            fontFamily: 'CormorantGaramond_600SemiBold',
+            fontFamily: FONTS.headlineBold,
             fontSize: 34,
-            color: '#1C1712',
+            color: COLORS.onSurface,
             marginBottom: 6,
           }}>
             Import from Social
           </Text>
           <Text style={{
-            fontFamily: 'DMMono_400Regular',
+            fontFamily: FONTS.mono,
             fontSize: 11,
-            color: '#A09590',
+            color: COLORS.onSurfaceVariant,
             letterSpacing: 0.5,
             marginBottom: 28,
           }}>
@@ -506,26 +507,26 @@ export default function AddScreen() {
 
           {/* Share intent instructions */}
           <View style={{
-            backgroundColor: '#EEE8DF',
+            backgroundColor: COLORS.surfaceContainer,
             borderWidth: 1,
-            borderColor: '#D5CCC0',
+            borderColor: COLORS.outlineVariant,
             padding: 16,
             marginBottom: 24,
           }}>
             <Text style={{
-              fontFamily: 'DMMono_400Regular',
+              fontFamily: FONTS.mono,
               fontSize: 10,
               letterSpacing: 2,
               textTransform: 'uppercase',
-              color: '#C4622D',
+              color: COLORS.primaryContainer,
               marginBottom: 12,
             }}>
               How to import
             </Text>
             <Text style={{
-              fontFamily: 'Lora_400Regular',
+              fontFamily: FONTS.body,
               fontSize: 14,
-              color: '#1C1712',
+              color: COLORS.onSurface,
               lineHeight: 22,
             }}>
               1. Open the recipe post in TikTok, Instagram, Facebook, or X{'\n'}
@@ -537,15 +538,15 @@ export default function AddScreen() {
 
           {importing && !needsCaption ? (
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, paddingVertical: 16, marginBottom: 16 }}>
-              <ActivityIndicator color="#C4622D" />
-              <Text style={{ fontFamily: 'DMMono_400Regular', fontSize: 11, color: '#A09590', letterSpacing: 1 }}>
+              <ActivityIndicator color={COLORS.primaryContainer} />
+              <Text style={{ fontFamily: FONTS.mono, fontSize: 11, color: COLORS.onSurfaceVariant, letterSpacing: 1 }}>
                 Extracting recipe...
               </Text>
             </View>
           ) : null}
 
           {importError ? (
-            <Text style={{ fontFamily: 'Lora_400Regular', fontSize: 13, color: '#E05C3A', marginBottom: 16, lineHeight: 20 }}>
+            <Text style={{ fontFamily: FONTS.body, fontSize: 13, color: COLORS.error, marginBottom: 16, lineHeight: 20 }}>
               {importError}
             </Text>
           ) : null}
@@ -556,27 +557,27 @@ export default function AddScreen() {
               <TextInput
                 style={{
                   borderWidth: 1,
-                  borderColor: '#D5CCC0',
+                  borderColor: COLORS.outlineVariant,
                   padding: 12,
-                  color: '#1C1712',
-                  fontFamily: 'Lora_400Regular',
+                  color: COLORS.onSurface,
+                  fontFamily: FONTS.body,
                   fontSize: 14,
-                  backgroundColor: '#EEE8DF',
+                  backgroundColor: COLORS.surfaceContainer,
                   marginBottom: 16,
                   minHeight: 100,
                   textAlignVertical: 'top',
                 }}
                 placeholder="Paste the recipe caption or ingredients here..."
-                placeholderTextColor="#A09590"
+                placeholderTextColor={COLORS.onSurfaceVariant}
                 value={pastedCaption}
                 onChangeText={setPastedCaption}
                 multiline
               />
               <TouchableOpacity
                 style={{
-                  backgroundColor: importing || !pastedCaption.trim() ? 'transparent' : '#C4622D',
+                  backgroundColor: importing || !pastedCaption.trim() ? 'transparent' : COLORS.primaryContainer,
                   borderWidth: 1,
-                  borderColor: importing || !pastedCaption.trim() ? '#BEB0A8' : '#C4622D',
+                  borderColor: importing || !pastedCaption.trim() ? COLORS.outlineVariant : COLORS.primaryContainer,
                   paddingVertical: 16,
                   alignItems: 'center',
                   marginBottom: 12,
@@ -586,18 +587,18 @@ export default function AddScreen() {
               >
                 {importing ? (
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                    <ActivityIndicator color="#A09590" />
-                    <Text style={{ fontFamily: 'DMMono_400Regular', fontSize: 11, color: '#A09590', letterSpacing: 1 }}>
+                    <ActivityIndicator color={COLORS.onSurfaceVariant} />
+                    <Text style={{ fontFamily: FONTS.mono, fontSize: 11, color: COLORS.onSurfaceVariant, letterSpacing: 1 }}>
                       Extracting recipe...
                     </Text>
                   </View>
                 ) : (
                   <Text style={{
-                    fontFamily: 'DMMono_400Regular',
+                    fontFamily: FONTS.mono,
                     fontSize: 12,
                     letterSpacing: 2,
                     textTransform: 'uppercase',
-                    color: pastedCaption.trim() ? '#EDE8DC' : '#A09590',
+                    color: pastedCaption.trim() ? COLORS.onPrimary : COLORS.onSurfaceVariant,
                   }}>
                     Extract Recipe
                   </Text>
@@ -607,7 +608,7 @@ export default function AddScreen() {
                 style={{ paddingVertical: 10, alignItems: 'center' }}
                 onPress={() => { setMode('manual'); }}
               >
-                <Text style={{ fontFamily: 'DMMono_400Regular', fontSize: 11, color: '#C4622D', letterSpacing: 1 }}>
+                <Text style={{ fontFamily: FONTS.mono, fontSize: 11, color: COLORS.primaryContainer, letterSpacing: 1 }}>
                   Skip — fill in manually
                 </Text>
               </TouchableOpacity>
@@ -618,26 +619,26 @@ export default function AddScreen() {
           {!needsCaption ? (
             <>
               <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 20, marginTop: 4 }}>
-                <View style={{ flex: 1, height: 1, backgroundColor: '#D5CCC0' }} />
-                <Text style={{ fontFamily: 'DMMono_400Regular', fontSize: 10, color: '#A09590', marginHorizontal: 12, letterSpacing: 1 }}>
+                <View style={{ flex: 1, height: 1, backgroundColor: COLORS.outlineVariant }} />
+                <Text style={{ fontFamily: FONTS.mono, fontSize: 10, color: COLORS.onSurfaceVariant, marginHorizontal: 12, letterSpacing: 1 }}>
                   OR PASTE A LINK
                 </Text>
-                <View style={{ flex: 1, height: 1, backgroundColor: '#D5CCC0' }} />
+                <View style={{ flex: 1, height: 1, backgroundColor: COLORS.outlineVariant }} />
               </View>
 
               <TextInput
                 style={{
                   borderBottomWidth: 1,
-                  borderBottomColor: '#D5CCC0',
+                  borderBottomColor: COLORS.outlineVariant,
                   paddingVertical: 12,
-                  color: '#1C1712',
-                  fontFamily: 'Lora_400Regular',
+                  color: COLORS.onSurface,
+                  fontFamily: FONTS.body,
                   fontSize: 15,
                   backgroundColor: 'transparent',
                   marginBottom: 16,
                 }}
                 placeholder="https://www.tiktok.com/..."
-                placeholderTextColor="#A09590"
+                placeholderTextColor={COLORS.onSurfaceVariant}
                 value={importUrl}
                 onChangeText={setImportUrl}
                 autoCapitalize="none"
@@ -646,9 +647,9 @@ export default function AddScreen() {
 
               <TouchableOpacity
                 style={{
-                  backgroundColor: importing || !importUrl.trim() ? 'transparent' : '#C4622D',
+                  backgroundColor: importing || !importUrl.trim() ? 'transparent' : COLORS.primaryContainer,
                   borderWidth: 1,
-                  borderColor: importing || !importUrl.trim() ? '#BEB0A8' : '#C4622D',
+                  borderColor: importing || !importUrl.trim() ? COLORS.outlineVariant : COLORS.primaryContainer,
                   paddingVertical: 16,
                   alignItems: 'center',
                   marginBottom: 24,
@@ -657,11 +658,11 @@ export default function AddScreen() {
                 disabled={importing || !importUrl.trim()}
               >
                 <Text style={{
-                  fontFamily: 'DMMono_400Regular',
+                  fontFamily: FONTS.mono,
                   fontSize: 12,
                   letterSpacing: 2,
                   textTransform: 'uppercase',
-                  color: importUrl.trim() ? '#EDE8DC' : '#A09590',
+                  color: importUrl.trim() ? COLORS.onPrimary : COLORS.onSurfaceVariant,
                 }}>
                   Import
                 </Text>
@@ -676,7 +677,7 @@ export default function AddScreen() {
   // Recipe form (manual or post-import)
   return (
     <KeyboardAvoidingView
-      style={{ flex: 1, backgroundColor: '#F8F4EE' }}
+      style={{ flex: 1, backgroundColor: COLORS.surface }}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <ScrollView contentContainerStyle={{ padding: 16 }}>
@@ -684,9 +685,9 @@ export default function AddScreen() {
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
           <TouchableOpacity onPress={() => { setMode('choose'); setTitle(''); }}>
             <Text style={{
-              fontFamily: 'DMMono_400Regular',
+              fontFamily: FONTS.mono,
               fontSize: 12,
-              color: '#C4622D',
+              color: COLORS.primaryContainer,
               letterSpacing: 0.5,
             }}>
               Back
@@ -694,7 +695,7 @@ export default function AddScreen() {
           </TouchableOpacity>
           <TouchableOpacity
             style={{
-              backgroundColor: '#C4622D',
+              backgroundColor: COLORS.primaryContainer,
               paddingHorizontal: 24,
               paddingVertical: 10,
             }}
@@ -702,14 +703,14 @@ export default function AddScreen() {
             disabled={saving}
           >
             {saving ? (
-              <ActivityIndicator color="#EDE8DC" size="small" />
+              <ActivityIndicator color={COLORS.onPrimary} size="small" />
             ) : (
               <Text style={{
-                fontFamily: 'DMMono_400Regular',
+                fontFamily: FONTS.mono,
                 fontSize: 11,
                 letterSpacing: 2,
                 textTransform: 'uppercase',
-                color: '#EDE8DC',
+                color: COLORS.onPrimary,
               }}>
                 Save
               </Text>
@@ -719,16 +720,16 @@ export default function AddScreen() {
 
         {sourceCredit && (
           <View style={{
-            backgroundColor: '#EEE8DF',
+            backgroundColor: COLORS.surfaceContainer,
             borderWidth: 1,
-            borderColor: '#D5CCC0',
+            borderColor: COLORS.outlineVariant,
             padding: 12,
             marginBottom: 16,
           }}>
             <Text style={{
-              fontFamily: 'DMMono_400Regular',
+              fontFamily: FONTS.mono,
               fontSize: 10,
-              color: '#A09590',
+              color: COLORS.onSurfaceVariant,
               letterSpacing: 0.5,
             }}>
               Credit: {sourceCredit} {sourceName ? `on ${sourceName}` : ''}
@@ -740,16 +741,16 @@ export default function AddScreen() {
         <TextInput
           style={{
             borderBottomWidth: 1,
-            borderBottomColor: '#D5CCC0',
+            borderBottomColor: COLORS.outlineVariant,
             paddingVertical: 10,
-            color: '#1C1712',
-            fontFamily: 'CormorantGaramond_600SemiBold',
+            color: COLORS.onSurface,
+            fontFamily: FONTS.headlineBold,
             fontSize: 26,
             backgroundColor: 'transparent',
             marginBottom: 16,
           }}
           placeholder="Recipe Title"
-          placeholderTextColor="#A09590"
+          placeholderTextColor={COLORS.onSurfaceVariant}
           value={title}
           onChangeText={setTitle}
         />
@@ -758,16 +759,16 @@ export default function AddScreen() {
         <TextInput
           style={{
             borderBottomWidth: 1,
-            borderBottomColor: '#D5CCC0',
+            borderBottomColor: COLORS.outlineVariant,
             paddingVertical: 10,
-            color: '#1C1712',
-            fontFamily: 'Lora_400Regular',
+            color: COLORS.onSurface,
+            fontFamily: FONTS.body,
             fontSize: 14,
             backgroundColor: 'transparent',
             marginBottom: 24,
           }}
           placeholder="Description (optional)"
-          placeholderTextColor="#A09590"
+          placeholderTextColor={COLORS.onSurfaceVariant}
           value={description}
           onChangeText={setDescription}
           multiline
@@ -779,16 +780,16 @@ export default function AddScreen() {
             style={{
               flex: 1,
               borderBottomWidth: 1,
-              borderBottomColor: '#D5CCC0',
+              borderBottomColor: COLORS.outlineVariant,
               paddingVertical: 8,
-              color: '#1C1712',
-              fontFamily: 'DMMono_400Regular',
+              color: COLORS.onSurface,
+              fontFamily: FONTS.mono,
               fontSize: 13,
               backgroundColor: 'transparent',
               textAlign: 'center',
             }}
             placeholder="Prep min"
-            placeholderTextColor="#A09590"
+            placeholderTextColor={COLORS.onSurfaceVariant}
             value={prepTime}
             onChangeText={setPrepTime}
             keyboardType="number-pad"
@@ -797,16 +798,16 @@ export default function AddScreen() {
             style={{
               flex: 1,
               borderBottomWidth: 1,
-              borderBottomColor: '#D5CCC0',
+              borderBottomColor: COLORS.outlineVariant,
               paddingVertical: 8,
-              color: '#1C1712',
-              fontFamily: 'DMMono_400Regular',
+              color: COLORS.onSurface,
+              fontFamily: FONTS.mono,
               fontSize: 13,
               backgroundColor: 'transparent',
               textAlign: 'center',
             }}
             placeholder="Cook min"
-            placeholderTextColor="#A09590"
+            placeholderTextColor={COLORS.onSurfaceVariant}
             value={cookTime}
             onChangeText={setCookTime}
             keyboardType="number-pad"
@@ -815,16 +816,16 @@ export default function AddScreen() {
             style={{
               flex: 1,
               borderBottomWidth: 1,
-              borderBottomColor: '#D5CCC0',
+              borderBottomColor: COLORS.outlineVariant,
               paddingVertical: 8,
-              color: '#1C1712',
-              fontFamily: 'DMMono_400Regular',
+              color: COLORS.onSurface,
+              fontFamily: FONTS.mono,
               fontSize: 13,
               backgroundColor: 'transparent',
               textAlign: 'center',
             }}
             placeholder="Serves"
-            placeholderTextColor="#A09590"
+            placeholderTextColor={COLORS.onSurfaceVariant}
             value={servings}
             onChangeText={setServings}
             keyboardType="number-pad"
@@ -833,11 +834,11 @@ export default function AddScreen() {
 
         {/* Difficulty */}
         <Text style={{
-          fontFamily: 'DMMono_400Regular',
+          fontFamily: FONTS.mono,
           fontSize: 10,
           letterSpacing: 2,
           textTransform: 'uppercase',
-          color: '#A09590',
+          color: COLORS.onSurfaceVariant,
           marginBottom: 12,
         }}>
           Difficulty
@@ -852,15 +853,15 @@ export default function AddScreen() {
                 paddingVertical: 10,
                 alignItems: 'center',
                 borderWidth: 1,
-                borderColor: difficulty === d ? '#C4622D' : '#BEB0A8',
+                borderColor: difficulty === d ? COLORS.primaryContainer : COLORS.outlineVariant,
               }}
             >
               <Text style={{
-                fontFamily: 'DMMono_400Regular',
+                fontFamily: FONTS.mono,
                 fontSize: 11,
                 letterSpacing: 1,
                 textTransform: 'capitalize',
-                color: difficulty === d ? '#C4622D' : '#A09590',
+                color: difficulty === d ? COLORS.primaryContainer : COLORS.onSurfaceVariant,
               }}>
                 {d}
               </Text>
@@ -870,11 +871,11 @@ export default function AddScreen() {
 
         {/* Cuisine */}
         <Text style={{
-          fontFamily: 'DMMono_400Regular',
+          fontFamily: FONTS.mono,
           fontSize: 10,
           letterSpacing: 2,
           textTransform: 'uppercase',
-          color: '#A09590',
+          color: COLORS.onSurfaceVariant,
           marginBottom: 12,
         }}>
           Cuisine
@@ -889,14 +890,14 @@ export default function AddScreen() {
                   paddingHorizontal: 12,
                   paddingVertical: 6,
                   borderWidth: 1,
-                  borderColor: cuisine === c ? '#C4622D' : '#BEB0A8',
+                  borderColor: cuisine === c ? COLORS.primaryContainer : COLORS.outlineVariant,
                 }}
               >
                 <Text style={{
-                  fontFamily: 'DMMono_400Regular',
+                  fontFamily: FONTS.mono,
                   fontSize: 10,
                   letterSpacing: 1,
-                  color: cuisine === c ? '#C4622D' : '#A09590',
+                  color: cuisine === c ? COLORS.primaryContainer : COLORS.onSurfaceVariant,
                 }}>
                   {c}
                 </Text>
@@ -907,11 +908,11 @@ export default function AddScreen() {
 
         {/* Ingredients */}
         <Text style={{
-          fontFamily: 'DMMono_400Regular',
+          fontFamily: FONTS.mono,
           fontSize: 10,
           letterSpacing: 2,
           textTransform: 'uppercase',
-          color: '#A09590',
+          color: COLORS.onSurfaceVariant,
           marginBottom: 12,
         }}>
           Ingredients
@@ -922,16 +923,16 @@ export default function AddScreen() {
               style={{
                 width: 56,
                 borderBottomWidth: 1,
-                borderBottomColor: '#D5CCC0',
+                borderBottomColor: COLORS.outlineVariant,
                 paddingVertical: 8,
-                color: '#C4622D',
-                fontFamily: 'DMMono_500Medium',
+                color: COLORS.primaryContainer,
+                fontFamily: FONTS.monoMedium,
                 fontSize: 13,
                 backgroundColor: 'transparent',
                 textAlign: 'center',
               }}
               placeholder="Amt"
-              placeholderTextColor="#A09590"
+              placeholderTextColor={COLORS.onSurfaceVariant}
               value={ing.amount}
               onChangeText={(v) => {
                 const next = [...ingredients];
@@ -943,16 +944,16 @@ export default function AddScreen() {
               style={{
                 width: 56,
                 borderBottomWidth: 1,
-                borderBottomColor: '#D5CCC0',
+                borderBottomColor: COLORS.outlineVariant,
                 paddingVertical: 8,
-                color: '#C4622D',
-                fontFamily: 'DMMono_500Medium',
+                color: COLORS.primaryContainer,
+                fontFamily: FONTS.monoMedium,
                 fontSize: 13,
                 backgroundColor: 'transparent',
                 textAlign: 'center',
               }}
               placeholder="Unit"
-              placeholderTextColor="#A09590"
+              placeholderTextColor={COLORS.onSurfaceVariant}
               value={ing.unit}
               onChangeText={(v) => {
                 const next = [...ingredients];
@@ -964,15 +965,15 @@ export default function AddScreen() {
               style={{
                 flex: 1,
                 borderBottomWidth: 1,
-                borderBottomColor: '#D5CCC0',
+                borderBottomColor: COLORS.outlineVariant,
                 paddingVertical: 8,
-                color: '#1C1712',
-                fontFamily: 'Lora_400Regular',
+                color: COLORS.onSurface,
+                fontFamily: FONTS.body,
                 fontSize: 14,
                 backgroundColor: 'transparent',
               }}
               placeholder="Ingredient"
-              placeholderTextColor="#A09590"
+              placeholderTextColor={COLORS.onSurfaceVariant}
               value={ing.name}
               onChangeText={(v) => {
                 const next = [...ingredients];
@@ -985,7 +986,7 @@ export default function AddScreen() {
                 style={{ width: 32, alignItems: 'center', justifyContent: 'center' }}
                 onPress={() => setIngredients(prev => prev.filter((_, idx) => idx !== i))}
               >
-                <Text style={{ fontFamily: 'DMMono_400Regular', fontSize: 16, color: '#A09590' }}>×</Text>
+                <Text style={{ fontFamily: FONTS.mono, fontSize: 16, color: COLORS.onSurfaceVariant }}>×</Text>
               </TouchableOpacity>
             )}
           </View>
@@ -995,10 +996,10 @@ export default function AddScreen() {
           onPress={() => setIngredients(prev => [...prev, { amount: '', unit: '', name: '' }])}
         >
           <Text style={{
-            fontFamily: 'DMMono_400Regular',
+            fontFamily: FONTS.mono,
             fontSize: 11,
             letterSpacing: 1,
-            color: '#C4622D',
+            color: COLORS.primaryContainer,
           }}>
             + Add ingredient
           </Text>
@@ -1006,11 +1007,11 @@ export default function AddScreen() {
 
         {/* Steps */}
         <Text style={{
-          fontFamily: 'DMMono_400Regular',
+          fontFamily: FONTS.mono,
           fontSize: 10,
           letterSpacing: 2,
           textTransform: 'uppercase',
-          color: '#A09590',
+          color: COLORS.onSurfaceVariant,
           marginBottom: 12,
         }}>
           Steps
@@ -1022,16 +1023,16 @@ export default function AddScreen() {
               height: 26,
               backgroundColor: 'transparent',
               borderWidth: 1,
-              borderColor: '#C4622D',
+              borderColor: COLORS.primaryContainer,
               alignItems: 'center',
               justifyContent: 'center',
               marginTop: 8,
               flexShrink: 0,
             }}>
               <Text style={{
-                fontFamily: 'DMMono_500Medium',
+                fontFamily: FONTS.monoMedium,
                 fontSize: 11,
-                color: '#C4622D',
+                color: COLORS.primaryContainer,
               }}>
                 {i + 1}
               </Text>
@@ -1040,15 +1041,15 @@ export default function AddScreen() {
               style={{
                 flex: 1,
                 borderBottomWidth: 1,
-                borderBottomColor: '#D5CCC0',
+                borderBottomColor: COLORS.outlineVariant,
                 paddingVertical: 8,
-                color: '#1C1712',
-                fontFamily: 'Lora_400Regular',
+                color: COLORS.onSurface,
+                fontFamily: FONTS.body,
                 fontSize: 14,
                 backgroundColor: 'transparent',
               }}
               placeholder={`Step ${i + 1}...`}
-              placeholderTextColor="#A09590"
+              placeholderTextColor={COLORS.onSurfaceVariant}
               value={step.instruction}
               onChangeText={(v) => {
                 const next = [...steps];
@@ -1062,7 +1063,7 @@ export default function AddScreen() {
                 style={{ width: 32, alignItems: 'center', justifyContent: 'center' }}
                 onPress={() => setSteps(prev => prev.filter((_, idx) => idx !== i).map((s, idx) => ({ ...s, order: idx + 1 })))}
               >
-                <Text style={{ fontFamily: 'DMMono_400Regular', fontSize: 16, color: '#A09590' }}>×</Text>
+                <Text style={{ fontFamily: FONTS.mono, fontSize: 16, color: COLORS.onSurfaceVariant }}>×</Text>
               </TouchableOpacity>
             )}
           </View>
@@ -1072,10 +1073,10 @@ export default function AddScreen() {
           onPress={() => setSteps(prev => [...prev, { order: prev.length + 1, instruction: '' }])}
         >
           <Text style={{
-            fontFamily: 'DMMono_400Regular',
+            fontFamily: FONTS.mono,
             fontSize: 11,
             letterSpacing: 1,
-            color: '#C4622D',
+            color: COLORS.primaryContainer,
           }}>
             + Add step
           </Text>
@@ -1083,11 +1084,11 @@ export default function AddScreen() {
 
         {/* Tips */}
         <Text style={{
-          fontFamily: 'DMMono_400Regular',
+          fontFamily: FONTS.mono,
           fontSize: 10,
           letterSpacing: 2,
           textTransform: 'uppercase',
-          color: '#A09590',
+          color: COLORS.onSurfaceVariant,
           marginBottom: 12,
         }}>
           Tips & Notes (optional)
@@ -1098,15 +1099,15 @@ export default function AddScreen() {
               style={{
                 flex: 1,
                 borderBottomWidth: 1,
-                borderBottomColor: '#D5CCC0',
+                borderBottomColor: COLORS.outlineVariant,
                 paddingVertical: 8,
-                color: '#1C1712',
-                fontFamily: 'Lora_400Regular',
+                color: COLORS.onSurface,
+                fontFamily: FONTS.body,
                 fontSize: 14,
                 backgroundColor: 'transparent',
               }}
               placeholder="Tip..."
-              placeholderTextColor="#A09590"
+              placeholderTextColor={COLORS.onSurfaceVariant}
               value={tip.text}
               onChangeText={(v) => {
                 const next = [...tips];
@@ -1119,7 +1120,7 @@ export default function AddScreen() {
               style={{ width: 32, alignItems: 'center', justifyContent: 'center' }}
               onPress={() => setTips(prev => prev.filter((_, idx) => idx !== i))}
             >
-              <Text style={{ fontFamily: 'DMMono_400Regular', fontSize: 16, color: '#A09590' }}>×</Text>
+              <Text style={{ fontFamily: FONTS.mono, fontSize: 16, color: COLORS.onSurfaceVariant }}>×</Text>
             </TouchableOpacity>
           </View>
         ))}
@@ -1128,10 +1129,10 @@ export default function AddScreen() {
           onPress={() => setTips(prev => [...prev, { text: '' }])}
         >
           <Text style={{
-            fontFamily: 'DMMono_400Regular',
+            fontFamily: FONTS.mono,
             fontSize: 11,
             letterSpacing: 1,
-            color: '#C4622D',
+            color: COLORS.primaryContainer,
           }}>
             + Add tip
           </Text>
@@ -1140,7 +1141,7 @@ export default function AddScreen() {
         {/* Save button */}
         <TouchableOpacity
           style={{
-            backgroundColor: '#C4622D',
+            backgroundColor: COLORS.primaryContainer,
             paddingVertical: 18,
             alignItems: 'center',
             marginBottom: 32,
@@ -1149,14 +1150,14 @@ export default function AddScreen() {
           disabled={saving}
         >
           {saving ? (
-            <ActivityIndicator color="#EDE8DC" />
+            <ActivityIndicator color={COLORS.onPrimary} />
           ) : (
             <Text style={{
-              fontFamily: 'DMMono_400Regular',
+              fontFamily: FONTS.mono,
               fontSize: 12,
               letterSpacing: 2.5,
               textTransform: 'uppercase',
-              color: '#EDE8DC',
+              color: COLORS.onPrimary,
             }}>
               Save Recipe
             </Text>
