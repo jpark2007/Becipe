@@ -1,6 +1,7 @@
 import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import type { Recipe } from '@/lib/database.types';
+import { COLORS, FONTS } from '@/lib/theme';
 
 interface Props {
   recipe: Recipe & {
@@ -14,7 +15,7 @@ interface Props {
 const DIFFICULTY_COLOR: Record<string, string> = {
   easy: '#6A9E6A',
   medium: '#C4A44A',
-  hard: '#C4622D',
+  hard: COLORS.primaryContainer,
 };
 
 export function RecipeCard({ recipe, showCreator }: Props) {
@@ -31,7 +32,7 @@ export function RecipeCard({ recipe, showCreator }: Props) {
       onPress={() => router.push(`/recipe/${recipe.id}`)}
       activeOpacity={0.85}
     >
-      {/* ── Image variant ── */}
+      {/* Image variant */}
       {recipe.cover_image_url ? (
         <View style={styles.imageContainer}>
           <Image
@@ -57,7 +58,7 @@ export function RecipeCard({ recipe, showCreator }: Props) {
           </View>
         </View>
       ) : (
-        /* ── No-image variant ── */
+        /* No-image variant */
         <View style={styles.noImageContainer}>
           {recipe.cuisine && (
             <Text style={styles.cuisineTagNoImage}>{recipe.cuisine.toUpperCase()}</Text>
@@ -68,7 +69,7 @@ export function RecipeCard({ recipe, showCreator }: Props) {
         </View>
       )}
 
-      {/* ── Meta row ── */}
+      {/* Meta row */}
       <View style={styles.metaRow}>
         {recipe.avg_rating != null && (
           <Text style={styles.rating}>{recipe.avg_rating.toFixed(1)}/10</Text>
@@ -77,13 +78,13 @@ export function RecipeCard({ recipe, showCreator }: Props) {
           <Text style={styles.metaMuted}>{totalTime} min</Text>
         )}
         {recipe.difficulty && (
-          <Text style={[styles.metaMuted, { color: DIFFICULTY_COLOR[recipe.difficulty] ?? '#A09590' }]}>
+          <Text style={[styles.metaMuted, { color: DIFFICULTY_COLOR[recipe.difficulty] ?? COLORS.onSurfaceVariant }]}>
             {recipe.difficulty}
           </Text>
         )}
       </View>
 
-      {/* ── Creator ── */}
+      {/* Creator */}
       {showCreator && recipe.creator && (
         <View style={styles.creatorRow}>
           <Text style={styles.creatorText}>by {recipe.creator.display_name}</Text>
@@ -98,8 +99,9 @@ export function RecipeCard({ recipe, showCreator }: Props) {
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: '#EEE8DF',
-    borderWidth: 0,
+    backgroundColor: COLORS.surfaceContainerLow,
+    borderRadius: 4,
+    overflow: 'hidden',
   },
   imageContainer: {
     width: '100%',
@@ -127,9 +129,9 @@ const styles = StyleSheet.create({
     paddingVertical: 3,
   },
   cuisineTagText: {
-    fontFamily: 'DMMono_400Regular',
+    fontFamily: FONTS.mono,
     fontSize: 9,
-    color: '#A09590',
+    color: COLORS.onSurfaceVariant,
     letterSpacing: 1.2,
   },
   titleOverlayContainer: {
@@ -139,28 +141,28 @@ const styles = StyleSheet.create({
     right: 12,
   },
   titleOverlay: {
-    fontFamily: 'CormorantGaramond_600SemiBold',
+    fontFamily: FONTS.headlineBold,
     fontSize: 26,
-    color: '#EDE8DC',
+    color: '#ffffff',
     lineHeight: 30,
   },
   noImageContainer: {
-    backgroundColor: '#EEE8DF',
+    backgroundColor: COLORS.surfaceContainer,
     paddingHorizontal: 14,
     paddingTop: 16,
     paddingBottom: 12,
   },
   cuisineTagNoImage: {
-    fontFamily: 'DMMono_400Regular',
+    fontFamily: FONTS.mono,
     fontSize: 9,
-    color: '#A09590',
+    color: COLORS.onSurfaceVariant,
     letterSpacing: 1.2,
     marginBottom: 6,
   },
   titleNoImage: {
-    fontFamily: 'CormorantGaramond_400Regular',
+    fontFamily: FONTS.headline,
     fontSize: 24,
-    color: '#1C1712',
+    color: COLORS.onSurface,
     lineHeight: 28,
   },
   metaRow: {
@@ -172,26 +174,26 @@ const styles = StyleSheet.create({
     paddingBottom: 8,
   },
   rating: {
-    fontFamily: 'DMMono_500Medium',
+    fontFamily: FONTS.monoMedium,
     fontSize: 12,
-    color: '#C4622D',
+    color: COLORS.primaryContainer,
   },
   metaMuted: {
-    fontFamily: 'DMMono_400Regular',
+    fontFamily: FONTS.mono,
     fontSize: 11,
-    color: '#A09590',
+    color: COLORS.onSurfaceVariant,
   },
   creatorRow: {
     paddingHorizontal: 14,
     paddingBottom: 10,
   },
   creatorText: {
-    fontFamily: 'Lora_400Regular',
+    fontFamily: FONTS.body,
     fontSize: 12,
-    color: '#A09590',
+    color: COLORS.onSurfaceVariant,
   },
   hairline: {
     height: StyleSheet.hairlineWidth,
-    backgroundColor: '#D5CCC0',
+    backgroundColor: COLORS.outlineVariant,
   },
 });
