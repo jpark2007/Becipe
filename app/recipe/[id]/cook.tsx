@@ -14,6 +14,7 @@ import Animated, { useSharedValue, useAnimatedStyle, withTiming, runOnJS } from 
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import { useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
+import { COLORS, FONTS } from '@/lib/theme';
 import type { Step, Ingredient, Tip } from '@/lib/database.types';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -75,8 +76,8 @@ export default function CookScreen() {
 
   if (isLoading || !recipe) {
     return (
-      <View style={{ flex: 1, backgroundColor: '#F8F4EE', alignItems: 'center', justifyContent: 'center' }}>
-        <ActivityIndicator color="#C4622D" />
+      <View style={{ flex: 1, backgroundColor: COLORS.surface, alignItems: 'center', justifyContent: 'center' }}>
+        <ActivityIndicator color={COLORS.primaryContainer} />
       </View>
     );
   }
@@ -86,89 +87,133 @@ export default function CookScreen() {
   const isDone = stepIndex === steps.length - 1;
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#F8F4EE' }}>
+    <View style={{ flex: 1, backgroundColor: COLORS.surface }}>
 
-      {/* ── Header ── */}
-      <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingTop: 56, paddingBottom: 16 }}>
+      {/* Header */}
+      <View style={{
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingHorizontal: 24,
+        paddingTop: 56,
+        paddingBottom: 16,
+        backgroundColor: COLORS.surface,
+      }}>
         <View style={{ flex: 1 }}>
-          <Text style={{ fontFamily: 'DMMono_400Regular', fontSize: 10, color: '#B5ADA8', letterSpacing: 1.5, marginBottom: 10 }}>
-            {recipe.title.toUpperCase()}
+          <Text style={{
+            fontFamily: FONTS.mono,
+            fontSize: 11,
+            letterSpacing: 2,
+            color: COLORS.onSurfaceVariant,
+            textTransform: 'uppercase',
+            marginBottom: 10,
+          }}>
+            {recipe.title}
           </Text>
-          {/* Thin progress bar */}
-          <View style={{ height: 1, backgroundColor: '#D5CCC0' }}>
-            <View style={{ height: 1, backgroundColor: '#C4622D', width: `${progress * 100}%` }} />
+          {/* Progress bar */}
+          <View style={{ height: 1, backgroundColor: COLORS.outlineVariant + '33' }}>
+            <View style={{ height: 1, backgroundColor: COLORS.primaryContainer, width: `${progress * 100}%` }} />
           </View>
         </View>
         <TouchableOpacity
           style={{ marginLeft: 20, paddingVertical: 4, paddingHorizontal: 8 }}
           onPress={() => router.back()}
         >
-          <Text style={{ fontFamily: 'DMMono_400Regular', fontSize: 18, color: '#A09590' }}>×</Text>
+          <Text style={{ fontFamily: FONTS.mono, fontSize: 20, color: COLORS.onSurfaceVariant }}>×</Text>
         </TouchableOpacity>
       </View>
 
       {/* Step counter */}
-      <Text style={{ fontFamily: 'DMMono_400Regular', fontSize: 10, color: '#B5ADA8', letterSpacing: 2, textAlign: 'center', marginBottom: 8 }}>
+      <Text style={{
+        fontFamily: FONTS.mono,
+        fontSize: 11,
+        letterSpacing: 2,
+        color: COLORS.onSurfaceVariant,
+        textTransform: 'uppercase',
+        textAlign: 'center',
+        marginBottom: 8,
+      }}>
         {stepIndex + 1} — {steps.length}
       </Text>
 
-      {/* ── Step instruction — swipeable ── */}
+      {/* Step instruction — swipeable */}
       <GestureDetector gesture={swipeGesture}>
         <Animated.View style={[animStyle, { flex: 1 }]}>
           <View style={{ flex: 1, paddingHorizontal: 28, justifyContent: 'center' }}>
             <Text style={{
-              fontFamily: 'CormorantGaramond_400Regular',
+              fontFamily: FONTS.headlineBold,
               fontSize: 32,
-              color: '#1C1712',
-              lineHeight: 44,
+              color: COLORS.onSurface,
+              lineHeight: 40,
+              letterSpacing: -0.5,
               textAlign: 'center',
             }}>
               {currentStep?.instruction}
             </Text>
-            {/* Swipe hint */}
-            <Text style={{ fontFamily: 'DMMono_400Regular', fontSize: 9, color: '#C8BFB8', textAlign: 'center', marginTop: 32, letterSpacing: 1.5 }}>
+            <Text style={{
+              fontFamily: FONTS.mono,
+              fontSize: 9,
+              color: COLORS.outlineVariant,
+              textAlign: 'center',
+              marginTop: 32,
+              letterSpacing: 1.5,
+            }}>
               SWIPE TO NAVIGATE
             </Text>
           </View>
         </Animated.View>
       </GestureDetector>
 
-      {/* ── Prev / Next ── */}
+      {/* Prev / Next */}
       <View style={{ flexDirection: 'row', gap: 8, paddingHorizontal: 20, paddingBottom: 16 }}>
         <TouchableOpacity
           style={{
-            flex: 1, paddingVertical: 14, alignItems: 'center',
-            borderWidth: 1, borderColor: stepIndex === 0 ? '#D8D0C8' : '#D5CCC0',
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: 8,
+            paddingHorizontal: 20,
+            paddingVertical: 14,
+            backgroundColor: COLORS.surfaceContainerLow,
+            borderRadius: 100,
             opacity: stepIndex === 0 ? 0.3 : 1,
           }}
           onPress={() => goTo(stepIndex - 1)}
           disabled={stepIndex === 0}
         >
-          <Text style={{ fontFamily: 'DMMono_400Regular', fontSize: 11, color: '#A09590', letterSpacing: 2 }}>← PREV</Text>
+          <Text style={{ fontFamily: FONTS.bodyBold, fontSize: 12, letterSpacing: 1, color: COLORS.onSurface, textTransform: 'uppercase' }}>
+            ← PREV
+          </Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={{
-            flex: 1, paddingVertical: 14, alignItems: 'center',
-            backgroundColor: isDone ? '#3A6A3A' : '#C4622D',
+            flex: 1,
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 8,
+            paddingHorizontal: 24,
+            paddingVertical: 14,
+            backgroundColor: isDone ? '#3A6A3A' : COLORS.primaryContainer,
+            borderRadius: 100,
           }}
           onPress={() => isDone ? router.back() : goTo(stepIndex + 1)}
         >
-          <Text style={{ fontFamily: 'DMMono_500Medium', fontSize: 11, color: '#EDE8DC', letterSpacing: 2 }}>
+          <Text style={{ fontFamily: FONTS.bodyBold, fontSize: 12, letterSpacing: 1, color: COLORS.onPrimaryContainer, textTransform: 'uppercase' }}>
             {isDone ? 'DONE' : 'NEXT →'}
           </Text>
         </TouchableOpacity>
       </View>
 
-      {/* ── Ingredients collapsible ── */}
-      <View style={{ borderTopWidth: 1, borderTopColor: '#D8D2CB' }}>
+      {/* Ingredients collapsible */}
+      <View style={{ borderTopWidth: 1, borderTopColor: COLORS.outlineVariant + '33' }}>
         <TouchableOpacity
           style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 12 }}
           onPress={() => setIngredientsOpen(o => !o)}
         >
-          <Text style={{ fontFamily: 'DMMono_400Regular', fontSize: 9, color: '#A09590', letterSpacing: 2.5 }}>
+          <Text style={{ fontFamily: FONTS.mono, fontSize: 9, color: COLORS.onSurfaceVariant, letterSpacing: 2.5 }}>
             INGREDIENTS ({ingredients.length})
           </Text>
-          <Text style={{ fontFamily: 'DMMono_400Regular', fontSize: 10, color: '#B5ADA8' }}>
+          <Text style={{ fontFamily: FONTS.mono, fontSize: 10, color: COLORS.onSurfaceVariant }}>
             {ingredientsOpen ? '▲' : '▼'}
           </Text>
         </TouchableOpacity>
@@ -177,21 +222,28 @@ export default function CookScreen() {
             {ingredients.map((ing, i) => (
               <TouchableOpacity
                 key={i}
-                style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 6 }}
+                style={{ flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 10 }}
                 onPress={() => setChecked(prev => ({ ...prev, [i]: !prev[i] }))}
               >
                 <View style={{
-                  width: 14, height: 14, borderWidth: 1,
-                  borderColor: checked[i] ? '#C4622D' : '#C8BFB8',
-                  backgroundColor: checked[i] ? '#C4622D' : 'transparent',
-                  marginRight: 12, alignItems: 'center', justifyContent: 'center',
+                  width: 20,
+                  height: 20,
+                  borderWidth: 2,
+                  borderColor: checked[i] ? COLORS.primary : COLORS.outlineVariant,
+                  borderRadius: 2,
+                  backgroundColor: checked[i] ? COLORS.primary : 'transparent',
+                  alignItems: 'center',
+                  justifyContent: 'center',
                 }}>
-                  {checked[i] && <Text style={{ fontFamily: 'DMMono_400Regular', fontSize: 8, color: '#EDE8DC' }}>✓</Text>}
+                  {checked[i] && <Text style={{ fontFamily: FONTS.mono, fontSize: 10, color: COLORS.onPrimary }}>✓</Text>}
                 </View>
                 <Text style={{
-                  fontFamily: 'DMMono_400Regular', fontSize: 12,
-                  color: checked[i] ? '#B5ACA4' : '#A09590',
+                  fontFamily: FONTS.mono,
+                  fontSize: 10,
+                  color: COLORS.onSurfaceVariant,
+                  textTransform: 'uppercase',
                   textDecorationLine: checked[i] ? 'line-through' : 'none',
+                  opacity: checked[i] ? 0.5 : 1,
                 }}>
                   {ing.amount}{ing.unit ? ` ${ing.unit}` : ''} {ing.name}
                 </Text>
@@ -201,20 +253,20 @@ export default function CookScreen() {
         )}
       </View>
 
-      {/* ── Tips collapsible ── */}
+      {/* Tips collapsible */}
       {tips.length > 0 && (
-        <View style={{ borderTopWidth: 1, borderTopColor: '#DDD5CD' }}>
+        <View style={{ borderTopWidth: 1, borderTopColor: COLORS.outlineVariant + '33' }}>
           <TouchableOpacity
             style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 10 }}
             onPress={() => setTipsOpen(o => !o)}
           >
-            <Text style={{ fontFamily: 'DMMono_400Regular', fontSize: 9, color: '#B5ADA8', letterSpacing: 2.5 }}>TIPS</Text>
-            <Text style={{ fontFamily: 'DMMono_400Regular', fontSize: 10, color: '#C8BFB8' }}>{tipsOpen ? '▲' : '▼'}</Text>
+            <Text style={{ fontFamily: FONTS.mono, fontSize: 9, color: COLORS.onSurfaceVariant, letterSpacing: 2.5 }}>TIPS</Text>
+            <Text style={{ fontFamily: FONTS.mono, fontSize: 10, color: COLORS.onSurfaceVariant }}>{tipsOpen ? '▲' : '▼'}</Text>
           </TouchableOpacity>
           {tipsOpen && (
             <ScrollView style={{ maxHeight: 110, paddingHorizontal: 20, paddingBottom: 12 }}>
               {tips.map((tip, i) => (
-                <Text key={i} style={{ fontFamily: 'Lora_400Regular', fontSize: 12, color: '#B5ADA8', marginBottom: 6, lineHeight: 18 }}>
+                <Text key={i} style={{ fontFamily: FONTS.body, fontSize: 13, color: COLORS.onSurfaceVariant, marginBottom: 6, lineHeight: 20 }}>
                   {tip.text}
                 </Text>
               ))}
