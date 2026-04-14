@@ -7,16 +7,21 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { StatusBar } from 'expo-status-bar';
 import { useFonts } from 'expo-font';
 import {
-  CormorantGaramond_400Regular,
-  CormorantGaramond_600SemiBold,
-} from '@expo-google-fonts/cormorant-garamond';
+  Newsreader_400Regular,
+  Newsreader_400Regular_Italic,
+  Newsreader_600SemiBold,
+  Newsreader_700Bold,
+} from '@expo-google-fonts/newsreader';
+import {
+  Inter_400Regular,
+  Inter_500Medium,
+  Inter_600SemiBold,
+  Inter_700Bold,
+} from '@expo-google-fonts/inter';
 import {
   DMMono_400Regular,
   DMMono_500Medium,
 } from '@expo-google-fonts/dm-mono';
-import {
-  Lora_400Regular,
-} from '@expo-google-fonts/lora';
 import { queryClient } from '@/lib/query-client';
 import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/store/auth';
@@ -71,11 +76,16 @@ function AuthGate() {
 
 export default function RootLayout() {
   const [fontsLoaded] = useFonts({
-    CormorantGaramond_400Regular,
-    CormorantGaramond_600SemiBold,
+    Newsreader_400Regular,
+    Newsreader_400Regular_Italic,
+    Newsreader_600SemiBold,
+    Newsreader_700Bold,
+    Inter_400Regular,
+    Inter_500Medium,
+    Inter_600SemiBold,
+    Inter_700Bold,
     DMMono_400Regular,
     DMMono_500Medium,
-    Lora_400Regular,
   });
 
   const isAuthReady = useAuthStore((s) => s.isAuthReady);
@@ -83,7 +93,7 @@ export default function RootLayout() {
   // Expo Router requires <Stack> to always be rendered (it defines the route tree).
   // We show a loading overlay on top until auth resolves, then AuthGate navigates.
   return (
-    <GestureHandlerRootView style={{ flex: 1, backgroundColor: '#F8F4EE' }}>
+    <GestureHandlerRootView style={{ flex: 1, backgroundColor: '#fbf9f4' }}>
       <ErrorBoundary>
         <QueryClientProvider client={queryClient}>
           <AuthGate />
@@ -91,7 +101,7 @@ export default function RootLayout() {
           <Stack
             screenOptions={{
               headerShown: false,
-              contentStyle: { backgroundColor: '#F8F4EE' },
+              contentStyle: { backgroundColor: '#fbf9f4' },
             }}
           >
             <Stack.Screen name="(auth)" />
@@ -103,8 +113,8 @@ export default function RootLayout() {
                 presentation: 'modal',
                 headerShown: true,
                 title: 'Log a Try',
-                headerStyle: { backgroundColor: '#F8F4EE' },
-                headerTintColor: '#1C1712',
+                headerStyle: { backgroundColor: '#fbf9f4' },
+                headerTintColor: '#1b1c19',
               }}
             />
             <Stack.Screen
@@ -112,14 +122,14 @@ export default function RootLayout() {
               options={{
                 headerShown: true,
                 title: '',
-                headerStyle: { backgroundColor: '#F8F4EE' },
-                headerTintColor: '#1C1712',
+                headerStyle: { backgroundColor: '#fbf9f4' },
+                headerTintColor: '#1b1c19',
               }}
             />
           </Stack>
           {!isAuthReady && (
-            <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: '#F8F4EE', alignItems: 'center', justifyContent: 'center' }}>
-              <ActivityIndicator color="#C4622D" />
+            <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: '#fbf9f4', alignItems: 'center', justifyContent: 'center' }}>
+              <ActivityIndicator color="#b85c2a" />
             </View>
           )}
         </QueryClientProvider>
