@@ -1,4 +1,5 @@
 import { Stack } from 'expo-router';
+import { COLORS } from '@/lib/theme';
 
 export default function RecipeLayout() {
   return (
@@ -8,8 +9,8 @@ export default function RecipeLayout() {
         options={{
           headerShown: true,
           title: '',
-          headerStyle: { backgroundColor: '#F8F4EE' },
-          headerTintColor: '#1C1712',
+          headerStyle: { backgroundColor: COLORS.surface },
+          headerTintColor: COLORS.onSurface,
         }}
       />
       <Stack.Screen

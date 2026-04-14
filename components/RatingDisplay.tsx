@@ -1,4 +1,5 @@
 import { View, Text, StyleSheet } from 'react-native';
+import { COLORS, FONTS } from '@/lib/theme';
 
 interface Props {
   rating: number;
@@ -39,16 +40,16 @@ const styles = StyleSheet.create({
     alignItems: 'baseline',
   },
   ratingNumber: {
-    fontFamily: 'DMMono_500Medium',
-    color: '#C4622D',
+    fontFamily: FONTS.monoMedium,
+    color: COLORS.primaryContainer,
   },
   suffix: {
-    fontFamily: 'DMMono_400Regular',
-    color: '#A09590',
+    fontFamily: FONTS.mono,
+    color: COLORS.onSurfaceVariant,
     marginLeft: 1,
   },
   countText: {
-    fontFamily: 'DMMono_400Regular',
-    color: '#A09590',
+    fontFamily: FONTS.mono,
+    color: COLORS.onSurfaceVariant,
   },
 });

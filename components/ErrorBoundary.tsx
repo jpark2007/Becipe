@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
+import { COLORS, FONTS } from '@/lib/theme';
 
 interface Props {
   children: React.ReactNode;
@@ -27,19 +28,19 @@ export class ErrorBoundary extends React.Component<Props, State> {
   render() {
     if (this.state.hasError) {
       return (
-        <View style={{ flex: 1, backgroundColor: '#F8F4EE', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+        <View style={{ flex: 1, backgroundColor: COLORS.surface, alignItems: 'center', justifyContent: 'center', padding: 24 }}>
           <Text style={{
-            fontFamily: 'CormorantGaramond_600SemiBold',
+            fontFamily: FONTS.headlineBold,
             fontSize: 28,
-            color: '#1C1712',
+            color: COLORS.onSurface,
             marginBottom: 12,
           }}>
             Something went wrong
           </Text>
           <Text style={{
-            fontFamily: 'Lora_400Regular',
+            fontFamily: FONTS.body,
             fontSize: 14,
-            color: '#A09590',
+            color: COLORS.onSurfaceVariant,
             textAlign: 'center',
             lineHeight: 22,
             marginBottom: 24,
@@ -48,18 +49,19 @@ export class ErrorBoundary extends React.Component<Props, State> {
           </Text>
           <TouchableOpacity
             style={{
-              backgroundColor: '#C4622D',
+              backgroundColor: COLORS.primary,
               paddingHorizontal: 32,
               paddingVertical: 14,
+              borderRadius: 2,
             }}
             onPress={() => this.setState({ hasError: false, error: null })}
           >
             <Text style={{
-              fontFamily: 'DMMono_400Regular',
+              fontFamily: FONTS.mono,
               fontSize: 12,
               letterSpacing: 2,
               textTransform: 'uppercase',
-              color: '#EDE8DC',
+              color: COLORS.onPrimary,
             }}>
               Try Again
             </Text>

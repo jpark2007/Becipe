@@ -1,4 +1,5 @@
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { COLORS, FONTS } from '@/lib/theme';
 
 interface Props {
   value: number;
@@ -11,7 +12,7 @@ const STEPS = Array.from({ length: 20 }, (_, i) => (i + 1) * 0.5);
 export function RatingSlider({ value, onChange }: Props) {
   return (
     <View style={styles.container}>
-      {/* ── Label + Score ── */}
+      {/* Label + Score */}
       <View style={styles.headerRow}>
         <Text style={styles.label}>RATING</Text>
         <View style={styles.scoreRow}>
@@ -20,7 +21,7 @@ export function RatingSlider({ value, onChange }: Props) {
         </View>
       </View>
 
-      {/* ── 20-bar track ── */}
+      {/* 20-bar track */}
       <View style={styles.barsRow}>
         {STEPS.map((step) => {
           const filled = step <= value;
@@ -49,25 +50,26 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   label: {
-    fontFamily: 'DMMono_400Regular',
-    fontSize: 9,
-    color: '#A09590',
-    letterSpacing: 1.6,
+    fontFamily: FONTS.mono,
+    fontSize: 10,
+    color: COLORS.onSurfaceVariant,
+    letterSpacing: 2,
+    textTransform: 'uppercase',
   },
   scoreRow: {
     flexDirection: 'row',
     alignItems: 'baseline',
   },
   scoreNumber: {
-    fontFamily: 'DMMono_500Medium',
-    fontSize: 36,
-    color: '#C4622D',
-    lineHeight: 40,
+    fontFamily: FONTS.headlineBold,
+    fontSize: 52,
+    color: COLORS.primary,
+    lineHeight: 56,
   },
   scoreSuffix: {
-    fontFamily: 'DMMono_400Regular',
+    fontFamily: FONTS.mono,
     fontSize: 16,
-    color: '#A09590',
+    color: COLORS.onSurfaceVariant,
   },
   barsRow: {
     flexDirection: 'row',
@@ -75,14 +77,13 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   bar: {
-    // Each bar takes ~4.5% of width; gap: 2 handles spacing
     flex: 1,
     height: 28,
   },
   barFilled: {
-    backgroundColor: '#C4622D',
+    backgroundColor: COLORS.primaryContainer,
   },
   barEmpty: {
-    backgroundColor: '#D5CCC0',
+    backgroundColor: COLORS.outlineVariant,
   },
 });
