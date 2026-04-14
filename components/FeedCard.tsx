@@ -1,6 +1,7 @@
 import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { formatDistanceToNow } from 'date-fns';
+import { COLORS, FONTS } from '@/lib/theme';
 
 interface FeedCardProps {
   item: {
@@ -15,23 +16,19 @@ interface FeedCardProps {
 
 export function FeedCard({ item }: FeedCardProps) {
   const router = useRouter();
-
-  const verbLabel: string =
-    item.verb === 'tried' ? 'tried' : item.verb === 'saved' ? 'saved' : 'shared';
-
+  const verbLabel = item.verb === 'tried' ? 'tried' : item.verb === 'saved' ? 'saved' : 'shared';
   const photoUri = item.try?.photo_url ?? item.recipe.cover_image_url ?? null;
   const initial = item.actor.display_name[0]?.toUpperCase() ?? '?';
   const timeAgo = formatDistanceToNow(new Date(item.created_at), { addSuffix: true });
 
   return (
     <View style={styles.card}>
-      {/* ── Header ── */}
+      {/* Creator row */}
       <TouchableOpacity
         style={styles.header}
         onPress={() => router.push(`/user/${item.actor.id}`)}
         activeOpacity={0.8}
       >
-        {/* Avatar */}
         <View style={styles.avatarContainer}>
           {item.actor.avatar_url ? (
             <Image source={{ uri: item.actor.avatar_url }} style={styles.avatar} />
@@ -39,185 +36,146 @@ export function FeedCard({ item }: FeedCardProps) {
             <Text style={styles.avatarInitial}>{initial}</Text>
           )}
         </View>
-
-        {/* Name + verb */}
         <View style={styles.headerMeta}>
-          <View style={styles.nameRow}>
-            <Text style={styles.displayName}>{item.actor.display_name}</Text>
-            <Text style={styles.username}> @{item.actor.username}</Text>
-          </View>
-          <Text style={styles.verbText}>{verbLabel} a recipe</Text>
+          <Text style={styles.displayName}>{item.actor.display_name}</Text>
+          <Text style={styles.verbText}>
+            {verbLabel} a recipe · {timeAgo}
+          </Text>
         </View>
-
-        {/* Timestamp */}
-        <Text style={styles.timestamp}>{timeAgo}</Text>
       </TouchableOpacity>
 
-      {/* ── Full-bleed image ── */}
+      {/* Full-bleed image with rating badge */}
       {photoUri && (
-        <TouchableOpacity onPress={() => router.push(`/recipe/${item.recipe.id}`)}>
-          <Image source={{ uri: photoUri }} style={styles.photo} resizeMode="cover" />
+        <TouchableOpacity
+          onPress={() => router.push(`/recipe/${item.recipe.id}`)}
+          activeOpacity={0.95}
+        >
+          <View style={styles.imageWrapper}>
+            <Image source={{ uri: photoUri }} style={styles.photo} resizeMode="cover" />
+            {item.try?.rating != null && (
+              <View style={styles.ratingBadge}>
+                <Text style={styles.ratingBadgeText}>
+                  {item.try.rating.toFixed(1)}/10
+                </Text>
+              </View>
+            )}
+          </View>
         </TouchableOpacity>
       )}
 
-      {/* ── Footer ── */}
-      <View style={styles.footer}>
-        {/* Rating */}
-        {item.try?.rating != null && (
-          <View style={styles.ratingRow}>
-            <Text style={styles.ratingLarge}>{item.try.rating.toFixed(1)}</Text>
-            <Text style={styles.ratingSlash}>/10</Text>
-          </View>
+      {/* Footer */}
+      <TouchableOpacity
+        style={styles.footer}
+        onPress={() => router.push(`/recipe/${item.recipe.id}`)}
+        activeOpacity={0.8}
+      >
+        {item.recipe.cuisine && (
+          <Text style={styles.cuisineTag}>{item.recipe.cuisine.toUpperCase()}</Text>
         )}
-
-        {/* Note */}
+        <Text style={styles.recipeTitle} numberOfLines={2}>
+          {item.recipe.title}
+        </Text>
         {item.try?.note ? (
           <Text style={styles.noteText} numberOfLines={3}>
             {item.try.note}
           </Text>
         ) : null}
-
-        {/* Divider + recipe link */}
-        <View style={styles.divider} />
-        <TouchableOpacity
-          style={styles.recipeLinkRow}
-          onPress={() => router.push(`/recipe/${item.recipe.id}`)}
-          activeOpacity={0.75}
-        >
-          <Text style={styles.recipeTitle} numberOfLines={1}>
-            {item.recipe.title}
-          </Text>
-          <Text style={styles.viewRecipeArrow}>→ view recipe</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Hairline bottom border */}
-      <View style={styles.hairline} />
+        <Text style={styles.viewRecipe}>View recipe →</Text>
+      </TouchableOpacity>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: '#EEE8DF',
-    marginBottom: 2,
+    backgroundColor: COLORS.surfaceContainer,
+    borderRadius: 4,
+    overflow: 'hidden',
+    marginBottom: 16,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 14,
-    paddingTop: 14,
-    paddingBottom: 10,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
   },
   avatarContainer: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: '#C4622D',
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: COLORS.primaryContainer,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 10,
+    marginRight: 12,
     overflow: 'hidden',
   },
-  avatar: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-  },
+  avatar: { width: 36, height: 36, borderRadius: 18 },
   avatarInitial: {
-    fontFamily: 'DMMono_400Regular',
-    fontSize: 13,
-    color: '#EDE8DC',
+    fontFamily: FONTS.bodyBold,
+    fontSize: 14,
+    color: COLORS.onPrimary,
   },
-  headerMeta: {
-    flex: 1,
-  },
-  nameRow: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-    flexWrap: 'wrap',
-  },
+  headerMeta: { flex: 1 },
   displayName: {
-    fontFamily: 'DMMono_500Medium',
-    fontSize: 11,
-    color: '#1C1712',
-  },
-  username: {
-    fontFamily: 'DMMono_400Regular',
-    fontSize: 10,
-    color: '#A09590',
+    fontFamily: FONTS.bodySemiBold,
+    fontSize: 13,
+    color: COLORS.onSurface,
   },
   verbText: {
-    fontFamily: 'Lora_400Regular',
+    fontFamily: FONTS.body,
+    fontSize: 12,
+    color: COLORS.onSurfaceVariant,
+    marginTop: 2,
+  },
+  imageWrapper: { position: 'relative' },
+  photo: { width: '100%', height: 260 },
+  ratingBadge: {
+    position: 'absolute',
+    bottom: 12,
+    left: 12,
+    backgroundColor: 'rgba(251,249,244,0.92)',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 100,
+  },
+  ratingBadgeText: {
+    fontFamily: FONTS.mono,
     fontSize: 11,
-    color: '#A09590',
-    marginTop: 1,
-  },
-  timestamp: {
-    fontFamily: 'DMMono_400Regular',
-    fontSize: 10,
-    color: '#A09590',
-    marginLeft: 8,
-    alignSelf: 'flex-start',
-    marginTop: 1,
-  },
-  photo: {
-    width: '100%',
-    height: 220,
+    color: COLORS.primary,
   },
   footer: {
-    paddingHorizontal: 14,
-    paddingTop: 12,
-    paddingBottom: 12,
+    paddingHorizontal: 16,
+    paddingTop: 14,
+    paddingBottom: 18,
   },
-  ratingRow: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-    marginBottom: 8,
-  },
-  ratingLarge: {
-    fontFamily: 'DMMono_500Medium',
-    fontSize: 28,
-    color: '#C4622D',
-  },
-  ratingSlash: {
-    fontFamily: 'DMMono_400Regular',
-    fontSize: 13,
-    color: '#A09590',
-    marginLeft: 2,
-  },
-  noteText: {
-    fontFamily: 'Lora_400Regular',
-    fontSize: 13,
-    color: '#1C1712',
-    lineHeight: 20,
-    marginBottom: 10,
-  },
-  divider: {
-    height: StyleSheet.hairlineWidth,
-    backgroundColor: '#D5CCC0',
-    marginBottom: 10,
-  },
-  recipeLinkRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+  cuisineTag: {
+    fontFamily: FONTS.mono,
+    fontSize: 9,
+    letterSpacing: 1.5,
+    color: COLORS.primary,
+    marginBottom: 6,
   },
   recipeTitle: {
-    fontFamily: 'CormorantGaramond_400Regular',
-    fontSize: 18,
-    color: '#1C1712',
-    flex: 1,
-    marginRight: 10,
+    fontFamily: FONTS.headlineBold,
+    fontSize: 24,
+    color: COLORS.onSurface,
+    lineHeight: 30,
+    marginBottom: 8,
   },
-  viewRecipeArrow: {
-    fontFamily: 'DMMono_400Regular',
+  noteText: {
+    fontFamily: FONTS.body,
+    fontSize: 13,
+    color: COLORS.onSurfaceVariant,
+    lineHeight: 20,
+    fontStyle: 'italic',
+    marginBottom: 10,
+  },
+  viewRecipe: {
+    fontFamily: FONTS.mono,
     fontSize: 10,
-    color: '#C4622D',
-    letterSpacing: 0.4,
-  },
-  hairline: {
-    height: StyleSheet.hairlineWidth,
-    backgroundColor: '#D5CCC0',
+    letterSpacing: 0.5,
+    color: COLORS.primary,
+    textTransform: 'uppercase',
+    marginTop: 4,
   },
 });
