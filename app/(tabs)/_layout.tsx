@@ -1,23 +1,16 @@
 import { Tabs } from 'expo-router';
-import { Text } from 'react-native';
+import { MaterialIcons } from '@expo/vector-icons';
+import { COLORS, FONTS } from '@/lib/theme';
 
-const TERRA = '#C4622D';
-const MUTED = '#B5ADA8';
-const INK   = '#F8F4EE';
+type IconName = React.ComponentProps<typeof MaterialIcons>['name'];
 
-function TabIcon({ char, focused }: { char: string; focused: boolean }) {
+function TabIcon({ name, focused }: { name: IconName; focused: boolean }) {
   return (
-    <Text style={{ fontFamily: 'DMMono_400Regular', fontSize: 17, color: focused ? TERRA : MUTED }}>
-      {char}
-    </Text>
-  );
-}
-
-function TabLabel({ label, focused }: { label: string; focused: boolean }) {
-  return (
-    <Text style={{ fontFamily: 'DMMono_400Regular', fontSize: 9, color: focused ? TERRA : MUTED, letterSpacing: 1.5, marginTop: 2 }}>
-      {label}
-    </Text>
+    <MaterialIcons
+      name={name}
+      size={24}
+      color={focused ? COLORS.primary : COLORS.onSurface + '66'}
+    />
   );
 }
 
@@ -26,48 +19,61 @@ export default function TabLayout() {
     <Tabs
       screenOptions={{
         tabBarStyle: {
-          backgroundColor: INK,
+          backgroundColor: COLORS.surface,
           borderTopWidth: 1,
-          borderTopColor: '#D8D0C8',
+          borderTopColor: COLORS.outlineVariant + '1a',
           height: 70,
           paddingBottom: 12,
           paddingTop: 8,
         },
-        headerStyle: { backgroundColor: INK, borderBottomWidth: 1, borderBottomColor: '#D8D0C8' } as any,
-        headerTintColor: '#1C1712',
-        headerTitleStyle: { fontFamily: 'DMMono_400Regular', fontSize: 11, letterSpacing: 2.5 },
+        tabBarLabelStyle: {
+          fontFamily: FONTS.bodyBold,
+          fontSize: 9,
+          letterSpacing: 1.5,
+          textTransform: 'uppercase',
+          marginTop: 2,
+        },
+        tabBarActiveTintColor: COLORS.primary,
+        tabBarInactiveTintColor: COLORS.onSurface + '66',
+        headerStyle: {
+          backgroundColor: COLORS.surface,
+          borderBottomWidth: 1,
+          borderBottomColor: COLORS.outlineVariant + '1a',
+        } as any,
+        headerTintColor: COLORS.onSurface,
+        headerTitleStyle: {
+          fontFamily: FONTS.bodyBold,
+          fontSize: 11,
+          letterSpacing: 2.5,
+        },
       }}
     >
       <Tabs.Screen
         name="feed"
         options={{
           title: 'FEED',
-          tabBarIcon: ({ focused }) => <TabIcon char="⊟" focused={focused} />,
-          tabBarLabel: ({ focused }) => <TabLabel label="FEED" focused={focused} />,
+          tabBarIcon: ({ focused }) => <TabIcon name="view-stream" focused={focused} />,
         }}
       />
       <Tabs.Screen
         name="explore"
         options={{
           title: 'EXPLORE',
-          tabBarIcon: ({ focused }) => <TabIcon char="◎" focused={focused} />,
-          tabBarLabel: ({ focused }) => <TabLabel label="EXPLORE" focused={focused} />,
+          tabBarIcon: ({ focused }) => <TabIcon name="explore" focused={focused} />,
         }}
       />
       <Tabs.Screen
         name="add"
         options={{
           title: 'ADD',
-          tabBarIcon: ({ focused }) => <TabIcon char="⊕" focused={focused} />,
-          tabBarLabel: ({ focused }) => <TabLabel label="ADD" focused={focused} />,
+          tabBarIcon: ({ focused }) => <TabIcon name="add-circle" focused={focused} />,
         }}
       />
       <Tabs.Screen
         name="profile"
         options={{
           title: 'PROFILE',
-          tabBarIcon: ({ focused }) => <TabIcon char="◯" focused={focused} />,
-          tabBarLabel: ({ focused }) => <TabLabel label="PROFILE" focused={focused} />,
+          tabBarIcon: ({ focused }) => <TabIcon name="person" focused={focused} />,
         }}
       />
     </Tabs>
