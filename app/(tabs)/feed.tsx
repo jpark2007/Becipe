@@ -14,14 +14,7 @@ import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/store/auth';
 import { FeedCard } from '@/components/FeedCard';
 import { RecipeCard } from '@/components/RecipeCard';
-
-/* ── Design tokens ── */
-const CREAM = '#F8F4EE';
-const CHARCOAL = '#1C1712';
-const TERRA = '#C4622D';
-const MUTED = '#A09590';
-const BORDER = '#D5CCC0';
-const CARD = '#EEE8DF';
+import { COLORS, FONTS } from '@/lib/theme';
 
 /* ── Types ── */
 type FeedTab = 'discover' | 'following';
@@ -157,7 +150,7 @@ export default function FeedScreen() {
 
   /* ── Realtime subscription for feed_items ── */
   useEffect(() => {
-    if (!user?.id) return; // don't open WebSocket before auth is ready
+    if (!user?.id) return;
 
     const channel = supabase
       .channel('feed-realtime')
@@ -186,12 +179,7 @@ export default function FeedScreen() {
           onPress={() => setActiveTab('discover')}
           activeOpacity={0.7}
         >
-          <Text
-            style={[
-              styles.tabLabel,
-              activeTab === 'discover' && styles.tabLabelActive,
-            ]}
-          >
+          <Text style={[styles.tabLabel, activeTab === 'discover' && styles.tabLabelActive]}>
             DISCOVER
           </Text>
           {activeTab === 'discover' && <View style={styles.tabUnderline} />}
@@ -202,12 +190,7 @@ export default function FeedScreen() {
           onPress={() => setActiveTab('following')}
           activeOpacity={0.7}
         >
-          <Text
-            style={[
-              styles.tabLabel,
-              activeTab === 'following' && styles.tabLabelActive,
-            ]}
-          >
+          <Text style={[styles.tabLabel, activeTab === 'following' && styles.tabLabelActive]}>
             FOLLOWING
           </Text>
           {activeTab === 'following' && <View style={styles.tabUnderline} />}
@@ -230,7 +213,6 @@ export default function FeedScreen() {
 
     return (
       <View key={profile.id} style={styles.suggestedUserRow}>
-        {/* Avatar */}
         <View style={styles.suggestedAvatar}>
           {profile.avatar_url ? (
             <Image source={{ uri: profile.avatar_url }} style={styles.suggestedAvatarImage} />
@@ -239,7 +221,6 @@ export default function FeedScreen() {
           )}
         </View>
 
-        {/* Name + username */}
         <View style={styles.suggestedUserInfo}>
           <Text style={styles.suggestedDisplayName} numberOfLines={1}>
             {profile.display_name}
@@ -249,7 +230,6 @@ export default function FeedScreen() {
           </Text>
         </View>
 
-        {/* Follow button */}
         <TouchableOpacity
           style={styles.followButton}
           onPress={() => followMutation.mutate(profile.id)}
@@ -268,9 +248,7 @@ export default function FeedScreen() {
   const renderDiscoverEmpty = () => (
     <View style={styles.emptyContainer}>
       <Text style={styles.emptyTitle}>Nothing yet</Text>
-      <Text style={styles.emptyBody}>
-        No recipes yet — be the first to add one!
-      </Text>
+      <Text style={styles.emptyBody}>No recipes yet — be the first to add one!</Text>
     </View>
   );
 
@@ -281,7 +259,6 @@ export default function FeedScreen() {
         Follow friends or try a recipe to see activity here
       </Text>
 
-      {/* Suggested users */}
       {suggestedUsers && suggestedUsers.length > 0 && (
         <View style={styles.suggestedSection}>
           <Text style={styles.suggestedHeading}>SUGGESTED COOKS</Text>
@@ -295,7 +272,7 @@ export default function FeedScreen() {
   if (isLoading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator color={TERRA} />
+        <ActivityIndicator color={COLORS.primaryContainer} />
       </View>
     );
   }
@@ -317,7 +294,7 @@ export default function FeedScreen() {
             <RefreshControl
               refreshing={isRefetching}
               onRefresh={onRefresh}
-              tintColor={TERRA}
+              tintColor={COLORS.primaryContainer}
             />
           }
           ListHeaderComponent={renderHeader}
@@ -339,7 +316,7 @@ export default function FeedScreen() {
           <RefreshControl
             refreshing={isRefetching}
             onRefresh={onRefresh}
-            tintColor={TERRA}
+            tintColor={COLORS.primaryContainer}
           />
         }
         ListHeaderComponent={renderHeader}
@@ -353,47 +330,50 @@ export default function FeedScreen() {
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: CREAM,
+    backgroundColor: COLORS.surface,
   },
   loadingContainer: {
     flex: 1,
-    backgroundColor: CREAM,
+    backgroundColor: COLORS.surface,
     alignItems: 'center',
     justifyContent: 'center',
   },
   listContent: {
     padding: 16,
+    paddingTop: 8,
   },
   cardPadding: {
-    marginBottom: 4,
+    marginBottom: 0,
   },
 
   /* Header */
   headerContainer: {
     marginBottom: 20,
+    paddingTop: 8,
   },
   title: {
-    fontFamily: 'CormorantGaramond_600SemiBold',
-    fontSize: 38,
-    color: CHARCOAL,
+    fontFamily: FONTS.headlineBold,
+    fontSize: 40,
+    color: COLORS.onSurface,
+    letterSpacing: -0.5,
   },
   tabRow: {
     flexDirection: 'row',
-    gap: 24,
+    gap: 28,
     marginTop: 16,
   },
   tabButton: {
-    paddingBottom: 8,
+    paddingBottom: 10,
     position: 'relative',
   },
   tabLabel: {
-    fontFamily: 'DMMono_400Regular',
-    fontSize: 11,
-    letterSpacing: 1.5,
-    color: MUTED,
+    fontFamily: FONTS.bodyBold,
+    fontSize: 13,
+    letterSpacing: 0.3,
+    color: COLORS.onSurface + '66',
   },
   tabLabelActive: {
-    color: CHARCOAL,
+    color: COLORS.onSurface,
   },
   tabUnderline: {
     position: 'absolute',
@@ -401,11 +381,11 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     height: 2,
-    backgroundColor: TERRA,
+    backgroundColor: COLORS.primaryContainer,
   },
   headerDivider: {
     height: 1,
-    backgroundColor: BORDER,
+    backgroundColor: COLORS.outlineVariant + '33',
     marginTop: 0,
   },
 
@@ -415,15 +395,15 @@ const styles = StyleSheet.create({
     paddingVertical: 64,
   },
   emptyTitle: {
-    fontFamily: 'CormorantGaramond_600SemiBold',
+    fontFamily: FONTS.headlineBold,
     fontSize: 32,
-    color: '#B5ADA8',
+    color: COLORS.onSurfaceVariant,
     marginBottom: 12,
   },
   emptyBody: {
-    fontFamily: 'Lora_400Regular',
+    fontFamily: FONTS.body,
     fontSize: 14,
-    color: MUTED,
+    color: COLORS.onSurfaceVariant,
     textAlign: 'center',
     paddingHorizontal: 40,
     lineHeight: 22,
@@ -436,26 +416,28 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
   },
   suggestedHeading: {
-    fontFamily: 'DMMono_400Regular',
+    fontFamily: FONTS.mono,
     fontSize: 10,
-    color: MUTED,
+    color: COLORS.onSurfaceVariant,
     letterSpacing: 2,
     marginBottom: 16,
     textAlign: 'center',
+    textTransform: 'uppercase',
   },
   suggestedUserRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: CARD,
+    backgroundColor: COLORS.surfaceContainerLow,
     paddingHorizontal: 14,
     paddingVertical: 12,
     marginBottom: 8,
+    borderRadius: 4,
   },
   suggestedAvatar: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: TERRA,
+    backgroundColor: COLORS.primaryContainer,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 12,
@@ -467,35 +449,36 @@ const styles = StyleSheet.create({
     borderRadius: 20,
   },
   suggestedAvatarInitial: {
-    fontFamily: 'DMMono_400Regular',
+    fontFamily: FONTS.bodyBold,
     fontSize: 16,
-    color: '#EDE8DC',
+    color: COLORS.onPrimary,
   },
   suggestedUserInfo: {
     flex: 1,
     marginRight: 12,
   },
   suggestedDisplayName: {
-    fontFamily: 'DMMono_500Medium',
+    fontFamily: FONTS.bodySemiBold,
     fontSize: 13,
-    color: CHARCOAL,
+    color: COLORS.onSurface,
   },
   suggestedUsername: {
-    fontFamily: 'DMMono_400Regular',
+    fontFamily: FONTS.mono,
     fontSize: 11,
-    color: MUTED,
+    color: COLORS.onSurfaceVariant,
     marginTop: 2,
   },
   followButton: {
     paddingHorizontal: 16,
     paddingVertical: 8,
-    backgroundColor: TERRA,
+    backgroundColor: COLORS.primary,
+    borderRadius: 2,
   },
   followButtonText: {
-    fontFamily: 'DMMono_400Regular',
+    fontFamily: FONTS.mono,
     fontSize: 11,
     letterSpacing: 1,
-    color: '#EDE8DC',
+    color: COLORS.onPrimary,
     textTransform: 'uppercase',
   },
 });
