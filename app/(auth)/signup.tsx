@@ -1,23 +1,21 @@
 import { useState } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity,
-  KeyboardAvoidingView, Platform, ActivityIndicator, Alert, ScrollView,
+  KeyboardAvoidingView, Platform, ActivityIndicator, ScrollView,
 } from 'react-native';
 import { Link, useRouter } from 'expo-router';
 import { supabase } from '@/lib/supabase';
-
-const INK = '#F8F4EE'; const CREAM = '#1C1712'; const MUTED = '#A09590';
-const TERRA = '#C4622D'; const BORDER = '#D5CCC0'; const PH = '#B5ACA4';
+import { COLORS, FONTS } from '@/lib/theme';
 
 function Field({ label, ...props }: any) {
   return (
-    <View style={{ borderBottomWidth: 1, borderBottomColor: BORDER, marginBottom: 24, paddingBottom: 12 }}>
-      <Text style={{ fontFamily: 'DMMono_400Regular', fontSize: 10, color: MUTED, letterSpacing: 2.5, marginBottom: 10 }}>
+    <View style={{ borderBottomWidth: 1, borderBottomColor: COLORS.outlineVariant, marginBottom: 24, paddingBottom: 12 }}>
+      <Text style={{ fontFamily: FONTS.mono, fontSize: 10, color: COLORS.onSurfaceVariant, letterSpacing: 2.5, marginBottom: 10 }}>
         {label}
       </Text>
       <TextInput
-        style={{ fontFamily: 'Lora_400Regular', fontSize: 16, color: CREAM }}
-        placeholderTextColor={PH}
+        style={{ fontFamily: FONTS.body, fontSize: 16, color: COLORS.onSurface }}
+        placeholderTextColor={COLORS.outlineVariant}
         {...props}
       />
     </View>
@@ -26,12 +24,12 @@ function Field({ label, ...props }: any) {
 
 export default function SignupScreen() {
   const router = useRouter();
-  const [email, setEmail]             = useState('');
-  const [password, setPassword]       = useState('');
-  const [username, setUsername]       = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [username, setUsername] = useState('');
   const [displayName, setDisplayName] = useState('');
-  const [loading, setLoading]         = useState(false);
-  const [errorMsg, setErrorMsg]       = useState('');
+  const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
 
   async function handleSignup() {
     if (!email || !password || !username || !displayName) {
@@ -52,7 +50,6 @@ export default function SignupScreen() {
     if (error) { setErrorMsg(error.message); setLoading(false); return; }
 
     if (data.user) {
-      // Upsert profile in case trigger hasn't run yet or email confirm delayed it
       await supabase.from('profiles').upsert({
         id: data.user.id,
         username: username.toLowerCase().trim(),
@@ -60,10 +57,8 @@ export default function SignupScreen() {
       }, { onConflict: 'id' });
 
       if (data.session) {
-        // Email confirmation disabled — signed in immediately
         router.replace('/(tabs)/feed');
       } else {
-        // Email confirmation required — go to verify screen
         router.push({ pathname: '/(auth)/verify-email', params: { email } });
       }
     }
@@ -71,45 +66,46 @@ export default function SignupScreen() {
   }
 
   return (
-    <KeyboardAvoidingView style={{ flex: 1, backgroundColor: INK }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+    <KeyboardAvoidingView style={{ flex: 1, backgroundColor: COLORS.surface }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <ScrollView contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 32, paddingTop: 80, paddingBottom: 48 }}>
 
         {/* Header */}
         <View style={{ marginBottom: 48 }}>
-          <Text style={{ fontFamily: 'CormorantGaramond_400Regular', fontSize: 13, color: MUTED, letterSpacing: 2, marginBottom: 8 }}>
+          <Text style={{ fontFamily: FONTS.mono, fontSize: 10, color: COLORS.onSurfaceVariant, letterSpacing: 4, marginBottom: 8 }}>
             NEW ACCOUNT
           </Text>
-          <Text style={{ fontFamily: 'CormorantGaramond_600SemiBold', fontSize: 48, color: CREAM, lineHeight: 48 }}>
-            Join Dishr
+          <Text style={{ fontFamily: FONTS.headlineBold, fontSize: 72, color: COLORS.onSurface, lineHeight: 72 }}>
+            Dishr
           </Text>
-          <View style={{ height: 1, backgroundColor: BORDER, marginTop: 20, width: '25%' }} />
+          <View style={{ height: 1, backgroundColor: COLORS.outlineVariant, marginTop: 20, width: '25%' }} />
         </View>
 
         <Field label="YOUR NAME" placeholder="Julia Child" value={displayName} onChangeText={setDisplayName} />
-        <Field label="USERNAME"  placeholder="@juliachild" value={username}     onChangeText={setUsername} autoCapitalize="none" />
-        <Field label="EMAIL"     placeholder="your@email.com" value={email}     onChangeText={setEmail}    autoCapitalize="none" keyboardType="email-address" />
-        <Field label="PASSWORD"  placeholder="••••••••"       value={password}  onChangeText={setPassword} secureTextEntry />
+        <Field label="USERNAME" placeholder="@juliachild" value={username} onChangeText={setUsername} autoCapitalize="none" />
+        <Field label="EMAIL" placeholder="your@email.com" value={email} onChangeText={setEmail} autoCapitalize="none" keyboardType="email-address" />
+        <Field label="PASSWORD" placeholder="••••••••" value={password} onChangeText={setPassword} secureTextEntry />
 
         {errorMsg ? (
-          <Text style={{ fontFamily: 'Lora_400Regular', fontSize: 13, color: '#E05C3A', marginBottom: 16, lineHeight: 20 }}>
+          <Text style={{ fontFamily: FONTS.body, fontSize: 13, color: COLORS.error, marginBottom: 16, lineHeight: 20 }}>
             {errorMsg}
           </Text>
         ) : null}
 
         <TouchableOpacity
-          style={{ backgroundColor: TERRA, paddingVertical: 17, alignItems: 'center', marginTop: 20 }}
-          onPress={handleSignup} disabled={loading}
+          style={{ backgroundColor: COLORS.primary, paddingVertical: 17, alignItems: 'center', marginTop: 20, borderRadius: 2 }}
+          onPress={handleSignup}
+          disabled={loading}
         >
           {loading
-            ? <ActivityIndicator color="#EDE8DC" />
-            : <Text style={{ fontFamily: 'DMMono_500Medium', fontSize: 11, color: '#EDE8DC', letterSpacing: 3.5 }}>CREATE ACCOUNT</Text>
+            ? <ActivityIndicator color={COLORS.onPrimary} />
+            : <Text style={{ fontFamily: FONTS.monoMedium, fontSize: 11, color: COLORS.onPrimary, letterSpacing: 3.5 }}>CREATE ACCOUNT</Text>
           }
         </TouchableOpacity>
 
         <View style={{ flexDirection: 'row', justifyContent: 'center', marginTop: 32 }}>
-          <Text style={{ fontFamily: 'DMMono_400Regular', fontSize: 12, color: MUTED }}>Have an account? </Text>
+          <Text style={{ fontFamily: FONTS.mono, fontSize: 12, color: COLORS.onSurfaceVariant }}>Have an account? </Text>
           <Link href="/(auth)/login">
-            <Text style={{ fontFamily: 'DMMono_400Regular', fontSize: 12, color: TERRA }}>Sign in →</Text>
+            <Text style={{ fontFamily: FONTS.mono, fontSize: 12, color: COLORS.primary }}>Sign in →</Text>
           </Link>
         </View>
       </ScrollView>
