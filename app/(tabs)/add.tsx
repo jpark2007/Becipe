@@ -9,8 +9,10 @@ import {
   Alert,
   KeyboardAvoidingView,
   Platform,
+  Image,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import * as ImagePicker from 'expo-image-picker';
 import { useShareIntent } from 'expo-share-intent';
 import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/store/auth';
@@ -36,6 +38,8 @@ export default function AddScreen() {
   const [importing, setImporting] = useState(false);
   const [importError, setImportError] = useState('');
   const [saving, setSaving] = useState(false);
+  const [coverImageUri, setCoverImageUri] = useState<string | null>(null);
+  const [coverImageUploading, setCoverImageUploading] = useState(false);
 
   // Recipe fields
   const [title, setTitle] = useState('');
@@ -73,6 +77,19 @@ export default function AddScreen() {
       resetShareIntent();
     }
   }, [hasShareIntent]);
+
+  async function pickCoverImage() {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      quality: 0.85,
+      aspect: [4, 3],
+      allowsEditing: true,
+    });
+    if (!result.canceled) {
+      setCoverImageUri(result.assets[0].uri);
+      setImportError('');
+    }
+  }
 
   function applyParsedData(data: any, targetUrl: string) {
     setTitle(data.title ?? '');
@@ -189,9 +206,37 @@ export default function AddScreen() {
       setImportError('Please give your recipe a title.');
       return;
     }
+
+    if (!coverImageUri) {
+      setImportError('Please add a cover photo for your recipe.');
+      return;
+    }
+
     setSaving(true);
 
     try {
+      // Upload cover image first
+      let coverImageUrl: string | null = null;
+      setCoverImageUploading(true);
+      const ext = coverImageUri.split('.').pop() ?? 'jpg';
+      const path = `covers/${user!.id}/${Date.now()}.${ext}`;
+      const response = await fetch(coverImageUri);
+      const blob = await response.blob();
+      if (blob.size > 10 * 1024 * 1024) {
+        setSaving(false);
+        setCoverImageUploading(false);
+        Alert.alert('Photo too large', 'Cover photo must be under 10MB.');
+        return;
+      }
+      const mimeType = blob.type || `image/${ext}`;
+      const { error: uploadError } = await supabase.storage
+        .from('recipe-photos')
+        .upload(path, blob, { contentType: mimeType });
+      if (uploadError) throw uploadError;
+      const { data: urlData } = supabase.storage.from('recipe-photos').getPublicUrl(path);
+      coverImageUrl = urlData.publicUrl;
+      setCoverImageUploading(false);
+
       console.log('[save] user id:', user!.id);
 
       // Use direct fetch to bypass Supabase client issues
@@ -221,6 +266,7 @@ export default function AddScreen() {
           created_by: user!.id,
           title: cleanTitle,
           description: cleanDescription || null,
+          cover_image_url: coverImageUrl,
           cuisine: cuisine || null,
           difficulty,
           prep_time_min: prepTime ? parseInt(prepTime) : null,
@@ -261,6 +307,7 @@ export default function AddScreen() {
     } catch (e: any) {
       console.error('[save] unexpected error:', e);
       setSaving(false);
+      setCoverImageUploading(false);
       Alert.alert('Save failed', e.message ?? 'Unknown error');
     }
   }
@@ -683,7 +730,7 @@ export default function AddScreen() {
       <ScrollView contentContainerStyle={{ padding: 16 }}>
         {/* Top nav */}
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
-          <TouchableOpacity onPress={() => { setMode('choose'); setTitle(''); }}>
+          <TouchableOpacity onPress={() => { setMode('choose'); setTitle(''); setCoverImageUri(null); }}>
             <Text style={{
               fontFamily: FONTS.mono,
               fontSize: 12,
@@ -703,7 +750,12 @@ export default function AddScreen() {
             disabled={saving}
           >
             {saving ? (
-              <ActivityIndicator color={COLORS.onPrimary} size="small" />
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                <ActivityIndicator color={COLORS.onPrimary} size="small" />
+                <Text style={{ fontFamily: FONTS.mono, fontSize: 10, color: COLORS.onPrimary, letterSpacing: 1 }}>
+                  {coverImageUploading ? 'Uploading...' : 'Saving...'}
+                </Text>
+              </View>
             ) : (
               <Text style={{
                 fontFamily: FONTS.mono,
@@ -736,6 +788,93 @@ export default function AddScreen() {
             </Text>
           </View>
         )}
+
+        {/* Validation error */}
+        {importError ? (
+          <Text style={{
+            fontFamily: FONTS.body,
+            fontSize: 13,
+            color: COLORS.error,
+            marginBottom: 16,
+            lineHeight: 20,
+          }}>
+            {importError}
+          </Text>
+        ) : null}
+
+        {/* Cover Photo — required */}
+        <TouchableOpacity
+          onPress={pickCoverImage}
+          activeOpacity={0.85}
+          style={{
+            marginBottom: 24,
+            height: 220,
+            backgroundColor: COLORS.surfaceContainer,
+            borderWidth: coverImageUri ? 0 : 2,
+            borderColor: COLORS.primaryContainer,
+            borderStyle: 'dashed',
+            alignItems: 'center',
+            justifyContent: 'center',
+            overflow: 'hidden',
+          }}
+        >
+          {coverImageUri ? (
+            <>
+              <Image
+                source={{ uri: coverImageUri }}
+                style={{ width: '100%', height: '100%' }}
+                resizeMode="cover"
+              />
+              <View style={{
+                position: 'absolute',
+                bottom: 0,
+                left: 0,
+                right: 0,
+                backgroundColor: 'rgba(0,0,0,0.45)',
+                paddingVertical: 8,
+                alignItems: 'center',
+              }}>
+                <Text style={{
+                  fontFamily: FONTS.mono,
+                  fontSize: 10,
+                  letterSpacing: 1.5,
+                  color: '#fff',
+                  textTransform: 'uppercase',
+                }}>
+                  Tap to change photo
+                </Text>
+              </View>
+            </>
+          ) : (
+            <>
+              <Text style={{
+                fontFamily: FONTS.mono,
+                fontSize: 28,
+                color: COLORS.primaryContainer,
+                marginBottom: 8,
+              }}>
+                +
+              </Text>
+              <Text style={{
+                fontFamily: FONTS.mono,
+                fontSize: 11,
+                letterSpacing: 1.5,
+                textTransform: 'uppercase',
+                color: COLORS.primaryContainer,
+              }}>
+                Add Cover Photo
+              </Text>
+              <Text style={{
+                fontFamily: FONTS.mono,
+                fontSize: 10,
+                color: COLORS.onSurfaceVariant,
+                marginTop: 4,
+              }}>
+                Required
+              </Text>
+            </>
+          )}
+        </TouchableOpacity>
 
         {/* Title */}
         <TextInput
@@ -1150,7 +1289,12 @@ export default function AddScreen() {
           disabled={saving}
         >
           {saving ? (
-            <ActivityIndicator color={COLORS.onPrimary} />
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <ActivityIndicator color={COLORS.onPrimary} />
+              <Text style={{ fontFamily: FONTS.mono, fontSize: 11, color: COLORS.onPrimary, letterSpacing: 1 }}>
+                {coverImageUploading ? 'Uploading photo...' : 'Saving...'}
+              </Text>
+            </View>
           ) : (
             <Text style={{
               fontFamily: FONTS.mono,

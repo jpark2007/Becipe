@@ -9,6 +9,7 @@ import {
   Image,
   StyleSheet,
 } from 'react-native';
+import { useRouter } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/store/auth';
@@ -100,6 +101,7 @@ async function fetchSuggestedUsers(userId: string) {
 
 export default function FeedScreen() {
   const { user } = useAuthStore();
+  const router = useRouter();
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<FeedTab>('discover');
 
@@ -213,22 +215,28 @@ export default function FeedScreen() {
 
     return (
       <View key={profile.id} style={styles.suggestedUserRow}>
-        <View style={styles.suggestedAvatar}>
-          {profile.avatar_url ? (
-            <Image source={{ uri: profile.avatar_url }} style={styles.suggestedAvatarImage} />
-          ) : (
-            <Text style={styles.suggestedAvatarInitial}>{initial}</Text>
-          )}
-        </View>
+        <TouchableOpacity
+          style={styles.suggestedUserLeft}
+          onPress={() => router.push(`/user/${profile.id}`)}
+          activeOpacity={0.8}
+        >
+          <View style={styles.suggestedAvatar}>
+            {profile.avatar_url ? (
+              <Image source={{ uri: profile.avatar_url }} style={styles.suggestedAvatarImage} />
+            ) : (
+              <Text style={styles.suggestedAvatarInitial}>{initial}</Text>
+            )}
+          </View>
 
-        <View style={styles.suggestedUserInfo}>
-          <Text style={styles.suggestedDisplayName} numberOfLines={1}>
-            {profile.display_name}
-          </Text>
-          <Text style={styles.suggestedUsername} numberOfLines={1}>
-            @{profile.username}
-          </Text>
-        </View>
+          <View style={styles.suggestedUserInfo}>
+            <Text style={styles.suggestedDisplayName} numberOfLines={1}>
+              {profile.display_name}
+            </Text>
+            <Text style={styles.suggestedUsername} numberOfLines={1}>
+              @{profile.username}
+            </Text>
+          </View>
+        </TouchableOpacity>
 
         <TouchableOpacity
           style={styles.followButton}
@@ -432,6 +440,11 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     marginBottom: 8,
     borderRadius: 4,
+  },
+  suggestedUserLeft: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   suggestedAvatar: {
     width: 40,
