@@ -275,8 +275,8 @@ const styles = StyleSheet.create({
   head: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingTop: 14,
-    paddingBottom: 26,
+    paddingTop: 0,
+    paddingBottom: 16,
   },
   iconBtn: {
     width: 40,

@@ -82,13 +82,11 @@ async function fetchRecipes(sort: SortOption, cuisine: Cuisine, search: string) 
 }
 
 async function fetchProfiles(search: string, excludeUserId?: string) {
+  if (!excludeUserId) return [];
   let query = supabase
     .from('profiles')
-    .select('id, display_name, username, avatar_url, created_at');
-
-  if (excludeUserId) {
-    query = query.neq('id', excludeUserId);
-  }
+    .select('id, display_name, username, avatar_url, created_at')
+    .neq('id', excludeUserId);
 
   if (search.trim()) {
     const term = `%${search.trim()}%`;
@@ -181,7 +179,7 @@ export default function ExploreScreen() {
   const { data: profiles, isLoading: peopleLoading } = useQuery({
     queryKey: ['people', peopleSearch],
     queryFn: () => fetchProfiles(peopleSearch, user?.id),
-    enabled: mode === 'people',
+    enabled: mode === 'people' && !!user?.id,
   });
 
   const { data: followingSet } = useQuery({
