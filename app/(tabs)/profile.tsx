@@ -62,11 +62,11 @@ async function fetchFollowing(userId: string) {
 }
 
 const AXIS_LABELS: Record<string, string> = {
-  salt: 'Salt',
   sweet: 'Sweet',
-  umami: 'Umami',
-  spice: 'Spice',
-  acid: 'Acid',
+  spicy: 'Spicy',
+  savory: 'Savory',
+  sour: 'Sour',
+  bitter: 'Bitter',
 };
 
 export default function ProfileScreen() {
@@ -237,7 +237,7 @@ export default function ProfileScreen() {
             );
           })}
           <Pressable
-            onPress={() => router.push('/(onboarding)/palate-quiz' as any)}
+            onPress={() => router.push('/palate-editor' as any)}
             hitSlop={6}
           >
             <Text style={styles.palateEdit}>edit your palate →</Text>

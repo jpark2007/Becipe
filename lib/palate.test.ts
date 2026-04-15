@@ -2,7 +2,7 @@
 import { matchScore, parsePalate, emptyPalate, PalateVector } from './palate';
 
 describe('matchScore', () => {
-  const a: PalateVector = { salt: 80, sweet: 20, umami: 90, spice: 60, acid: 50 };
+  const a: PalateVector = { sweet: 20, spicy: 60, savory: 90, sour: 50, bitter: 30 };
 
   test('identical vectors → 100', () => {
     expect(matchScore(a, a)).toBe(100);
@@ -15,13 +15,13 @@ describe('matchScore', () => {
   });
 
   test('mean distance 20 → score 80', () => {
-    const b: PalateVector = { salt: 60, sweet: 40, umami: 70, spice: 80, acid: 30 };
+    const b: PalateVector = { sweet: 40, spicy: 80, savory: 70, sour: 30, bitter: 50 };
     // diffs: 20, 20, 20, 20, 20 → mean 20 → score 80
     expect(matchScore(a, b)).toBe(80);
   });
 
   test('clamps to 0..100', () => {
-    const opp: PalateVector = { salt: 0, sweet: 100, umami: 0, spice: 0, acid: 0 };
+    const opp: PalateVector = { sweet: 100, spicy: 0, savory: 0, sour: 0, bitter: 100 };
     const score = matchScore(a, opp);
     expect(score).toBeGreaterThanOrEqual(0);
     expect(score).toBeLessThanOrEqual(100);
@@ -30,8 +30,8 @@ describe('matchScore', () => {
 
 describe('parsePalate', () => {
   test('valid object → vector', () => {
-    expect(parsePalate({ salt: 1, sweet: 2, umami: 3, spice: 4, acid: 5 }))
-      .toEqual({ salt: 1, sweet: 2, umami: 3, spice: 4, acid: 5 });
+    expect(parsePalate({ sweet: 1, spicy: 2, savory: 3, sour: 4, bitter: 5 }))
+      .toEqual({ sweet: 1, spicy: 2, savory: 3, sour: 4, bitter: 5 });
   });
 
   test('null/undefined → null', () => {
@@ -40,10 +40,10 @@ describe('parsePalate', () => {
   });
 
   test('missing axis → null', () => {
-    expect(parsePalate({ salt: 1, sweet: 2, umami: 3, spice: 4 })).toBeNull();
+    expect(parsePalate({ sweet: 1, spicy: 2, savory: 3, sour: 4 })).toBeNull();
   });
 
   test('non-numeric axis → null', () => {
-    expect(parsePalate({ salt: '1', sweet: 2, umami: 3, spice: 4, acid: 5 })).toBeNull();
+    expect(parsePalate({ sweet: '1', spicy: 2, savory: 3, sour: 4, bitter: 5 })).toBeNull();
   });
 });

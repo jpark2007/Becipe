@@ -1,14 +1,14 @@
 // lib/palate.ts
 export type PalateVector = {
-  salt: number;
   sweet: number;
-  umami: number;
-  spice: number;
-  acid: number;
+  spicy: number;
+  savory: number;
+  sour: number;
+  bitter: number;
 };
 
 export const PALATE_AXES: (keyof PalateVector)[] = [
-  'salt', 'sweet', 'umami', 'spice', 'acid',
+  'sweet', 'spicy', 'savory', 'sour', 'bitter',
 ];
 
 /**
@@ -36,7 +36,7 @@ export function matchScore(
 }
 
 export function emptyPalate(): PalateVector {
-  return { salt: 50, sweet: 50, umami: 50, spice: 50, acid: 50 };
+  return { sweet: 50, spicy: 50, savory: 50, sour: 50, bitter: 50 };
 }
 
 /**
@@ -52,10 +52,10 @@ export function parsePalate(v: unknown): PalateVector | null {
     if (typeof o[ax] !== 'number') return null;
   }
   return {
-    salt:  o.salt  as number,
-    sweet: o.sweet as number,
-    umami: o.umami as number,
-    spice: o.spice as number,
-    acid:  o.acid  as number,
+    sweet:  o.sweet  as number,
+    spicy:  o.spicy  as number,
+    savory: o.savory as number,
+    sour:   o.sour   as number,
+    bitter: o.bitter as number,
   };
 }
