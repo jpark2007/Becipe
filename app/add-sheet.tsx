@@ -44,6 +44,7 @@ export default function AddSheetScreen() {
           }}
         >
           <Text style={styles.secondaryText}>Log a Try</Text>
+          <Text style={styles.secondarySub}>Rate and post a cook you just made</Text>
         </Pressable>
       </View>
     </SafeAreaView>
@@ -106,17 +107,25 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   secondary: {
-    backgroundColor: 'transparent',
-    borderRadius: radius.md,
-    paddingVertical: 14,
-    alignItems: 'center',
+    backgroundColor: colors.card,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+    paddingVertical: 18,
+    paddingHorizontal: 22,
+    minHeight: 72,
     justifyContent: 'center',
-    minHeight: 40,
   },
   secondaryText: {
-    fontFamily: 'Inter_600SemiBold',
-    fontSize: 14,
+    fontFamily: 'Inter_800ExtraBold',
+    fontSize: 18,
+    color: colors.ink,
+    letterSpacing: -0.4,
+  },
+  secondarySub: {
+    fontFamily: 'Inter_500Medium',
+    fontSize: 12,
     color: colors.muted,
-    letterSpacing: -0.2,
+    marginTop: 4,
   },
 });
