@@ -3,12 +3,14 @@ import {
   View,
   Text,
   TextInput,
-  TouchableOpacity,
+  Pressable,
   ScrollView,
   ActivityIndicator,
   Alert,
   KeyboardAvoidingView,
   Platform,
+  SafeAreaView,
+  StyleSheet,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useShareIntent } from 'expo-share-intent';
@@ -17,20 +19,30 @@ import { useAuthStore } from '@/store/auth';
 import { queryClient } from '@/lib/query-client';
 import type { Ingredient, Step, Tip } from '@/lib/database.types';
 import { CUISINES } from '@/lib/smart-sort';
+import { colors, shadow } from '@/lib/theme';
+import { EditorialHeading } from '@/components/EditorialHeading';
 
-type Mode = 'choose' | 'manual' | 'import' | 'social-import';
+type Mode = 'manual' | 'import' | 'social' | 'share';
 type Difficulty = 'easy' | 'medium' | 'hard';
 
 function isSocialUrl(url: string): boolean {
   return /tiktok\.com|instagram\.com|facebook\.com|fb\.watch|twitter\.com|x\.com|youtube\.com|youtu\.be/.test(url);
 }
 
+const MODE_TABS: { key: Mode; label: string }[] = [
+  { key: 'manual', label: 'manual' },
+  { key: 'import', label: 'url' },
+  { key: 'social', label: 'social' },
+  { key: 'share', label: 'share' },
+];
+
 export default function AddScreen() {
   const router = useRouter();
   const { user } = useAuthStore();
   const { hasShareIntent, shareIntent, resetShareIntent } = useShareIntent();
 
-  const [mode, setMode] = useState<Mode>('choose');
+  const [mode, setMode] = useState<Mode>('manual');
+  const [inForm, setInForm] = useState(false);
   const [importUrl, setImportUrl] = useState('');
   const [importing, setImporting] = useState(false);
   const [importError, setImportError] = useState('');
@@ -61,16 +73,15 @@ export default function AddScreen() {
       const sharedText = shareIntent.text ?? '';
       if (url) {
         setImportUrl(url);
-        setMode(isSocialUrl(url) ? 'social-import' : 'import');
-        // Pass shared text as caption — this is how we get captions from social apps
+        setMode(isSocialUrl(url) ? 'social' : 'import');
         handleImport(url, sharedText || undefined);
       } else if (sharedText) {
-        // User shared text only (no URL) — treat as pasted caption
-        setMode('social-import');
+        setMode('social');
         setPastedCaption(sharedText);
       }
       resetShareIntent();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hasShareIntent]);
 
   function applyParsedData(data: any, targetUrl: string) {
@@ -88,6 +99,7 @@ export default function AddScreen() {
     setSourceCredit(data.source_credit ?? '');
     setSourceType(data.source_type ?? 'url');
     setMode('manual');
+    setInForm(true);
   }
 
   async function tryEdgeFunction(targetUrl: string, caption?: string) {
@@ -137,7 +149,7 @@ export default function AddScreen() {
     const targetUrl = (url ?? importUrl).trim();
     if (!targetUrl) return;
 
-    const isSocial = isSocialUrl(targetUrl) || mode === 'social-import';
+    const isSocial = isSocialUrl(targetUrl) || mode === 'social';
 
     setImporting(true);
     setImportError('');
@@ -149,7 +161,6 @@ export default function AddScreen() {
       const msg = err.message ?? '';
       let userMessage: string;
       if (msg === 'caption_needed') {
-        // Show paste-caption UI
         setNeedsCaption(true);
         if (err.partial) {
           setSourceUrl(err.partial.source_url ?? targetUrl);
@@ -169,6 +180,7 @@ export default function AddScreen() {
         const platformNames: Record<string, string> = { 'tiktok.com': 'TikTok', 'instagram.com': 'Instagram', 'facebook.com': 'Facebook', 'fb.watch': 'Facebook', 'twitter.com': 'X', 'x.com': 'X', 'youtube.com': 'YouTube', 'youtu.be': 'YouTube' };
         setSourceName(Object.entries(platformNames).find(([k]) => targetUrl.includes(k))?.[1] ?? '');
         setMode('manual');
+        setInForm(true);
       } else if (msg.includes('Empty parse')) {
         userMessage = 'That site blocks automated imports. Try BBC Good Food, Serious Eats, Food Network, or Simply Recipes.';
       } else {
@@ -191,9 +203,6 @@ export default function AddScreen() {
     setSaving(true);
 
     try {
-      console.log('[save] user id:', user!.id);
-
-      // Use direct fetch to bypass Supabase client issues
       const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL ?? '';
       const supabaseKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? '';
       const session = useAuthStore.getState().session;
@@ -204,9 +213,6 @@ export default function AddScreen() {
         Alert.alert('Save failed', 'Please sign in again.');
         return;
       }
-
-      console.log('[save] token prefix:', token.slice(0, 10));
-      console.log('[save] inserting recipe...');
 
       const res = await fetch(`${supabaseUrl}/rest/v1/recipes`, {
         method: 'POST',
@@ -249,920 +255,675 @@ export default function AddScreen() {
       setSaving(false);
       if (!res.ok) {
         const err = await res.json().catch(() => ({ message: `HTTP ${res.status}` }));
-        console.error('[save] recipe insert failed:', err);
         Alert.alert('Save failed', err.message ?? `Error ${res.status}`);
       } else {
-        console.log('[save] recipe saved!');
         queryClient.invalidateQueries({ queryKey: ['profile'] });
         queryClient.invalidateQueries({ queryKey: ['discover'] });
         router.replace('/(tabs)/profile');
       }
     } catch (e: any) {
-      console.error('[save] unexpected error:', e);
       setSaving(false);
       Alert.alert('Save failed', e.message ?? 'Unknown error');
     }
   }
 
-  if (mode === 'choose') {
-    return (
-      <View style={{ flex: 1, backgroundColor: '#F8F4EE', paddingHorizontal: 24, justifyContent: 'center' }}>
-        <Text style={{
-          fontFamily: 'CormorantGaramond_600SemiBold',
-          fontSize: 34,
-          color: '#1C1712',
-          marginBottom: 6,
-        }}>
-          Add a Recipe
-        </Text>
-        <Text style={{
-          fontFamily: 'DMMono_400Regular',
-          fontSize: 11,
-          color: '#A09590',
-          letterSpacing: 0.5,
-          marginBottom: 40,
-        }}>
-          Create from scratch or import from the web
-        </Text>
-
-        {/* Create Manually */}
-        <TouchableOpacity
-          style={{
-            backgroundColor: '#EEE8DF',
-            borderLeftWidth: 4,
-            borderLeftColor: '#C4622D',
-            padding: 20,
-            marginBottom: 2,
-          }}
-          onPress={() => { setSourceType('manual'); setMode('manual'); }}
-        >
-          <Text style={{
-            fontFamily: 'DMMono_400Regular',
-            fontSize: 10,
-            letterSpacing: 2,
-            textTransform: 'uppercase',
-            color: '#C4622D',
-            marginBottom: 6,
-          }}>
-            Create Manually
-          </Text>
-          <Text style={{
-            fontFamily: 'CormorantGaramond_400Regular',
-            fontSize: 18,
-            color: '#A09590',
-          }}>
-            Write your own recipe from scratch
-          </Text>
-        </TouchableOpacity>
-
-        {/* Import from URL */}
-        <TouchableOpacity
-          style={{
-            backgroundColor: '#EEE8DF',
-            borderLeftWidth: 4,
-            borderLeftColor: '#C4622D',
-            padding: 20,
-            marginBottom: 2,
-          }}
-          onPress={() => setMode('import')}
-        >
-          <Text style={{
-            fontFamily: 'DMMono_400Regular',
-            fontSize: 10,
-            letterSpacing: 2,
-            textTransform: 'uppercase',
-            color: '#C4622D',
-            marginBottom: 6,
-          }}>
-            Import from URL
-          </Text>
-          <Text style={{
-            fontFamily: 'CormorantGaramond_400Regular',
-            fontSize: 18,
-            color: '#A09590',
-          }}>
-            Paste a link from any recipe website
-          </Text>
-        </TouchableOpacity>
-
-        {/* Import from Social */}
-        <TouchableOpacity
-          style={{
-            backgroundColor: '#EEE8DF',
-            borderLeftWidth: 4,
-            borderLeftColor: '#C4622D',
-            padding: 20,
-          }}
-          onPress={() => setMode('social-import')}
-        >
-          <Text style={{
-            fontFamily: 'DMMono_400Regular',
-            fontSize: 10,
-            letterSpacing: 2,
-            textTransform: 'uppercase',
-            color: '#C4622D',
-            marginBottom: 6,
-          }}>
-            Import from Social
-          </Text>
-          <Text style={{
-            fontFamily: 'CormorantGaramond_400Regular',
-            fontSize: 18,
-            color: '#A09590',
-          }}>
-            Share directly from TikTok, Instagram, and more
-          </Text>
-        </TouchableOpacity>
-      </View>
-    );
+  function resetToChoose() {
+    setInForm(false);
+    setTitle('');
+    setDescription('');
+    setImportUrl('');
+    setImportError('');
+    setNeedsCaption(false);
+    setPastedCaption('');
   }
 
-  if (mode === 'import' && !title) {
-    return (
-      <KeyboardAvoidingView
-        style={{ flex: 1, backgroundColor: '#F8F4EE' }}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      >
-        <View style={{ flex: 1, paddingHorizontal: 24, justifyContent: 'center' }}>
-          <TouchableOpacity onPress={() => setMode('choose')} style={{ marginBottom: 32 }}>
-            <Text style={{
-              fontFamily: 'DMMono_400Regular',
-              fontSize: 12,
-              color: '#C4622D',
-              letterSpacing: 0.5,
-            }}>
-              Back
-            </Text>
-          </TouchableOpacity>
-
-          <Text style={{
-            fontFamily: 'CormorantGaramond_600SemiBold',
-            fontSize: 34,
-            color: '#1C1712',
-            marginBottom: 6,
-          }}>
-            Import Recipe
-          </Text>
-          <Text style={{
-            fontFamily: 'DMMono_400Regular',
-            fontSize: 11,
-            color: '#A09590',
-            letterSpacing: 0.5,
-            marginBottom: 32,
-          }}>
-            Paste a link from any recipe website
-          </Text>
-
-          <TextInput
-            style={{
-              borderBottomWidth: 1,
-              borderBottomColor: '#D5CCC0',
-              paddingVertical: 12,
-              color: '#1C1712',
-              fontFamily: 'Lora_400Regular',
-              fontSize: 15,
-              backgroundColor: 'transparent',
-              marginBottom: 24,
+  const ModeTabs = (
+    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.modeRow}>
+      {MODE_TABS.map((t) => {
+        const active = mode === t.key && !inForm;
+        // 'share' is an alias for social on tap
+        return (
+          <Pressable
+            key={t.key}
+            onPress={() => {
+              setMode(t.key === 'share' ? 'social' : t.key);
+              if (t.key === 'manual') { setInForm(true); setSourceType('manual'); }
+              else setInForm(false);
             }}
-            placeholder="https://..."
-            placeholderTextColor="#A09590"
-            value={importUrl}
-            onChangeText={setImportUrl}
-            autoCapitalize="none"
-            keyboardType="url"
-          />
-
-          {importError ? (
-            <Text style={{ fontFamily: 'Lora_400Regular', fontSize: 13, color: '#E05C3A', marginBottom: 16, lineHeight: 20 }}>
-              {importError}
-            </Text>
-          ) : null}
-
-          <TouchableOpacity
-            style={{
-              backgroundColor: importing || !importUrl.trim() ? 'transparent' : '#C4622D',
-              borderWidth: 1,
-              borderColor: importing || !importUrl.trim() ? '#BEB0A8' : '#C4622D',
-              paddingVertical: 16,
-              alignItems: 'center',
-            }}
-            onPress={() => handleImport()}
-            disabled={importing || !importUrl.trim()}
+            style={[styles.modePill, active ? styles.modePillActive : styles.modePillInactive]}
           >
-            {importing ? (
-              <ActivityIndicator color="#A09590" />
-            ) : (
-              <Text style={{
-                fontFamily: 'DMMono_400Regular',
-                fontSize: 12,
-                letterSpacing: 2,
-                textTransform: 'uppercase',
-                color: importUrl.trim() ? '#EDE8DC' : '#A09590',
-              }}>
-                Import
-              </Text>
-            )}
-          </TouchableOpacity>
-        </View>
-      </KeyboardAvoidingView>
-    );
+            <Text style={[styles.modePillText, active ? styles.modePillTextActive : styles.modePillTextInactive]}>
+              {t.label}
+            </Text>
+          </Pressable>
+        );
+      })}
+    </ScrollView>
+  );
+
+  // ---------- Choose / Mode-selector landing ----------
+  if (!inForm && (mode === 'import' || mode === 'social' || mode === 'manual')) {
+    if (mode === 'manual') {
+      // Manual starts the form immediately
+      // (fall through — renders form below on next tick)
+    }
   }
 
-  if (mode === 'social-import' && !title) {
+  // ---------- Import URL landing ----------
+  if (!inForm && mode === 'import' && !title) {
     return (
-      <KeyboardAvoidingView
-        style={{ flex: 1, backgroundColor: '#F8F4EE' }}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      >
-        <ScrollView contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 24, justifyContent: 'center' }}>
-          <TouchableOpacity onPress={() => { setMode('choose'); setImportError(''); setImportUrl(''); setNeedsCaption(false); setPastedCaption(''); }} style={{ marginBottom: 32 }}>
-            <Text style={{
-              fontFamily: 'DMMono_400Regular',
-              fontSize: 12,
-              color: '#C4622D',
-              letterSpacing: 0.5,
-            }}>
-              Back
-            </Text>
-          </TouchableOpacity>
+      <SafeAreaView style={styles.safe}>
+        <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+          <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
+            <EditorialHeading size={26} emphasis="recipe" emphasisColor="clay">
+              {'Add a\n'}
+            </EditorialHeading>
+            <Text style={styles.subtitle}>paste a link from any recipe website</Text>
 
-          <Text style={{
-            fontFamily: 'CormorantGaramond_600SemiBold',
-            fontSize: 34,
-            color: '#1C1712',
-            marginBottom: 6,
-          }}>
-            Import from Social
-          </Text>
-          <Text style={{
-            fontFamily: 'DMMono_400Regular',
-            fontSize: 11,
-            color: '#A09590',
-            letterSpacing: 0.5,
-            marginBottom: 28,
-          }}>
-            Share a recipe post directly to Dishr
-          </Text>
+            {ModeTabs}
 
-          {/* Share intent instructions */}
-          <View style={{
-            backgroundColor: '#EEE8DF',
-            borderWidth: 1,
-            borderColor: '#D5CCC0',
-            padding: 16,
-            marginBottom: 24,
-          }}>
-            <Text style={{
-              fontFamily: 'DMMono_400Regular',
-              fontSize: 10,
-              letterSpacing: 2,
-              textTransform: 'uppercase',
-              color: '#C4622D',
-              marginBottom: 12,
-            }}>
-              How to import
-            </Text>
-            <Text style={{
-              fontFamily: 'Lora_400Regular',
-              fontSize: 14,
-              color: '#1C1712',
-              lineHeight: 22,
-            }}>
-              1. Open the recipe post in TikTok, Instagram, Facebook, or X{'\n'}
-              2. Tap the Share button{'\n'}
-              3. Choose "Dishr" from the share menu{'\n\n'}
-              The recipe will be extracted automatically.
-            </Text>
-          </View>
-
-          {importing && !needsCaption ? (
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, paddingVertical: 16, marginBottom: 16 }}>
-              <ActivityIndicator color="#C4622D" />
-              <Text style={{ fontFamily: 'DMMono_400Regular', fontSize: 11, color: '#A09590', letterSpacing: 1 }}>
-                Extracting recipe...
-              </Text>
-            </View>
-          ) : null}
-
-          {importError ? (
-            <Text style={{ fontFamily: 'Lora_400Regular', fontSize: 13, color: '#E05C3A', marginBottom: 16, lineHeight: 20 }}>
-              {importError}
-            </Text>
-          ) : null}
-
-          {/* Paste caption fallback */}
-          {needsCaption ? (
-            <>
+            <View style={styles.fieldCard}>
+              <Text style={styles.fieldLabel}>recipe url</Text>
               <TextInput
-                style={{
-                  borderWidth: 1,
-                  borderColor: '#D5CCC0',
-                  padding: 12,
-                  color: '#1C1712',
-                  fontFamily: 'Lora_400Regular',
-                  fontSize: 14,
-                  backgroundColor: '#EEE8DF',
-                  marginBottom: 16,
-                  minHeight: 100,
-                  textAlignVertical: 'top',
-                }}
-                placeholder="Paste the recipe caption or ingredients here..."
-                placeholderTextColor="#A09590"
-                value={pastedCaption}
-                onChangeText={setPastedCaption}
-                multiline
-              />
-              <TouchableOpacity
-                style={{
-                  backgroundColor: importing || !pastedCaption.trim() ? 'transparent' : '#C4622D',
-                  borderWidth: 1,
-                  borderColor: importing || !pastedCaption.trim() ? '#BEB0A8' : '#C4622D',
-                  paddingVertical: 16,
-                  alignItems: 'center',
-                  marginBottom: 12,
-                }}
-                onPress={() => handleImport(undefined, pastedCaption)}
-                disabled={importing || !pastedCaption.trim()}
-              >
-                {importing ? (
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                    <ActivityIndicator color="#A09590" />
-                    <Text style={{ fontFamily: 'DMMono_400Regular', fontSize: 11, color: '#A09590', letterSpacing: 1 }}>
-                      Extracting recipe...
-                    </Text>
-                  </View>
-                ) : (
-                  <Text style={{
-                    fontFamily: 'DMMono_400Regular',
-                    fontSize: 12,
-                    letterSpacing: 2,
-                    textTransform: 'uppercase',
-                    color: pastedCaption.trim() ? '#EDE8DC' : '#A09590',
-                  }}>
-                    Extract Recipe
-                  </Text>
-                )}
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={{ paddingVertical: 10, alignItems: 'center' }}
-                onPress={() => { setMode('manual'); }}
-              >
-                <Text style={{ fontFamily: 'DMMono_400Regular', fontSize: 11, color: '#C4622D', letterSpacing: 1 }}>
-                  Skip — fill in manually
-                </Text>
-              </TouchableOpacity>
-            </>
-          ) : null}
-
-          {/* Divider */}
-          {!needsCaption ? (
-            <>
-              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 20, marginTop: 4 }}>
-                <View style={{ flex: 1, height: 1, backgroundColor: '#D5CCC0' }} />
-                <Text style={{ fontFamily: 'DMMono_400Regular', fontSize: 10, color: '#A09590', marginHorizontal: 12, letterSpacing: 1 }}>
-                  OR PASTE A LINK
-                </Text>
-                <View style={{ flex: 1, height: 1, backgroundColor: '#D5CCC0' }} />
-              </View>
-
-              <TextInput
-                style={{
-                  borderBottomWidth: 1,
-                  borderBottomColor: '#D5CCC0',
-                  paddingVertical: 12,
-                  color: '#1C1712',
-                  fontFamily: 'Lora_400Regular',
-                  fontSize: 15,
-                  backgroundColor: 'transparent',
-                  marginBottom: 16,
-                }}
-                placeholder="https://www.tiktok.com/..."
-                placeholderTextColor="#A09590"
+                style={styles.inputInline}
+                placeholder="https://..."
+                placeholderTextColor={colors.muted}
                 value={importUrl}
                 onChangeText={setImportUrl}
                 autoCapitalize="none"
                 keyboardType="url"
               />
+            </View>
 
-              <TouchableOpacity
-                style={{
-                  backgroundColor: importing || !importUrl.trim() ? 'transparent' : '#C4622D',
-                  borderWidth: 1,
-                  borderColor: importing || !importUrl.trim() ? '#BEB0A8' : '#C4622D',
-                  paddingVertical: 16,
-                  alignItems: 'center',
-                  marginBottom: 24,
-                }}
-                onPress={() => handleImport()}
-                disabled={importing || !importUrl.trim()}
-              >
-                <Text style={{
-                  fontFamily: 'DMMono_400Regular',
-                  fontSize: 12,
-                  letterSpacing: 2,
-                  textTransform: 'uppercase',
-                  color: importUrl.trim() ? '#EDE8DC' : '#A09590',
-                }}>
-                  Import
-                </Text>
-              </TouchableOpacity>
-            </>
-          ) : null}
-        </ScrollView>
-      </KeyboardAvoidingView>
+            {importError ? <Text style={styles.errorText}>{importError}</Text> : null}
+
+            <Pressable
+              style={[styles.primaryBtn, (importing || !importUrl.trim()) && styles.primaryBtnDisabled]}
+              onPress={() => handleImport()}
+              disabled={importing || !importUrl.trim()}
+            >
+              {importing ? <ActivityIndicator color="#fff" /> : <Text style={styles.primaryBtnText}>import →</Text>}
+            </Pressable>
+
+            <Pressable
+              style={{ paddingVertical: 14, alignItems: 'center' }}
+              onPress={() => { setMode('manual'); setInForm(true); setSourceType('manual'); }}
+            >
+              <Text style={styles.linkText}>or fill in manually</Text>
+            </Pressable>
+          </ScrollView>
+        </KeyboardAvoidingView>
+      </SafeAreaView>
     );
   }
 
-  // Recipe form (manual or post-import)
+  // ---------- Social import landing ----------
+  if (!inForm && mode === 'social' && !title) {
+    return (
+      <SafeAreaView style={styles.safe}>
+        <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+          <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
+            <EditorialHeading size={26} emphasis="recipe" emphasisColor="clay">
+              {'Add a\n'}
+            </EditorialHeading>
+            <Text style={styles.subtitle}>share a recipe post directly to dishr</Text>
+
+            {ModeTabs}
+
+            <View style={styles.infoCard}>
+              <Text style={styles.fieldLabel}>how to import</Text>
+              <Text style={styles.infoBody}>
+                1. Open the recipe post in TikTok, Instagram, Facebook, or X{'\n'}
+                2. Tap the Share button{'\n'}
+                3. Choose "Dishr" from the share menu{'\n\n'}
+                The recipe will be extracted automatically.
+              </Text>
+            </View>
+
+            {importing && !needsCaption ? (
+              <View style={styles.loadingRow}>
+                <ActivityIndicator color={colors.clay} />
+                <Text style={styles.loadingText}>extracting recipe…</Text>
+              </View>
+            ) : null}
+
+            {importError ? <Text style={styles.errorText}>{importError}</Text> : null}
+
+            {needsCaption ? (
+              <>
+                <View style={styles.fieldCard}>
+                  <Text style={styles.fieldLabel}>paste caption</Text>
+                  <TextInput
+                    style={[styles.inputInline, { minHeight: 120, textAlignVertical: 'top' }]}
+                    placeholder="paste recipe caption or ingredients here…"
+                    placeholderTextColor={colors.muted}
+                    value={pastedCaption}
+                    onChangeText={setPastedCaption}
+                    multiline
+                  />
+                </View>
+                <Pressable
+                  style={[styles.primaryBtn, (importing || !pastedCaption.trim()) && styles.primaryBtnDisabled]}
+                  onPress={() => handleImport(undefined, pastedCaption)}
+                  disabled={importing || !pastedCaption.trim()}
+                >
+                  {importing ? <ActivityIndicator color="#fff" /> : <Text style={styles.primaryBtnText}>extract recipe →</Text>}
+                </Pressable>
+                <Pressable style={{ paddingVertical: 14, alignItems: 'center' }} onPress={() => { setMode('manual'); setInForm(true); }}>
+                  <Text style={styles.linkText}>skip — fill in manually</Text>
+                </Pressable>
+              </>
+            ) : (
+              <>
+                <View style={styles.dividerRow}>
+                  <View style={styles.dividerLine} />
+                  <Text style={styles.dividerText}>OR PASTE A LINK</Text>
+                  <View style={styles.dividerLine} />
+                </View>
+
+                <View style={styles.fieldCard}>
+                  <Text style={styles.fieldLabel}>social url</Text>
+                  <TextInput
+                    style={styles.inputInline}
+                    placeholder="https://www.tiktok.com/…"
+                    placeholderTextColor={colors.muted}
+                    value={importUrl}
+                    onChangeText={setImportUrl}
+                    autoCapitalize="none"
+                    keyboardType="url"
+                  />
+                </View>
+
+                <Pressable
+                  style={[styles.primaryBtn, (importing || !importUrl.trim()) && styles.primaryBtnDisabled]}
+                  onPress={() => handleImport()}
+                  disabled={importing || !importUrl.trim()}
+                >
+                  {importing ? <ActivityIndicator color="#fff" /> : <Text style={styles.primaryBtnText}>import →</Text>}
+                </Pressable>
+              </>
+            )}
+          </ScrollView>
+        </KeyboardAvoidingView>
+      </SafeAreaView>
+    );
+  }
+
+  // ---------- Manual form ----------
   return (
-    <KeyboardAvoidingView
-      style={{ flex: 1, backgroundColor: '#F8F4EE' }}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-    >
-      <ScrollView contentContainerStyle={{ padding: 16 }}>
-        {/* Top nav */}
-        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
-          <TouchableOpacity onPress={() => { setMode('choose'); setTitle(''); }}>
-            <Text style={{
-              fontFamily: 'DMMono_400Regular',
-              fontSize: 12,
-              color: '#C4622D',
-              letterSpacing: 0.5,
-            }}>
-              Back
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={{
-              backgroundColor: '#C4622D',
-              paddingHorizontal: 24,
-              paddingVertical: 10,
-            }}
+    <SafeAreaView style={styles.safe}>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
+          {/* Header row */}
+          <View style={styles.headRow}>
+            <Pressable style={styles.iconBtn} onPress={resetToChoose}>
+              <Text style={styles.iconBtnText}>←</Text>
+            </Pressable>
+            <Pressable
+              style={[styles.saveBtn, saving && styles.primaryBtnDisabled]}
+              onPress={handleSave}
+              disabled={saving}
+            >
+              {saving ? <ActivityIndicator color="#fff" size="small" /> : <Text style={styles.saveBtnText}>save →</Text>}
+            </Pressable>
+          </View>
+
+          <EditorialHeading size={26} emphasis="recipe" emphasisColor="clay">
+            {'Add a\n'}
+          </EditorialHeading>
+          <Text style={styles.subtitle}>fill in the details</Text>
+
+          {sourceCredit ? (
+            <View style={styles.creditCard}>
+              <Text style={styles.fieldLabel}>credit</Text>
+              <Text style={styles.creditText}>
+                {sourceCredit} {sourceName ? `on ${sourceName}` : ''}
+              </Text>
+            </View>
+          ) : null}
+
+          {/* Title */}
+          <View style={styles.fieldCard}>
+            <Text style={styles.fieldLabel}>title</Text>
+            <TextInput
+              style={styles.titleInput}
+              placeholder="recipe title"
+              placeholderTextColor={colors.muted}
+              value={title}
+              onChangeText={setTitle}
+            />
+          </View>
+
+          {/* Description */}
+          <View style={styles.fieldCard}>
+            <Text style={styles.fieldLabel}>description</Text>
+            <TextInput
+              style={styles.inputInline}
+              placeholder="description (optional)"
+              placeholderTextColor={colors.muted}
+              value={description}
+              onChangeText={setDescription}
+              multiline
+            />
+          </View>
+
+          {/* Meta row */}
+          <View style={styles.metaRow}>
+            <View style={[styles.fieldCard, { flex: 1 }]}>
+              <Text style={styles.fieldLabel}>prep (min)</Text>
+              <TextInput
+                style={styles.inputInline}
+                placeholder="—"
+                placeholderTextColor={colors.muted}
+                value={prepTime}
+                onChangeText={setPrepTime}
+                keyboardType="number-pad"
+              />
+            </View>
+            <View style={[styles.fieldCard, { flex: 1 }]}>
+              <Text style={styles.fieldLabel}>cook (min)</Text>
+              <TextInput
+                style={styles.inputInline}
+                placeholder="—"
+                placeholderTextColor={colors.muted}
+                value={cookTime}
+                onChangeText={setCookTime}
+                keyboardType="number-pad"
+              />
+            </View>
+            <View style={[styles.fieldCard, { flex: 1 }]}>
+              <Text style={styles.fieldLabel}>serves</Text>
+              <TextInput
+                style={styles.inputInline}
+                placeholder="—"
+                placeholderTextColor={colors.muted}
+                value={servings}
+                onChangeText={setServings}
+                keyboardType="number-pad"
+              />
+            </View>
+          </View>
+
+          {/* Difficulty */}
+          <Text style={styles.blockLabel}>difficulty</Text>
+          <View style={styles.chipsRow}>
+            {(['easy', 'medium', 'hard'] as Difficulty[]).map((d) => {
+              const active = difficulty === d;
+              return (
+                <Pressable
+                  key={d}
+                  onPress={() => setDifficulty(d)}
+                  style={[styles.chip, active ? styles.chipActive : styles.chipInactive]}
+                >
+                  <Text style={[styles.chipText, active ? styles.chipTextActive : styles.chipTextInactive]}>
+                    {d}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+
+          {/* Cuisine */}
+          <Text style={styles.blockLabel}>cuisine</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 20 }}>
+            {CUISINES.filter(c => c !== 'All').map((c) => {
+              const active = cuisine === c;
+              return (
+                <Pressable
+                  key={c}
+                  onPress={() => setCuisine(cuisine === c ? '' : c)}
+                  style={[styles.chip, active ? styles.chipActive : styles.chipInactive]}
+                >
+                  <Text style={[styles.chipText, active ? styles.chipTextActive : styles.chipTextInactive]}>
+                    {c}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </ScrollView>
+
+          {/* Ingredients */}
+          <Text style={styles.blockLabel}>ingredients</Text>
+          {ingredients.map((ing, i) => (
+            <View key={i} style={styles.ingredientRow}>
+              <TextInput
+                style={[styles.smallInput, { width: 56 }]}
+                placeholder="amt"
+                placeholderTextColor={colors.muted}
+                value={ing.amount}
+                onChangeText={(v) => {
+                  const next = [...ingredients];
+                  next[i] = { ...next[i], amount: v };
+                  setIngredients(next);
+                }}
+              />
+              <TextInput
+                style={[styles.smallInput, { width: 56 }]}
+                placeholder="unit"
+                placeholderTextColor={colors.muted}
+                value={ing.unit}
+                onChangeText={(v) => {
+                  const next = [...ingredients];
+                  next[i] = { ...next[i], unit: v };
+                  setIngredients(next);
+                }}
+              />
+              <TextInput
+                style={[styles.smallInput, { flex: 1 }]}
+                placeholder="ingredient"
+                placeholderTextColor={colors.muted}
+                value={ing.name}
+                onChangeText={(v) => {
+                  const next = [...ingredients];
+                  next[i] = { ...next[i], name: v };
+                  setIngredients(next);
+                }}
+              />
+              {ingredients.length > 1 && (
+                <Pressable
+                  style={styles.removeBtn}
+                  onPress={() => setIngredients(prev => prev.filter((_, idx) => idx !== i))}
+                >
+                  <Text style={styles.removeBtnText}>×</Text>
+                </Pressable>
+              )}
+            </View>
+          ))}
+          <Pressable
+            style={{ paddingVertical: 10, marginBottom: 20 }}
+            onPress={() => setIngredients(prev => [...prev, { amount: '', unit: '', name: '' }])}
+          >
+            <Text style={styles.linkText}>+ add ingredient</Text>
+          </Pressable>
+
+          {/* Steps */}
+          <Text style={styles.blockLabel}>steps</Text>
+          {steps.map((step, i) => (
+            <View key={i} style={styles.stepRow}>
+              <View style={styles.stepNum}>
+                <Text style={styles.stepNumText}>{i + 1}</Text>
+              </View>
+              <TextInput
+                style={[styles.smallInput, { flex: 1 }]}
+                placeholder={`step ${i + 1}…`}
+                placeholderTextColor={colors.muted}
+                value={step.instruction}
+                onChangeText={(v) => {
+                  const next = [...steps];
+                  next[i] = { ...next[i], instruction: v };
+                  setSteps(next);
+                }}
+                multiline
+              />
+              {steps.length > 1 && (
+                <Pressable
+                  style={styles.removeBtn}
+                  onPress={() => setSteps(prev => prev.filter((_, idx) => idx !== i).map((s, idx) => ({ ...s, order: idx + 1 })))}
+                >
+                  <Text style={styles.removeBtnText}>×</Text>
+                </Pressable>
+              )}
+            </View>
+          ))}
+          <Pressable
+            style={{ paddingVertical: 10, marginBottom: 20 }}
+            onPress={() => setSteps(prev => [...prev, { order: prev.length + 1, instruction: '' }])}
+          >
+            <Text style={styles.linkText}>+ add step</Text>
+          </Pressable>
+
+          {/* Tips */}
+          <Text style={styles.blockLabel}>tips & notes (optional)</Text>
+          {tips.map((tip, i) => (
+            <View key={i} style={styles.ingredientRow}>
+              <TextInput
+                style={[styles.smallInput, { flex: 1 }]}
+                placeholder="tip…"
+                placeholderTextColor={colors.muted}
+                value={tip.text}
+                onChangeText={(v) => {
+                  const next = [...tips];
+                  next[i] = { text: v };
+                  setTips(next);
+                }}
+                multiline
+              />
+              <Pressable
+                style={styles.removeBtn}
+                onPress={() => setTips(prev => prev.filter((_, idx) => idx !== i))}
+              >
+                <Text style={styles.removeBtnText}>×</Text>
+              </Pressable>
+            </View>
+          ))}
+          <Pressable
+            style={{ paddingVertical: 10, marginBottom: 16 }}
+            onPress={() => setTips(prev => [...prev, { text: '' }])}
+          >
+            <Text style={styles.linkText}>+ add tip</Text>
+          </Pressable>
+
+          {importError ? <Text style={styles.errorText}>{importError}</Text> : null}
+
+          {/* Save button */}
+          <Pressable
+            style={[styles.primaryBtn, { marginBottom: 32 }, saving && styles.primaryBtnDisabled]}
             onPress={handleSave}
             disabled={saving}
           >
-            {saving ? (
-              <ActivityIndicator color="#EDE8DC" size="small" />
-            ) : (
-              <Text style={{
-                fontFamily: 'DMMono_400Regular',
-                fontSize: 11,
-                letterSpacing: 2,
-                textTransform: 'uppercase',
-                color: '#EDE8DC',
-              }}>
-                Save
-              </Text>
-            )}
-          </TouchableOpacity>
-        </View>
-
-        {sourceCredit && (
-          <View style={{
-            backgroundColor: '#EEE8DF',
-            borderWidth: 1,
-            borderColor: '#D5CCC0',
-            padding: 12,
-            marginBottom: 16,
-          }}>
-            <Text style={{
-              fontFamily: 'DMMono_400Regular',
-              fontSize: 10,
-              color: '#A09590',
-              letterSpacing: 0.5,
-            }}>
-              Credit: {sourceCredit} {sourceName ? `on ${sourceName}` : ''}
-            </Text>
-          </View>
-        )}
-
-        {/* Title */}
-        <TextInput
-          style={{
-            borderBottomWidth: 1,
-            borderBottomColor: '#D5CCC0',
-            paddingVertical: 10,
-            color: '#1C1712',
-            fontFamily: 'CormorantGaramond_600SemiBold',
-            fontSize: 26,
-            backgroundColor: 'transparent',
-            marginBottom: 16,
-          }}
-          placeholder="Recipe Title"
-          placeholderTextColor="#A09590"
-          value={title}
-          onChangeText={setTitle}
-        />
-
-        {/* Description */}
-        <TextInput
-          style={{
-            borderBottomWidth: 1,
-            borderBottomColor: '#D5CCC0',
-            paddingVertical: 10,
-            color: '#1C1712',
-            fontFamily: 'Lora_400Regular',
-            fontSize: 14,
-            backgroundColor: 'transparent',
-            marginBottom: 24,
-          }}
-          placeholder="Description (optional)"
-          placeholderTextColor="#A09590"
-          value={description}
-          onChangeText={setDescription}
-          multiline
-        />
-
-        {/* Meta row */}
-        <View style={{ flexDirection: 'row', gap: 12, marginBottom: 24 }}>
-          <TextInput
-            style={{
-              flex: 1,
-              borderBottomWidth: 1,
-              borderBottomColor: '#D5CCC0',
-              paddingVertical: 8,
-              color: '#1C1712',
-              fontFamily: 'DMMono_400Regular',
-              fontSize: 13,
-              backgroundColor: 'transparent',
-              textAlign: 'center',
-            }}
-            placeholder="Prep min"
-            placeholderTextColor="#A09590"
-            value={prepTime}
-            onChangeText={setPrepTime}
-            keyboardType="number-pad"
-          />
-          <TextInput
-            style={{
-              flex: 1,
-              borderBottomWidth: 1,
-              borderBottomColor: '#D5CCC0',
-              paddingVertical: 8,
-              color: '#1C1712',
-              fontFamily: 'DMMono_400Regular',
-              fontSize: 13,
-              backgroundColor: 'transparent',
-              textAlign: 'center',
-            }}
-            placeholder="Cook min"
-            placeholderTextColor="#A09590"
-            value={cookTime}
-            onChangeText={setCookTime}
-            keyboardType="number-pad"
-          />
-          <TextInput
-            style={{
-              flex: 1,
-              borderBottomWidth: 1,
-              borderBottomColor: '#D5CCC0',
-              paddingVertical: 8,
-              color: '#1C1712',
-              fontFamily: 'DMMono_400Regular',
-              fontSize: 13,
-              backgroundColor: 'transparent',
-              textAlign: 'center',
-            }}
-            placeholder="Serves"
-            placeholderTextColor="#A09590"
-            value={servings}
-            onChangeText={setServings}
-            keyboardType="number-pad"
-          />
-        </View>
-
-        {/* Difficulty */}
-        <Text style={{
-          fontFamily: 'DMMono_400Regular',
-          fontSize: 10,
-          letterSpacing: 2,
-          textTransform: 'uppercase',
-          color: '#A09590',
-          marginBottom: 12,
-        }}>
-          Difficulty
-        </Text>
-        <View style={{ flexDirection: 'row', gap: 8, marginBottom: 24 }}>
-          {(['easy', 'medium', 'hard'] as Difficulty[]).map((d) => (
-            <TouchableOpacity
-              key={d}
-              onPress={() => setDifficulty(d)}
-              style={{
-                flex: 1,
-                paddingVertical: 10,
-                alignItems: 'center',
-                borderWidth: 1,
-                borderColor: difficulty === d ? '#C4622D' : '#BEB0A8',
-              }}
-            >
-              <Text style={{
-                fontFamily: 'DMMono_400Regular',
-                fontSize: 11,
-                letterSpacing: 1,
-                textTransform: 'capitalize',
-                color: difficulty === d ? '#C4622D' : '#A09590',
-              }}>
-                {d}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-
-        {/* Cuisine */}
-        <Text style={{
-          fontFamily: 'DMMono_400Regular',
-          fontSize: 10,
-          letterSpacing: 2,
-          textTransform: 'uppercase',
-          color: '#A09590',
-          marginBottom: 12,
-        }}>
-          Cuisine
-        </Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 24 }}>
-          <View style={{ flexDirection: 'row', gap: 8 }}>
-            {CUISINES.filter(c => c !== 'All').map((c) => (
-              <TouchableOpacity
-                key={c}
-                onPress={() => setCuisine(cuisine === c ? '' : c)}
-                style={{
-                  paddingHorizontal: 12,
-                  paddingVertical: 6,
-                  borderWidth: 1,
-                  borderColor: cuisine === c ? '#C4622D' : '#BEB0A8',
-                }}
-              >
-                <Text style={{
-                  fontFamily: 'DMMono_400Regular',
-                  fontSize: 10,
-                  letterSpacing: 1,
-                  color: cuisine === c ? '#C4622D' : '#A09590',
-                }}>
-                  {c}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
+            {saving ? <ActivityIndicator color="#fff" /> : <Text style={styles.primaryBtnText}>save recipe →</Text>}
+          </Pressable>
         </ScrollView>
-
-        {/* Ingredients */}
-        <Text style={{
-          fontFamily: 'DMMono_400Regular',
-          fontSize: 10,
-          letterSpacing: 2,
-          textTransform: 'uppercase',
-          color: '#A09590',
-          marginBottom: 12,
-        }}>
-          Ingredients
-        </Text>
-        {ingredients.map((ing, i) => (
-          <View key={i} style={{ flexDirection: 'row', gap: 8, marginBottom: 10 }}>
-            <TextInput
-              style={{
-                width: 56,
-                borderBottomWidth: 1,
-                borderBottomColor: '#D5CCC0',
-                paddingVertical: 8,
-                color: '#C4622D',
-                fontFamily: 'DMMono_500Medium',
-                fontSize: 13,
-                backgroundColor: 'transparent',
-                textAlign: 'center',
-              }}
-              placeholder="Amt"
-              placeholderTextColor="#A09590"
-              value={ing.amount}
-              onChangeText={(v) => {
-                const next = [...ingredients];
-                next[i] = { ...next[i], amount: v };
-                setIngredients(next);
-              }}
-            />
-            <TextInput
-              style={{
-                width: 56,
-                borderBottomWidth: 1,
-                borderBottomColor: '#D5CCC0',
-                paddingVertical: 8,
-                color: '#C4622D',
-                fontFamily: 'DMMono_500Medium',
-                fontSize: 13,
-                backgroundColor: 'transparent',
-                textAlign: 'center',
-              }}
-              placeholder="Unit"
-              placeholderTextColor="#A09590"
-              value={ing.unit}
-              onChangeText={(v) => {
-                const next = [...ingredients];
-                next[i] = { ...next[i], unit: v };
-                setIngredients(next);
-              }}
-            />
-            <TextInput
-              style={{
-                flex: 1,
-                borderBottomWidth: 1,
-                borderBottomColor: '#D5CCC0',
-                paddingVertical: 8,
-                color: '#1C1712',
-                fontFamily: 'Lora_400Regular',
-                fontSize: 14,
-                backgroundColor: 'transparent',
-              }}
-              placeholder="Ingredient"
-              placeholderTextColor="#A09590"
-              value={ing.name}
-              onChangeText={(v) => {
-                const next = [...ingredients];
-                next[i] = { ...next[i], name: v };
-                setIngredients(next);
-              }}
-            />
-            {ingredients.length > 1 && (
-              <TouchableOpacity
-                style={{ width: 32, alignItems: 'center', justifyContent: 'center' }}
-                onPress={() => setIngredients(prev => prev.filter((_, idx) => idx !== i))}
-              >
-                <Text style={{ fontFamily: 'DMMono_400Regular', fontSize: 16, color: '#A09590' }}>×</Text>
-              </TouchableOpacity>
-            )}
-          </View>
-        ))}
-        <TouchableOpacity
-          style={{ paddingVertical: 10, marginBottom: 24 }}
-          onPress={() => setIngredients(prev => [...prev, { amount: '', unit: '', name: '' }])}
-        >
-          <Text style={{
-            fontFamily: 'DMMono_400Regular',
-            fontSize: 11,
-            letterSpacing: 1,
-            color: '#C4622D',
-          }}>
-            + Add ingredient
-          </Text>
-        </TouchableOpacity>
-
-        {/* Steps */}
-        <Text style={{
-          fontFamily: 'DMMono_400Regular',
-          fontSize: 10,
-          letterSpacing: 2,
-          textTransform: 'uppercase',
-          color: '#A09590',
-          marginBottom: 12,
-        }}>
-          Steps
-        </Text>
-        {steps.map((step, i) => (
-          <View key={i} style={{ flexDirection: 'row', gap: 12, marginBottom: 12 }}>
-            <View style={{
-              width: 26,
-              height: 26,
-              backgroundColor: 'transparent',
-              borderWidth: 1,
-              borderColor: '#C4622D',
-              alignItems: 'center',
-              justifyContent: 'center',
-              marginTop: 8,
-              flexShrink: 0,
-            }}>
-              <Text style={{
-                fontFamily: 'DMMono_500Medium',
-                fontSize: 11,
-                color: '#C4622D',
-              }}>
-                {i + 1}
-              </Text>
-            </View>
-            <TextInput
-              style={{
-                flex: 1,
-                borderBottomWidth: 1,
-                borderBottomColor: '#D5CCC0',
-                paddingVertical: 8,
-                color: '#1C1712',
-                fontFamily: 'Lora_400Regular',
-                fontSize: 14,
-                backgroundColor: 'transparent',
-              }}
-              placeholder={`Step ${i + 1}...`}
-              placeholderTextColor="#A09590"
-              value={step.instruction}
-              onChangeText={(v) => {
-                const next = [...steps];
-                next[i] = { ...next[i], instruction: v };
-                setSteps(next);
-              }}
-              multiline
-            />
-            {steps.length > 1 && (
-              <TouchableOpacity
-                style={{ width: 32, alignItems: 'center', justifyContent: 'center' }}
-                onPress={() => setSteps(prev => prev.filter((_, idx) => idx !== i).map((s, idx) => ({ ...s, order: idx + 1 })))}
-              >
-                <Text style={{ fontFamily: 'DMMono_400Regular', fontSize: 16, color: '#A09590' }}>×</Text>
-              </TouchableOpacity>
-            )}
-          </View>
-        ))}
-        <TouchableOpacity
-          style={{ paddingVertical: 10, marginBottom: 24 }}
-          onPress={() => setSteps(prev => [...prev, { order: prev.length + 1, instruction: '' }])}
-        >
-          <Text style={{
-            fontFamily: 'DMMono_400Regular',
-            fontSize: 11,
-            letterSpacing: 1,
-            color: '#C4622D',
-          }}>
-            + Add step
-          </Text>
-        </TouchableOpacity>
-
-        {/* Tips */}
-        <Text style={{
-          fontFamily: 'DMMono_400Regular',
-          fontSize: 10,
-          letterSpacing: 2,
-          textTransform: 'uppercase',
-          color: '#A09590',
-          marginBottom: 12,
-        }}>
-          Tips & Notes (optional)
-        </Text>
-        {tips.map((tip, i) => (
-          <View key={i} style={{ flexDirection: 'row', gap: 8, marginBottom: 10 }}>
-            <TextInput
-              style={{
-                flex: 1,
-                borderBottomWidth: 1,
-                borderBottomColor: '#D5CCC0',
-                paddingVertical: 8,
-                color: '#1C1712',
-                fontFamily: 'Lora_400Regular',
-                fontSize: 14,
-                backgroundColor: 'transparent',
-              }}
-              placeholder="Tip..."
-              placeholderTextColor="#A09590"
-              value={tip.text}
-              onChangeText={(v) => {
-                const next = [...tips];
-                next[i] = { text: v };
-                setTips(next);
-              }}
-              multiline
-            />
-            <TouchableOpacity
-              style={{ width: 32, alignItems: 'center', justifyContent: 'center' }}
-              onPress={() => setTips(prev => prev.filter((_, idx) => idx !== i))}
-            >
-              <Text style={{ fontFamily: 'DMMono_400Regular', fontSize: 16, color: '#A09590' }}>×</Text>
-            </TouchableOpacity>
-          </View>
-        ))}
-        <TouchableOpacity
-          style={{ paddingVertical: 10, marginBottom: 16 }}
-          onPress={() => setTips(prev => [...prev, { text: '' }])}
-        >
-          <Text style={{
-            fontFamily: 'DMMono_400Regular',
-            fontSize: 11,
-            letterSpacing: 1,
-            color: '#C4622D',
-          }}>
-            + Add tip
-          </Text>
-        </TouchableOpacity>
-
-        {/* Save button */}
-        <TouchableOpacity
-          style={{
-            backgroundColor: '#C4622D',
-            paddingVertical: 18,
-            alignItems: 'center',
-            marginBottom: 32,
-          }}
-          onPress={handleSave}
-          disabled={saving}
-        >
-          {saving ? (
-            <ActivityIndicator color="#EDE8DC" />
-          ) : (
-            <Text style={{
-              fontFamily: 'DMMono_400Regular',
-              fontSize: 12,
-              letterSpacing: 2.5,
-              textTransform: 'uppercase',
-              color: '#EDE8DC',
-            }}>
-              Save Recipe
-            </Text>
-          )}
-        </TouchableOpacity>
-      </ScrollView>
-    </KeyboardAvoidingView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  safe: { flex: 1, backgroundColor: colors.bone },
+  scroll: { paddingHorizontal: 22, paddingBottom: 48, paddingTop: 12 },
+  subtitle: {
+    fontFamily: 'Inter_500Medium',
+    fontSize: 13,
+    color: colors.muted,
+    marginTop: 6,
+    marginBottom: 18,
+  },
+
+  modeRow: { marginBottom: 18 },
+  modePill: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 999,
+    marginRight: 6,
+  },
+  modePillActive: { backgroundColor: colors.ink },
+  modePillInactive: { backgroundColor: colors.card, ...shadow.card },
+  modePillText: { fontFamily: 'Inter_700Bold', fontSize: 12, letterSpacing: -0.1 },
+  modePillTextActive: { color: '#fff' },
+  modePillTextInactive: { color: colors.inkSoft },
+
+  fieldCard: {
+    backgroundColor: colors.card,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: 14,
+    marginBottom: 12,
+  },
+  fieldLabel: {
+    fontFamily: 'Inter_700Bold',
+    fontSize: 11,
+    color: colors.muted,
+    letterSpacing: 1.0,
+    textTransform: 'uppercase',
+    marginBottom: 6,
+  },
+  inputInline: {
+    fontFamily: 'Inter_500Medium',
+    fontSize: 14,
+    color: colors.ink,
+    paddingVertical: 4,
+  },
+  titleInput: {
+    fontFamily: 'Inter_800ExtraBold',
+    fontSize: 20,
+    color: colors.ink,
+    letterSpacing: -0.4,
+    paddingVertical: 4,
+  },
+
+  errorText: {
+    color: colors.clay,
+    fontFamily: 'Inter_500Medium',
+    fontSize: 12,
+    marginTop: 4,
+    marginBottom: 12,
+  },
+  linkText: {
+    color: colors.clay,
+    fontFamily: 'Inter_700Bold',
+    fontSize: 12,
+  },
+
+  primaryBtn: {
+    backgroundColor: colors.clay,
+    borderRadius: 999,
+    paddingVertical: 17,
+    alignItems: 'center',
+    marginTop: 6,
+    ...shadow.cta,
+  },
+  primaryBtnDisabled: { opacity: 0.5 },
+  primaryBtnText: { fontFamily: 'Inter_700Bold', fontSize: 14, color: '#fff' },
+
+  infoCard: {
+    backgroundColor: colors.claySoft,
+    borderRadius: 14,
+    padding: 16,
+    marginBottom: 16,
+  },
+  infoBody: {
+    fontFamily: 'Inter_500Medium',
+    fontSize: 13,
+    color: colors.ink,
+    lineHeight: 20,
+    marginTop: 4,
+  },
+  loadingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+    paddingVertical: 14,
+    marginBottom: 8,
+  },
+  loadingText: { fontFamily: 'Inter_500Medium', fontSize: 12, color: colors.muted },
+
+  dividerRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 16, marginTop: 8 },
+  dividerLine: { flex: 1, height: 1, backgroundColor: colors.border },
+  dividerText: {
+    fontFamily: 'Inter_700Bold',
+    fontSize: 10,
+    color: colors.muted,
+    marginHorizontal: 12,
+    letterSpacing: 1.0,
+  },
+
+  headRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  iconBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: colors.card,
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...shadow.cta,
+  },
+  iconBtnText: {
+    fontFamily: 'Inter_700Bold',
+    fontSize: 16,
+    color: colors.ink,
+  },
+  saveBtn: {
+    backgroundColor: colors.clay,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 999,
+    ...shadow.cta,
+  },
+  saveBtnText: {
+    fontFamily: 'Inter_700Bold',
+    fontSize: 12,
+    color: '#fff',
+  },
+
+  creditCard: {
+    backgroundColor: colors.claySoft,
+    borderRadius: 14,
+    padding: 12,
+    marginBottom: 12,
+  },
+  creditText: {
+    fontFamily: 'Inter_500Medium',
+    fontSize: 12,
+    color: colors.inkSoft,
+  },
+
+  metaRow: { flexDirection: 'row', gap: 8, marginBottom: 6 },
+
+  blockLabel: {
+    fontFamily: 'Inter_700Bold',
+    fontSize: 11,
+    color: colors.muted,
+    letterSpacing: 1.0,
+    textTransform: 'uppercase',
+    marginTop: 12,
+    marginBottom: 10,
+  },
+
+  chipsRow: { flexDirection: 'row', gap: 6, marginBottom: 16 },
+  chip: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 999,
+    marginRight: 6,
+  },
+  chipActive: { backgroundColor: colors.ink },
+  chipInactive: { backgroundColor: colors.card, ...shadow.card },
+  chipText: { fontFamily: 'Inter_700Bold', fontSize: 12, letterSpacing: -0.1, textTransform: 'capitalize' },
+  chipTextActive: { color: '#fff' },
+  chipTextInactive: { color: colors.inkSoft },
+
+  ingredientRow: { flexDirection: 'row', gap: 8, marginBottom: 10, alignItems: 'center' },
+  smallInput: {
+    backgroundColor: colors.card,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: colors.border,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontFamily: 'Inter_500Medium',
+    fontSize: 14,
+    color: colors.ink,
+  },
+  removeBtn: { width: 32, height: 32, alignItems: 'center', justifyContent: 'center' },
+  removeBtnText: { fontFamily: 'Inter_700Bold', fontSize: 18, color: colors.muted },
+
+  stepRow: { flexDirection: 'row', gap: 10, marginBottom: 12, alignItems: 'flex-start' },
+  stepNum: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: colors.clay,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 6,
+  },
+  stepNumText: { fontFamily: 'Inter_700Bold', fontSize: 12, color: '#fff' },
+});

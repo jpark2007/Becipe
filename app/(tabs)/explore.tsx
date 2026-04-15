@@ -1,19 +1,23 @@
-import { useState, useCallback } from 'react';
+import { useState } from 'react';
 import {
   View,
   Text,
   TextInput,
   FlatList,
   ScrollView,
-  TouchableOpacity,
+  Pressable,
   ActivityIndicator,
   Image,
+  StyleSheet,
+  SafeAreaView,
 } from 'react-native';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/store/auth';
 import { RecipeCard } from '@/components/RecipeCard';
+import { EditorialHeading } from '@/components/EditorialHeading';
+import { colors, shadow } from '@/lib/theme';
 import {
   CUISINES,
   type Cuisine,
@@ -117,7 +121,6 @@ async function fetchByIngredients(ingredients: string[]) {
   });
 
   if (error) {
-    // Fallback: manual query
     const { data: flat } = await supabase
       .from('recipe_ingredients_flat')
       .select('recipe_id, ingredient_name')
@@ -189,7 +192,7 @@ export default function ExploreScreen() {
 
   const followMutation = useMutation({
     mutationFn: async (targetId: string) => {
-      const { error } = await supabase.from('follows').insert({
+      const { error } = await (supabase.from('follows') as any).insert({
         follower_id: user!.id,
         following_id: targetId,
       });
@@ -226,128 +229,69 @@ export default function ExploreScreen() {
 
   const smartLabel = getSmartSortLabel();
 
-  return (
-    <View style={{ flex: 1, backgroundColor: '#F8F4EE' }}>
-      {/* Mode toggle */}
-      <View style={{
-        flexDirection: 'row',
-        backgroundColor: '#EEE8DF',
-        borderBottomWidth: 1,
-        borderBottomColor: '#D5CCC0',
-        paddingHorizontal: 24,
-        paddingTop: 16,
-        paddingBottom: 0,
-        gap: 32,
-      }}>
-        <TouchableOpacity
-          onPress={() => setMode('browse')}
-          style={{ paddingBottom: 12 }}
-        >
-          <Text style={{
-            fontFamily: 'DMMono_400Regular',
-            fontSize: 12,
-            letterSpacing: 1.5,
-            textTransform: 'uppercase',
-            color: mode === 'browse' ? '#1C1712' : '#A09590',
-          }}>
-            Browse
-          </Text>
-          {mode === 'browse' && (
-            <View style={{
-              position: 'absolute',
-              bottom: 0,
-              left: 0,
-              right: 0,
-              height: 2,
-              backgroundColor: '#C4622D',
-            }} />
-          )}
-        </TouchableOpacity>
-        <TouchableOpacity
-          onPress={() => setMode('fridge')}
-          style={{ paddingBottom: 12 }}
-        >
-          <Text style={{
-            fontFamily: 'DMMono_400Regular',
-            fontSize: 12,
-            letterSpacing: 1.5,
-            textTransform: 'uppercase',
-            color: mode === 'fridge' ? '#1C1712' : '#A09590',
-          }}>
-            My Fridge
-          </Text>
-          {mode === 'fridge' && (
-            <View style={{
-              position: 'absolute',
-              bottom: 0,
-              left: 0,
-              right: 0,
-              height: 2,
-              backgroundColor: '#C4622D',
-            }} />
-          )}
-        </TouchableOpacity>
-        <TouchableOpacity
-          onPress={() => setMode('people')}
-          style={{ paddingBottom: 12 }}
-        >
-          <Text style={{
-            fontFamily: 'DMMono_400Regular',
-            fontSize: 12,
-            letterSpacing: 1.5,
-            textTransform: 'uppercase',
-            color: mode === 'people' ? '#1C1712' : '#A09590',
-          }}>
-            People
-          </Text>
-          {mode === 'people' && (
-            <View style={{
-              position: 'absolute',
-              bottom: 0,
-              left: 0,
-              right: 0,
-              height: 2,
-              backgroundColor: '#C4622D',
-            }} />
-          )}
-        </TouchableOpacity>
-      </View>
+  const ModePill = ({ label, active, onPress }: { label: string; active: boolean; onPress: () => void }) => (
+    <Pressable
+      onPress={onPress}
+      style={[styles.modePill, active ? styles.modePillActive : styles.modePillInactive]}
+    >
+      <Text style={[styles.modePillText, active ? styles.modePillTextActive : styles.modePillTextInactive]}>
+        {label}
+      </Text>
+    </Pressable>
+  );
 
+  const Chip = ({ label, active, onPress }: { label: string; active: boolean; onPress: () => void }) => (
+    <Pressable
+      onPress={onPress}
+      style={[styles.chip, active ? styles.chipActive : styles.chipInactive]}
+    >
+      <Text style={[styles.chipText, active ? styles.chipTextActive : styles.chipTextInactive]}>
+        {label}
+      </Text>
+    </Pressable>
+  );
+
+  const HeaderBlock = (
+    <View>
+      <EditorialHeading size={26} emphasis="cooks" emphasisColor="sage">
+        {'What your circle\n'}
+      </EditorialHeading>
+      <Text style={styles.subtitle}>explore, fridge-match, or find people</Text>
+
+      {/* Mode pill tabs */}
+      <View style={styles.modeRow}>
+        <ModePill label="browse" active={mode === 'browse'} onPress={() => setMode('browse')} />
+        <ModePill label="fridge" active={mode === 'fridge'} onPress={() => setMode('fridge')} />
+        <ModePill label="people" active={mode === 'people'} onPress={() => setMode('people')} />
+      </View>
+    </View>
+  );
+
+  return (
+    <SafeAreaView style={styles.safe}>
       {mode === 'people' ? (
         <FlatList
           data={(profiles as any[]) ?? []}
           keyExtractor={(item) => item.id}
-          contentContainerStyle={{ padding: 16 }}
+          contentContainerStyle={{ paddingHorizontal: 22, paddingBottom: 60 }}
           ListHeaderComponent={
             <View>
-              <TextInput
-                style={{
-                  borderBottomWidth: 1,
-                  borderBottomColor: '#D5CCC0',
-                  paddingHorizontal: 0,
-                  paddingVertical: 10,
-                  color: '#1C1712',
-                  fontFamily: 'Lora_400Regular',
-                  fontSize: 15,
-                  marginBottom: 20,
-                  backgroundColor: 'transparent',
-                }}
-                placeholder="Search by name or username..."
-                placeholderTextColor="#A09590"
-                value={peopleSearch}
-                onChangeText={setPeopleSearch}
-              />
+              {HeaderBlock}
+
+              {/* Search */}
+              <View style={styles.searchRow}>
+                <Text style={styles.searchGlyph}>⌕</Text>
+                <TextInput
+                  style={styles.searchInput}
+                  placeholder="search by name or username"
+                  placeholderTextColor={colors.muted}
+                  value={peopleSearch}
+                  onChangeText={setPeopleSearch}
+                />
+              </View>
+
               {!peopleSearch.trim() && (
-                <Text style={{
-                  fontFamily: 'DMMono_500Medium',
-                  fontSize: 11,
-                  letterSpacing: 1.5,
-                  textTransform: 'uppercase',
-                  color: '#A09590',
-                  marginBottom: 12,
-                }}>
-                  Suggested cooks
-                </Text>
+                <Text style={styles.sectionLabel}>suggested cooks</Text>
               )}
             </View>
           }
@@ -357,106 +301,47 @@ export default function ExploreScreen() {
             const initial = (item.display_name?.[0] || item.username?.[0] || '?').toUpperCase();
 
             return (
-              <TouchableOpacity
+              <Pressable
                 onPress={() => router.push(`/user/${item.id}`)}
-                style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  paddingVertical: 10,
-                  borderBottomWidth: 1,
-                  borderBottomColor: '#D5CCC0',
-                }}
+                style={styles.personRow}
               >
                 {item.avatar_url ? (
-                  <Image
-                    source={{ uri: item.avatar_url }}
-                    style={{ width: 40, height: 40, borderRadius: 4, backgroundColor: '#EEE8DF' }}
-                  />
+                  <Image source={{ uri: item.avatar_url }} style={styles.avatar} />
                 ) : (
-                  <View style={{
-                    width: 40,
-                    height: 40,
-                    borderRadius: 4,
-                    backgroundColor: '#C4622D',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}>
-                    <Text style={{
-                      fontFamily: 'DMMono_500Medium',
-                      fontSize: 16,
-                      color: '#F8F4EE',
-                    }}>
-                      {initial}
-                    </Text>
+                  <View style={[styles.avatar, { backgroundColor: colors.clay, alignItems: 'center', justifyContent: 'center' }]}>
+                    <Text style={styles.avatarText}>{initial}</Text>
                   </View>
                 )}
 
                 <View style={{ flex: 1, marginLeft: 12 }}>
-                  <Text style={{
-                    fontFamily: 'DMMono_500Medium',
-                    fontSize: 12,
-                    color: '#1C1712',
-                  }}>
-                    {item.display_name || item.username}
-                  </Text>
-                  {item.username && (
-                    <Text style={{
-                      fontFamily: 'DMMono_400Regular',
-                      fontSize: 10,
-                      color: '#A09590',
-                      marginTop: 2,
-                    }}>
-                      @{item.username}
-                    </Text>
-                  )}
+                  <Text style={styles.personName}>{item.display_name || item.username}</Text>
+                  {item.username && <Text style={styles.personHandle}>@{item.username}</Text>}
                 </View>
 
                 {!isSelf && (
-                  <TouchableOpacity
+                  <Pressable
                     onPress={() => {
-                      if (isFollowing) {
-                        unfollowMutation.mutate(item.id);
-                      } else {
-                        followMutation.mutate(item.id);
-                      }
+                      if (isFollowing) unfollowMutation.mutate(item.id);
+                      else followMutation.mutate(item.id);
                     }}
-                    style={{
-                      paddingHorizontal: 14,
-                      paddingVertical: 6,
-                      borderWidth: 1,
-                      borderColor: '#C4622D',
-                      backgroundColor: isFollowing ? 'transparent' : '#C4622D',
-                      borderRadius: 4,
-                    }}
+                    style={[
+                      styles.followBtn,
+                      isFollowing ? styles.followBtnFollowing : styles.followBtnFollow,
+                    ]}
                   >
-                    <Text style={{
-                      fontFamily: 'DMMono_500Medium',
-                      fontSize: 10,
-                      letterSpacing: 1,
-                      textTransform: 'uppercase',
-                      color: isFollowing ? '#C4622D' : '#F8F4EE',
-                    }}>
-                      {isFollowing ? 'Following' : 'Follow'}
+                    <Text style={isFollowing ? styles.followBtnTextFollowing : styles.followBtnTextFollow}>
+                      {isFollowing ? 'following' : 'follow'}
                     </Text>
-                  </TouchableOpacity>
+                  </Pressable>
                 )}
-              </TouchableOpacity>
+              </Pressable>
             );
           }}
           ListEmptyComponent={
             peopleLoading ? (
-              <ActivityIndicator color="#C4622D" style={{ marginTop: 32 }} />
+              <ActivityIndicator color={colors.sage} style={{ marginTop: 32 }} />
             ) : (
-              <Text style={{
-                color: '#A09590',
-                textAlign: 'center',
-                marginTop: 32,
-                fontFamily: 'DMMono_400Regular',
-                fontSize: 12,
-                letterSpacing: 1,
-              }}>
-                No users found
-              </Text>
+              <Text style={styles.empty}>no users found</Text>
             )
           }
         />
@@ -465,109 +350,53 @@ export default function ExploreScreen() {
           data={recipes as any[]}
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => <RecipeCard recipe={item} showCreator />}
-          contentContainerStyle={{ padding: 16 }}
+          contentContainerStyle={{ paddingHorizontal: 22, paddingBottom: 60 }}
           ListHeaderComponent={
             <View>
+              {HeaderBlock}
+
               {/* Search */}
-              <TextInput
-                style={{
-                  borderBottomWidth: 1,
-                  borderBottomColor: '#D5CCC0',
-                  paddingHorizontal: 0,
-                  paddingVertical: 10,
-                  color: '#1C1712',
-                  fontFamily: 'Lora_400Regular',
-                  fontSize: 15,
-                  marginBottom: 20,
-                  backgroundColor: 'transparent',
-                }}
-                placeholder="Search recipes..."
-                placeholderTextColor="#A09590"
-                value={searchText}
-                onChangeText={setSearchText}
-              />
+              <View style={styles.searchRow}>
+                <Text style={styles.searchGlyph}>⌕</Text>
+                <TextInput
+                  style={styles.searchInput}
+                  placeholder="search recipes"
+                  placeholderTextColor={colors.muted}
+                  value={searchText}
+                  onChangeText={setSearchText}
+                />
+              </View>
 
               {/* Sort chips */}
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 16 }}>
-                <View style={{ flexDirection: 'row', gap: 24, paddingRight: 16 }}>
-                  {SORT_OPTIONS.map((opt) => (
-                    <TouchableOpacity
-                      key={opt.key}
-                      onPress={() => setSort(opt.key)}
-                      style={{ paddingBottom: 8 }}
-                    >
-                      <Text style={{
-                        fontFamily: 'DMMono_400Regular',
-                        fontSize: 11,
-                        letterSpacing: 1.2,
-                        textTransform: 'uppercase',
-                        color: sort === opt.key ? '#C4622D' : '#A09590',
-                      }}>
-                        {opt.key === 'smart' ? smartLabel : opt.label}
-                      </Text>
-                      {sort === opt.key && (
-                        <View style={{
-                          position: 'absolute',
-                          bottom: 0,
-                          left: 0,
-                          right: 0,
-                          height: 1,
-                          backgroundColor: '#C4622D',
-                        }} />
-                      )}
-                    </TouchableOpacity>
-                  ))}
-                </View>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipScroll}>
+                {SORT_OPTIONS.map((opt) => (
+                  <Chip
+                    key={opt.key}
+                    label={opt.key === 'smart' ? smartLabel : opt.label}
+                    active={sort === opt.key}
+                    onPress={() => setSort(opt.key)}
+                  />
+                ))}
               </ScrollView>
 
               {/* Cuisine chips */}
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 20 }}>
-                <View style={{ flexDirection: 'row', gap: 24, paddingRight: 16 }}>
-                  {CUISINES.map((c) => (
-                    <TouchableOpacity
-                      key={c}
-                      onPress={() => setCuisine(c)}
-                      style={{ paddingBottom: 8 }}
-                    >
-                      <Text style={{
-                        fontFamily: 'DMMono_400Regular',
-                        fontSize: 11,
-                        letterSpacing: 1.2,
-                        textTransform: 'uppercase',
-                        color: cuisine === c ? '#C4622D' : '#A09590',
-                      }}>
-                        {c}
-                      </Text>
-                      {cuisine === c && (
-                        <View style={{
-                          position: 'absolute',
-                          bottom: 0,
-                          left: 0,
-                          right: 0,
-                          height: 1,
-                          backgroundColor: '#C4622D',
-                        }} />
-                      )}
-                    </TouchableOpacity>
-                  ))}
-                </View>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipScroll}>
+                {CUISINES.map((c) => (
+                  <Chip
+                    key={c}
+                    label={c}
+                    active={cuisine === c}
+                    onPress={() => setCuisine(c)}
+                  />
+                ))}
               </ScrollView>
             </View>
           }
           ListEmptyComponent={
             isLoading ? (
-              <ActivityIndicator color="#C4622D" style={{ marginTop: 32 }} />
+              <ActivityIndicator color={colors.sage} style={{ marginTop: 32 }} />
             ) : (
-              <Text style={{
-                color: '#A09590',
-                textAlign: 'center',
-                marginTop: 32,
-                fontFamily: 'DMMono_400Regular',
-                fontSize: 12,
-                letterSpacing: 1,
-              }}>
-                No recipes found
-              </Text>
+              <Text style={styles.empty}>no recipes found</Text>
             )
           }
         />
@@ -578,141 +407,203 @@ export default function ExploreScreen() {
           renderItem={({ item }) => (
             <View>
               {item.match_count !== undefined && (
-                <Text style={{
-                  color: '#C4622D',
-                  fontFamily: 'DMMono_400Regular',
-                  fontSize: 11,
-                  letterSpacing: 0.8,
-                  paddingHorizontal: 16,
-                  paddingTop: 8,
-                }}>
+                <Text style={styles.matchText}>
                   {item.match_count} of {item.total_ingredients} ingredients matched
                 </Text>
               )}
               <RecipeCard recipe={item} showCreator />
             </View>
           )}
-          contentContainerStyle={{ padding: 16 }}
+          contentContainerStyle={{ paddingHorizontal: 22, paddingBottom: 60 }}
           ListHeaderComponent={
             <View>
-              <Text style={{
-                fontFamily: 'CormorantGaramond_400Regular',
-                fontSize: 26,
-                color: '#1C1712',
-                marginBottom: 6,
-              }}>
-                What's in my fridge?
-              </Text>
-              <Text style={{
-                fontFamily: 'DMMono_400Regular',
-                fontSize: 11,
-                color: '#A09590',
-                letterSpacing: 0.5,
-                marginBottom: 20,
-              }}>
-                Add ingredients you have and we'll find matching recipes
-              </Text>
+              {HeaderBlock}
 
-              {/* Ingredient input */}
-              <View style={{ flexDirection: 'row', gap: 12, marginBottom: 16, alignItems: 'flex-end' }}>
+              <EditorialHeading size={22} emphasis="fridge?" emphasisColor="clay">
+                {"What's in your\n"}
+              </EditorialHeading>
+              <Text style={styles.subtitle}>add ingredients you have and we'll match recipes</Text>
+
+              {/* Ingredient input row */}
+              <View style={styles.fridgeRow}>
                 <TextInput
-                  style={{
-                    flex: 1,
-                    borderBottomWidth: 1,
-                    borderBottomColor: '#D5CCC0',
-                    paddingVertical: 10,
-                    color: '#1C1712',
-                    fontFamily: 'Lora_400Regular',
-                    fontSize: 15,
-                    backgroundColor: 'transparent',
-                  }}
-                  placeholder="Add ingredient..."
-                  placeholderTextColor="#A09590"
+                  style={[styles.input, { flex: 1 }]}
+                  placeholder="add ingredient"
+                  placeholderTextColor={colors.muted}
                   value={fridgeInput}
                   onChangeText={setFridgeInput}
                   onSubmitEditing={addFridgeIngredient}
                   returnKeyType="done"
                 />
-                <TouchableOpacity
-                  style={{
-                    paddingHorizontal: 16,
-                    paddingVertical: 10,
-                    borderWidth: 1,
-                    borderColor: '#C4622D',
-                  }}
-                  onPress={addFridgeIngredient}
-                >
-                  <Text style={{
-                    fontFamily: 'DMMono_400Regular',
-                    fontSize: 11,
-                    letterSpacing: 1.2,
-                    textTransform: 'uppercase',
-                    color: '#C4622D',
-                  }}>
-                    Add
-                  </Text>
-                </TouchableOpacity>
+                <Pressable style={styles.addBtn} onPress={addFridgeIngredient}>
+                  <Text style={styles.addBtnText}>add</Text>
+                </Pressable>
               </View>
 
               {/* Ingredient chips */}
               {fridgeIngredients.length > 0 && (
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 20 }}>
-                  <View style={{ flexDirection: 'row', gap: 8, paddingRight: 16 }}>
-                    {fridgeIngredients.map((ing) => (
-                      <TouchableOpacity
-                        key={ing}
-                        style={{
-                          flexDirection: 'row',
-                          alignItems: 'center',
-                          backgroundColor: '#F8F4EE',
-                          borderWidth: 1,
-                          borderColor: '#BEB0A8',
-                          paddingHorizontal: 12,
-                          paddingVertical: 6,
-                          gap: 6,
-                        }}
-                        onPress={() => setFridgeIngredients(prev => prev.filter(i => i !== ing))}
-                      >
-                        <Text style={{
-                          fontFamily: 'DMMono_400Regular',
-                          fontSize: 11,
-                          letterSpacing: 0.8,
-                          color: '#1C1712',
-                        }}>
-                          {ing}
-                        </Text>
-                        <Text style={{
-                          fontFamily: 'DMMono_400Regular',
-                          fontSize: 13,
-                          color: '#A09590',
-                        }}>
-                          ×
-                        </Text>
-                      </TouchableOpacity>
-                    ))}
-                  </View>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipScroll}>
+                  {fridgeIngredients.map((ing) => (
+                    <Pressable
+                      key={ing}
+                      style={[styles.chip, styles.chipInactive, styles.fridgeChip]}
+                      onPress={() => setFridgeIngredients(prev => prev.filter(i => i !== ing))}
+                    >
+                      <Text style={styles.chipTextInactive}>{ing}</Text>
+                      <Text style={styles.removeGlyph}>  ×</Text>
+                    </Pressable>
+                  ))}
                 </ScrollView>
               )}
 
-              {fridgeLoading && <ActivityIndicator color="#C4622D" style={{ marginBottom: 16 }} />}
+              {fridgeLoading && <ActivityIndicator color={colors.sage} style={{ marginBottom: 16 }} />}
             </View>
           }
           ListEmptyComponent={
             fridgeIngredients.length === 0 ? null : (
-              <Text style={{
-                color: '#A09590',
-                textAlign: 'center',
-                marginTop: 16,
-                fontFamily: 'DMMono_400Regular',
-                fontSize: 12,
-                letterSpacing: 1,
-              }}>
-                No recipes found with those ingredients
-              </Text>
+              <Text style={styles.empty}>no recipes matched those ingredients</Text>
             )
           }
         />
       )}
-    </View>
+    </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  safe: { flex: 1, backgroundColor: colors.bone, paddingTop: 8 },
+  subtitle: {
+    fontFamily: 'Inter_500Medium',
+    fontSize: 13,
+    color: colors.muted,
+    marginTop: 6,
+    marginBottom: 18,
+  },
+  modeRow: { flexDirection: 'row', gap: 6, marginBottom: 16 },
+  modePill: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 999,
+    ...shadow.card,
+  },
+  modePillActive: { backgroundColor: colors.ink },
+  modePillInactive: { backgroundColor: colors.card },
+  modePillText: { fontFamily: 'Inter_700Bold', fontSize: 12, letterSpacing: -0.1 },
+  modePillTextActive: { color: '#fff' },
+  modePillTextInactive: { color: colors.inkSoft },
+
+  searchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.card,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: colors.border,
+    paddingHorizontal: 14,
+    paddingVertical: 4,
+    marginBottom: 14,
+  },
+  searchGlyph: {
+    fontFamily: 'Inter_700Bold',
+    fontSize: 16,
+    color: colors.muted,
+    marginRight: 8,
+  },
+  searchInput: {
+    flex: 1,
+    paddingVertical: 12,
+    color: colors.ink,
+    fontFamily: 'Inter_500Medium',
+    fontSize: 14,
+  },
+
+  chipScroll: { marginBottom: 14 },
+  chip: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 999,
+    marginRight: 6,
+  },
+  chipInactive: {
+    backgroundColor: colors.card,
+    ...shadow.card,
+  },
+  chipActive: { backgroundColor: colors.ink },
+  chipText: { fontFamily: 'Inter_700Bold', fontSize: 12, letterSpacing: -0.1 },
+  chipTextInactive: { color: colors.inkSoft },
+  chipTextActive: { color: '#fff' },
+
+  sectionLabel: {
+    fontFamily: 'Inter_700Bold',
+    fontSize: 11,
+    color: colors.muted,
+    letterSpacing: 1.0,
+    textTransform: 'uppercase',
+    marginTop: 4,
+    marginBottom: 10,
+  },
+
+  personRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.card,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: 12,
+    marginBottom: 10,
+  },
+  avatar: { width: 40, height: 40, borderRadius: 20, backgroundColor: colors.card },
+  avatarText: { fontFamily: 'Inter_700Bold', fontSize: 16, color: '#F5E9D3' },
+  personName: { fontFamily: 'Inter_700Bold', fontSize: 14, color: colors.ink },
+  personHandle: { fontFamily: 'Inter_500Medium', fontSize: 12, color: colors.muted, marginTop: 2 },
+
+  followBtn: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 999,
+  },
+  followBtnFollow: { backgroundColor: colors.sage, ...shadow.cta },
+  followBtnFollowing: { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border },
+  followBtnTextFollow: { fontFamily: 'Inter_700Bold', fontSize: 12, color: '#fff' },
+  followBtnTextFollowing: { fontFamily: 'Inter_700Bold', fontSize: 12, color: colors.inkSoft },
+
+  empty: {
+    color: colors.muted,
+    textAlign: 'center',
+    marginTop: 32,
+    fontFamily: 'Inter_500Medium',
+    fontSize: 13,
+  },
+
+  fridgeRow: { flexDirection: 'row', gap: 8, marginBottom: 12, alignItems: 'center' },
+  input: {
+    backgroundColor: colors.card,
+    borderRadius: 14,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: colors.border,
+    fontFamily: 'Inter_500Medium',
+    fontSize: 14,
+    color: colors.ink,
+  },
+  addBtn: {
+    backgroundColor: colors.clay,
+    borderRadius: 999,
+    paddingHorizontal: 18,
+    paddingVertical: 14,
+    ...shadow.cta,
+  },
+  addBtnText: { fontFamily: 'Inter_700Bold', fontSize: 13, color: '#fff' },
+  fridgeChip: { flexDirection: 'row', alignItems: 'center' },
+  removeGlyph: { fontFamily: 'Inter_700Bold', fontSize: 13, color: colors.muted },
+  matchText: {
+    color: colors.sage,
+    fontFamily: 'Inter_700Bold',
+    fontSize: 11,
+    letterSpacing: 0.6,
+    paddingHorizontal: 4,
+    paddingTop: 6,
+    textTransform: 'uppercase',
+  },
+});
