@@ -11,6 +11,7 @@ import {
   Platform,
   StyleSheet,
 } from 'react-native';
+import { INGREDIENTS_SORTED } from '@/lib/ingredients';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useShareIntent } from 'expo-share-intent';
@@ -65,6 +66,7 @@ export default function AddScreen() {
   const [sourceType, setSourceType] = useState<'manual' | 'url' | 'tiktok' | 'instagram' | 'facebook' | 'x' | 'youtube'>('manual');
   const [needsCaption, setNeedsCaption] = useState(false);
   const [pastedCaption, setPastedCaption] = useState('');
+  const [activeIngIdx, setActiveIngIdx] = useState<number | null>(null);
 
   // Auto-trigger import when share intent arrives
   useEffect(() => {
@@ -459,13 +461,18 @@ export default function AddScreen() {
             <Pressable style={styles.iconBtn} onPress={resetToChoose}>
               <Text style={styles.iconBtnText}>←</Text>
             </Pressable>
-            <Pressable
-              style={[styles.saveBtn, saving && styles.primaryBtnDisabled]}
-              onPress={handleSave}
-              disabled={saving}
-            >
-              {saving ? <ActivityIndicator color="#fff" size="small" /> : <Text style={styles.saveBtnText}>save →</Text>}
-            </Pressable>
+            <View style={styles.headRowRight}>
+              <Pressable style={styles.iconBtn} onPress={() => router.push('/voice-dictate' as any)}>
+                <Text style={styles.iconBtnText}>🎤</Text>
+              </Pressable>
+              <Pressable
+                style={[styles.saveBtn, saving && styles.primaryBtnDisabled]}
+                onPress={handleSave}
+                disabled={saving}
+              >
+                {saving ? <ActivityIndicator color="#fff" size="small" /> : <Text style={styles.saveBtnText}>save →</Text>}
+              </Pressable>
+            </View>
           </View>
 
           <EditorialHeading size={26} emphasis="recipe" emphasisColor="clay">
@@ -584,51 +591,79 @@ export default function AddScreen() {
 
           {/* Ingredients */}
           <Text style={styles.blockLabel}>ingredients</Text>
-          {ingredients.map((ing, i) => (
-            <View key={i} style={styles.ingredientRow}>
-              <TextInput
-                style={[styles.smallInput, { width: 56 }]}
-                placeholder="amt"
-                placeholderTextColor={colors.muted}
-                value={ing.amount}
-                onChangeText={(v) => {
-                  const next = [...ingredients];
-                  next[i] = { ...next[i], amount: v };
-                  setIngredients(next);
-                }}
-              />
-              <TextInput
-                style={[styles.smallInput, { width: 56 }]}
-                placeholder="unit"
-                placeholderTextColor={colors.muted}
-                value={ing.unit}
-                onChangeText={(v) => {
-                  const next = [...ingredients];
-                  next[i] = { ...next[i], unit: v };
-                  setIngredients(next);
-                }}
-              />
-              <TextInput
-                style={[styles.smallInput, { flex: 1 }]}
-                placeholder="ingredient"
-                placeholderTextColor={colors.muted}
-                value={ing.name}
-                onChangeText={(v) => {
-                  const next = [...ingredients];
-                  next[i] = { ...next[i], name: v };
-                  setIngredients(next);
-                }}
-              />
-              {ingredients.length > 1 && (
-                <Pressable
-                  style={styles.removeBtn}
-                  onPress={() => setIngredients(prev => prev.filter((_, idx) => idx !== i))}
-                >
-                  <Text style={styles.removeBtnText}>×</Text>
-                </Pressable>
-              )}
-            </View>
-          ))}
+          {ingredients.map((ing, i) => {
+            const suggestions = activeIngIdx === i && ing.name.trim().length > 0
+              ? INGREDIENTS_SORTED.filter((s: string) => s.toLowerCase().includes(ing.name.toLowerCase())).slice(0, 6)
+              : [];
+            return (
+              <View key={i}>
+                <View style={styles.ingredientRow}>
+                  <TextInput
+                    style={[styles.smallInput, { width: 56 }]}
+                    placeholder="amt"
+                    placeholderTextColor={colors.muted}
+                    value={ing.amount}
+                    onChangeText={(v) => {
+                      const next = [...ingredients];
+                      next[i] = { ...next[i], amount: v };
+                      setIngredients(next);
+                    }}
+                  />
+                  <TextInput
+                    style={[styles.smallInput, { width: 56 }]}
+                    placeholder="unit"
+                    placeholderTextColor={colors.muted}
+                    value={ing.unit}
+                    onChangeText={(v) => {
+                      const next = [...ingredients];
+                      next[i] = { ...next[i], unit: v };
+                      setIngredients(next);
+                    }}
+                  />
+                  <TextInput
+                    style={[styles.smallInput, { flex: 1 }]}
+                    placeholder="ingredient"
+                    placeholderTextColor={colors.muted}
+                    value={ing.name}
+                    onFocus={() => setActiveIngIdx(i)}
+                    onBlur={() => setActiveIngIdx(null)}
+                    onChangeText={(v) => {
+                      const next = [...ingredients];
+                      next[i] = { ...next[i], name: v };
+                      setIngredients(next);
+                      setActiveIngIdx(i);
+                    }}
+                  />
+                  {ingredients.length > 1 && (
+                    <Pressable
+                      style={styles.removeBtn}
+                      onPress={() => setIngredients(prev => prev.filter((_, idx) => idx !== i))}
+                    >
+                      <Text style={styles.removeBtnText}>×</Text>
+                    </Pressable>
+                  )}
+                </View>
+                {suggestions.length > 0 && (
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 6 }}>
+                    {suggestions.map((s: string) => (
+                      <Pressable
+                        key={s}
+                        style={[styles.chip, styles.chipInactive, { marginRight: 6 }]}
+                        onPress={() => {
+                          const next = [...ingredients];
+                          next[i] = { ...next[i], name: s };
+                          setIngredients(next);
+                          setActiveIngIdx(null);
+                        }}
+                      >
+                        <Text style={[styles.chipText, styles.chipTextInactive]}>{s}</Text>
+                      </Pressable>
+                    ))}
+                  </ScrollView>
+                )}
+              </View>
+            );
+          })}
           <Pressable
             style={{ paddingVertical: 10, marginBottom: 20 }}
             onPress={() => setIngredients(prev => [...prev, { amount: '', unit: '', name: '' }])}
@@ -835,6 +870,11 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 12,
+  },
+  headRowRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
   },
   iconBtn: {
     width: 40,
