@@ -158,7 +158,7 @@ export default function FeedScreen() {
       )}
 
       <EditorialHeading size={22} emphasis="cooking" emphasisColor="sage">
-        {'See what your circle\nis '}
+        {'See what your friends\nare '}
       </EditorialHeading>
       <View style={{ height: 14 }} />
     </View>
