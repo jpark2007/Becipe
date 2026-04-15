@@ -10,7 +10,7 @@ import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/store/auth';
 
 const LABELS: Record<keyof PalateVector, string> = {
-  salt: 'Salt', sweet: 'Sweet', umami: 'Umami', spice: 'Spice', acid: 'Acid',
+  sweet: 'Sweet', spicy: 'Spicy', savory: 'Savory', sour: 'Sour', bitter: 'Bitter',
 };
 
 export default function PalateQuiz() {

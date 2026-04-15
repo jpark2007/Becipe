@@ -143,6 +143,11 @@ export default function RootLayout() {
             <Stack.Screen name="try-picker" options={{ headerShown: false }} />
             <Stack.Screen name="fridge" options={{ headerShown: false }} />
             <Stack.Screen
+              name="palate-editor"
+              options={{ presentation: 'modal', headerShown: false }}
+            />
+            <Stack.Screen name="friends" options={{ headerShown: false }} />
+            <Stack.Screen
               name="people-search"
               options={{ presentation: 'formSheet', headerShown: false }}
             />
