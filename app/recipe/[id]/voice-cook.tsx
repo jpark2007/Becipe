@@ -1,5 +1,6 @@
 // app/recipe/[id]/voice-cook.tsx
-import { View, Text, Pressable, StyleSheet, SafeAreaView, ImageBackground } from 'react-native';
+import { View, Text, Pressable, StyleSheet, ImageBackground } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';

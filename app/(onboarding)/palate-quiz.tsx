@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { View, Text, Pressable, StyleSheet, SafeAreaView, Alert } from 'react-native';
+import { View, Text, Pressable, StyleSheet, Alert } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import Slider from '@react-native-community/slider';
 import { useRouter } from 'expo-router';
 import { colors, radius, shadow } from '@/lib/theme';
