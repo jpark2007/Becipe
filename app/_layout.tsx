@@ -134,6 +134,18 @@ export default function RootLayout() {
                 headerTintColor: '#1C1712',
               }}
             />
+            <Stack.Screen name="circle/[id]" options={{ headerShown: false }} />
+            <Stack.Screen
+              name="add-sheet"
+              options={{ presentation: 'formSheet', headerShown: false }}
+            />
+            <Stack.Screen name="add-recipe" options={{ headerShown: false }} />
+            <Stack.Screen name="try-picker" options={{ headerShown: false }} />
+            <Stack.Screen name="fridge" options={{ headerShown: false }} />
+            <Stack.Screen
+              name="people-search"
+              options={{ presentation: 'formSheet', headerShown: false }}
+            />
           </Stack>
           {!isAuthReady && (
             <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: '#F8F4EE', alignItems: 'center', justifyContent: 'center' }}>
