@@ -70,7 +70,7 @@ export default function RecipeDetailScreen() {
     },
     onSuccess: () => {
       setIsSaved(true);
-      Alert.alert('Saved!', 'Recipe added to your saves.');
+      Alert.alert('Added to your queue', 'Find it in Kitchen › Cooking soon.');
     },
   });
 
@@ -207,6 +207,17 @@ export default function RecipeDetailScreen() {
           onPress={() => router.push(`/try/${id}`)}
         >
           <Text style={styles.tryBtnText}>log a try</Text>
+        </Pressable>
+
+        {/* Add to queue explicit CTA */}
+        <Pressable
+          style={[styles.tryBtn, isSaved && styles.queueBtnSaved]}
+          onPress={() => !isSaved && saveMutation.mutate()}
+          disabled={isSaved || saveMutation.isPending}
+        >
+          <Text style={[styles.tryBtnText, isSaved && { color: colors.sage }]}>
+            {isSaved ? '✓ In your queue' : '🔖 Add to queue'}
+          </Text>
         </Pressable>
 
         {/* Tips accordion */}
@@ -470,6 +481,10 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: colors.ink,
     letterSpacing: -0.1,
+  },
+  queueBtnSaved: {
+    backgroundColor: colors.sageSoft,
+    borderColor: colors.sageSoft,
   },
   tipsWrap: {
     marginTop: 28,
