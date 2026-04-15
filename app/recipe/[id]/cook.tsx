@@ -1,31 +1,44 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import {
   View,
   Text,
-  TouchableOpacity,
+  Pressable,
   ScrollView,
   Dimensions,
   ActivityIndicator,
+  StyleSheet,
+  SafeAreaView,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { GestureDetector, Gesture } from 'react-native-gesture-handler';
 import Animated, { useSharedValue, useAnimatedStyle, withTiming, runOnJS } from 'react-native-reanimated';
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
-import { useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import type { Step, Ingredient, Tip } from '@/lib/database.types';
+import { colors, radius, shadow } from '@/lib/theme';
+import { Plate } from '@/components/Plate';
+import { EditorialHeading } from '@/components/EditorialHeading';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 async function fetchRecipeForCook(id: string) {
   const { data, error } = await supabase
     .from('recipes')
-    .select('title, steps, ingredients, tips')
+    .select('title, cover_image_url, steps, ingredients, tips')
     .eq('id', id)
     .single();
   if (error) throw error;
   return data;
+}
+
+// Pull a word to emphasize from a step instruction: take the last alphabetic
+// word longer than 3 chars, else nothing.
+function pickEmphasis(instruction: string): { base: string; emph?: string } {
+  if (!instruction) return { base: '' };
+  const match = instruction.match(/^(.*?)([\s,.]+)([A-Za-z]{4,})[.!?]?\s*$/);
+  if (!match) return { base: instruction };
+  return { base: match[1] + match[2], emph: match[3] };
 }
 
 export default function CookScreen() {
@@ -34,7 +47,7 @@ export default function CookScreen() {
   const [stepIndex, setStepIndex] = useState(0);
   const [checked, setChecked] = useState<Record<number, boolean>>({});
   const [tipsOpen, setTipsOpen] = useState(false);
-  const [ingredientsOpen, setIngredientsOpen] = useState(true);
+  const [ingredientsOpen, setIngredientsOpen] = useState(false);
 
   const translateX = useSharedValue(0);
 
@@ -75,153 +88,391 @@ export default function CookScreen() {
 
   if (isLoading || !recipe) {
     return (
-      <View style={{ flex: 1, backgroundColor: '#F8F4EE', alignItems: 'center', justifyContent: 'center' }}>
-        <ActivityIndicator color="#C4622D" />
+      <View style={[styles.root, styles.loading]}>
+        <ActivityIndicator color={colors.sage} />
       </View>
     );
   }
 
   const currentStep = steps[stepIndex];
-  const progress = (stepIndex + 1) / steps.length;
   const isDone = stepIndex === steps.length - 1;
+  const { base, emph } = pickEmphasis(currentStep?.instruction ?? '');
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#F8F4EE' }}>
-
-      {/* ── Header ── */}
-      <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingTop: 56, paddingBottom: 16 }}>
-        <View style={{ flex: 1 }}>
-          <Text style={{ fontFamily: 'DMMono_400Regular', fontSize: 10, color: '#B5ADA8', letterSpacing: 1.5, marginBottom: 10 }}>
-            {recipe.title.toUpperCase()}
-          </Text>
-          {/* Thin progress bar */}
-          <View style={{ height: 1, backgroundColor: '#D5CCC0' }}>
-            <View style={{ height: 1, backgroundColor: '#C4622D', width: `${progress * 100}%` }} />
+    <View style={styles.root}>
+      <SafeAreaView style={styles.safe}>
+        {/* Header: close + timer pill */}
+        <View style={styles.header}>
+          <Pressable style={styles.iconBtn} onPress={() => router.back()}>
+            <Text style={styles.iconBtnText}>×</Text>
+          </Pressable>
+          <View style={styles.timerPill}>
+            <Text style={styles.timerPillText}>⏱ 12:45</Text>
           </View>
+          <View style={styles.iconBtn} />
         </View>
-        <TouchableOpacity
-          style={{ marginLeft: 20, paddingVertical: 4, paddingHorizontal: 8 }}
-          onPress={() => router.back()}
+
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
         >
-          <Text style={{ fontFamily: 'DMMono_400Regular', fontSize: 18, color: '#A09590' }}>×</Text>
-        </TouchableOpacity>
-      </View>
+          <GestureDetector gesture={swipeGesture}>
+            <Animated.View style={animStyle}>
+              {/* Hero plate */}
+              <View style={styles.heroWrap}>
+                <Plate uri={recipe.cover_image_url} size={220} />
+              </View>
 
-      {/* Step counter */}
-      <Text style={{ fontFamily: 'DMMono_400Regular', fontSize: 10, color: '#B5ADA8', letterSpacing: 2, textAlign: 'center', marginBottom: 8 }}>
-        {stepIndex + 1} — {steps.length}
-      </Text>
+              {/* Step eyebrow */}
+              <Text style={styles.eyebrow}>
+                STEP {String(stepIndex + 1).padStart(2, '0')} OF {String(steps.length).padStart(2, '0')}
+              </Text>
 
-      {/* ── Step instruction — swipeable ── */}
-      <GestureDetector gesture={swipeGesture}>
-        <Animated.View style={[animStyle, { flex: 1 }]}>
-          <View style={{ flex: 1, paddingHorizontal: 28, justifyContent: 'center' }}>
-            <Text style={{
-              fontFamily: 'CormorantGaramond_400Regular',
-              fontSize: 32,
-              color: '#1C1712',
-              lineHeight: 44,
-              textAlign: 'center',
-            }}>
-              {currentStep?.instruction}
-            </Text>
-            {/* Swipe hint */}
-            <Text style={{ fontFamily: 'DMMono_400Regular', fontSize: 9, color: '#C8BFB8', textAlign: 'center', marginTop: 32, letterSpacing: 1.5 }}>
-              SWIPE TO NAVIGATE
-            </Text>
+              {/* Step title */}
+              <View style={styles.titleWrap}>
+                <EditorialHeading
+                  size={32}
+                  emphasis={emph}
+                  emphasisColor="sage"
+                  style={{ textAlign: 'center' }}
+                >
+                  {base}
+                </EditorialHeading>
+              </View>
+
+              {/* Step body text */}
+              {currentStep?.instruction ? (
+                <Text style={styles.stepBody}>{currentStep.instruction}</Text>
+              ) : null}
+
+              {/* Step dots */}
+              <View style={styles.dots}>
+                {steps.map((_, i) => (
+                  <View
+                    key={i}
+                    style={[
+                      styles.dot,
+                      i <= stepIndex ? styles.dotActive : styles.dotIdle,
+                    ]}
+                  />
+                ))}
+              </View>
+            </Animated.View>
+          </GestureDetector>
+
+          {/* Ingredients card */}
+          <View style={styles.card}>
+            <Pressable
+              style={styles.cardHead}
+              onPress={() => setIngredientsOpen((o) => !o)}
+            >
+              <Text style={styles.cardHeadLabel}>
+                INGREDIENTS ({ingredients.length})
+              </Text>
+              <Text style={styles.cardHeadChevron}>
+                {ingredientsOpen ? '▲' : '▼'}
+              </Text>
+            </Pressable>
+            {ingredientsOpen && (
+              <View style={styles.cardBody}>
+                {ingredients.map((ing, i) => (
+                  <Pressable
+                    key={i}
+                    style={styles.ingRow}
+                    onPress={() => setChecked((prev) => ({ ...prev, [i]: !prev[i] }))}
+                  >
+                    <View
+                      style={[
+                        styles.checkbox,
+                        checked[i] ? styles.checkboxOn : styles.checkboxOff,
+                      ]}
+                    >
+                      {checked[i] ? <Text style={styles.checkboxTick}>✓</Text> : null}
+                    </View>
+                    <Text
+                      style={[
+                        styles.ingText,
+                        checked[i] ? styles.ingTextDone : null,
+                      ]}
+                    >
+                      {ing.amount}{ing.unit ? ` ${ing.unit}` : ''} {ing.name}
+                    </Text>
+                  </Pressable>
+                ))}
+              </View>
+            )}
           </View>
-        </Animated.View>
-      </GestureDetector>
 
-      {/* ── Prev / Next ── */}
-      <View style={{ flexDirection: 'row', gap: 8, paddingHorizontal: 20, paddingBottom: 16 }}>
-        <TouchableOpacity
-          style={{
-            flex: 1, paddingVertical: 14, alignItems: 'center',
-            borderWidth: 1, borderColor: stepIndex === 0 ? '#D8D0C8' : '#D5CCC0',
-            opacity: stepIndex === 0 ? 0.3 : 1,
-          }}
-          onPress={() => goTo(stepIndex - 1)}
-          disabled={stepIndex === 0}
-        >
-          <Text style={{ fontFamily: 'DMMono_400Regular', fontSize: 11, color: '#A09590', letterSpacing: 2 }}>← PREV</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={{
-            flex: 1, paddingVertical: 14, alignItems: 'center',
-            backgroundColor: isDone ? '#3A6A3A' : '#C4622D',
-          }}
-          onPress={() => isDone ? router.back() : goTo(stepIndex + 1)}
-        >
-          <Text style={{ fontFamily: 'DMMono_500Medium', fontSize: 11, color: '#EDE8DC', letterSpacing: 2 }}>
-            {isDone ? 'DONE' : 'NEXT →'}
-          </Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* ── Ingredients collapsible ── */}
-      <View style={{ borderTopWidth: 1, borderTopColor: '#D8D2CB' }}>
-        <TouchableOpacity
-          style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 12 }}
-          onPress={() => setIngredientsOpen(o => !o)}
-        >
-          <Text style={{ fontFamily: 'DMMono_400Regular', fontSize: 9, color: '#A09590', letterSpacing: 2.5 }}>
-            INGREDIENTS ({ingredients.length})
-          </Text>
-          <Text style={{ fontFamily: 'DMMono_400Regular', fontSize: 10, color: '#B5ADA8' }}>
-            {ingredientsOpen ? '▲' : '▼'}
-          </Text>
-        </TouchableOpacity>
-        {ingredientsOpen && (
-          <ScrollView style={{ maxHeight: 140, paddingHorizontal: 20, paddingBottom: 12 }}>
-            {ingredients.map((ing, i) => (
-              <TouchableOpacity
-                key={i}
-                style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 6 }}
-                onPress={() => setChecked(prev => ({ ...prev, [i]: !prev[i] }))}
+          {/* Tips card */}
+          {tips.length > 0 ? (
+            <View style={styles.card}>
+              <Pressable
+                style={styles.cardHead}
+                onPress={() => setTipsOpen((o) => !o)}
               >
-                <View style={{
-                  width: 14, height: 14, borderWidth: 1,
-                  borderColor: checked[i] ? '#C4622D' : '#C8BFB8',
-                  backgroundColor: checked[i] ? '#C4622D' : 'transparent',
-                  marginRight: 12, alignItems: 'center', justifyContent: 'center',
-                }}>
-                  {checked[i] && <Text style={{ fontFamily: 'DMMono_400Regular', fontSize: 8, color: '#EDE8DC' }}>✓</Text>}
+                <Text style={styles.cardHeadLabel}>TIPS ({tips.length})</Text>
+                <Text style={styles.cardHeadChevron}>
+                  {tipsOpen ? '▲' : '▼'}
+                </Text>
+              </Pressable>
+              {tipsOpen && (
+                <View style={styles.cardBody}>
+                  {tips.map((tip, i) => (
+                    <Text key={i} style={styles.tipText}>
+                      {tip.text}
+                    </Text>
+                  ))}
                 </View>
-                <Text style={{
-                  fontFamily: 'DMMono_400Regular', fontSize: 12,
-                  color: checked[i] ? '#B5ACA4' : '#A09590',
-                  textDecorationLine: checked[i] ? 'line-through' : 'none',
-                }}>
-                  {ing.amount}{ing.unit ? ` ${ing.unit}` : ''} {ing.name}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-        )}
-      </View>
+              )}
+            </View>
+          ) : null}
+        </ScrollView>
 
-      {/* ── Tips collapsible ── */}
-      {tips.length > 0 && (
-        <View style={{ borderTopWidth: 1, borderTopColor: '#DDD5CD' }}>
-          <TouchableOpacity
-            style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 10 }}
-            onPress={() => setTipsOpen(o => !o)}
+        {/* Footer: prev / next / mic */}
+        <View style={styles.footer}>
+          <Pressable
+            style={[styles.prevBtn, stepIndex === 0 ? styles.btnDisabled : null]}
+            onPress={() => goTo(stepIndex - 1)}
+            disabled={stepIndex === 0}
           >
-            <Text style={{ fontFamily: 'DMMono_400Regular', fontSize: 9, color: '#B5ADA8', letterSpacing: 2.5 }}>TIPS</Text>
-            <Text style={{ fontFamily: 'DMMono_400Regular', fontSize: 10, color: '#C8BFB8' }}>{tipsOpen ? '▲' : '▼'}</Text>
-          </TouchableOpacity>
-          {tipsOpen && (
-            <ScrollView style={{ maxHeight: 110, paddingHorizontal: 20, paddingBottom: 12 }}>
-              {tips.map((tip, i) => (
-                <Text key={i} style={{ fontFamily: 'Lora_400Regular', fontSize: 12, color: '#B5ADA8', marginBottom: 6, lineHeight: 18 }}>
-                  {tip.text}
-                </Text>
-              ))}
-            </ScrollView>
-          )}
+            <Text style={styles.prevBtnText}>←</Text>
+          </Pressable>
+          <Pressable
+            style={styles.nextBtn}
+            onPress={() => (isDone ? router.back() : goTo(stepIndex + 1))}
+          >
+            <Text style={styles.nextBtnText}>
+              {isDone ? 'finish' : 'next step →'}
+            </Text>
+          </Pressable>
+          <Pressable
+            style={styles.micBtn}
+            onPress={() => router.push(`/recipe/${id}/voice-cook`)}
+          >
+            <Text style={styles.micBtnText}>🎤</Text>
+          </Pressable>
         </View>
-      )}
+      </SafeAreaView>
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  root: { flex: 1, backgroundColor: colors.bone },
+  safe: { flex: 1 },
+  loading: { alignItems: 'center', justifyContent: 'center' },
+
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingTop: 8,
+    paddingBottom: 8,
+  },
+  iconBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  iconBtnText: {
+    fontFamily: 'Inter_500Medium',
+    fontSize: 20,
+    color: colors.inkSoft,
+    lineHeight: 22,
+  },
+  timerPill: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: radius.pill,
+    backgroundColor: colors.sage,
+  },
+  timerPillText: {
+    color: '#FFFFFF',
+    fontFamily: 'Inter_700Bold',
+    fontSize: 13,
+    letterSpacing: 0.2,
+  },
+
+  scrollContent: {
+    paddingHorizontal: 22,
+    paddingBottom: 20,
+  },
+
+  heroWrap: {
+    alignItems: 'center',
+    marginTop: 8,
+    marginBottom: 22,
+  },
+
+  eyebrow: {
+    textAlign: 'center',
+    color: colors.sage,
+    fontFamily: 'Inter_700Bold',
+    fontSize: 11,
+    letterSpacing: 1.6,
+    marginBottom: 10,
+  },
+  titleWrap: {
+    alignItems: 'center',
+    marginBottom: 14,
+  },
+  stepBody: {
+    textAlign: 'center',
+    fontFamily: 'Inter_500Medium',
+    fontSize: 15,
+    lineHeight: 23,
+    color: colors.inkSoft,
+    marginBottom: 18,
+  },
+
+  dots: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    marginBottom: 22,
+  },
+  dot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  dotActive: { backgroundColor: colors.sage },
+  dotIdle: { backgroundColor: colors.border },
+
+  card: {
+    backgroundColor: colors.card,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+    marginTop: 12,
+    overflow: 'hidden',
+  },
+  cardHead: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 18,
+    paddingVertical: 14,
+  },
+  cardHeadLabel: {
+    fontFamily: 'Inter_700Bold',
+    fontSize: 10,
+    color: colors.muted,
+    letterSpacing: 1.6,
+  },
+  cardHeadChevron: {
+    fontFamily: 'Inter_500Medium',
+    fontSize: 10,
+    color: colors.muted,
+  },
+  cardBody: {
+    paddingHorizontal: 18,
+    paddingBottom: 14,
+  },
+  ingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 7,
+  },
+  checkbox: {
+    width: 18,
+    height: 18,
+    borderRadius: 5,
+    borderWidth: 1.5,
+    marginRight: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  checkboxOff: {
+    borderColor: colors.border,
+    backgroundColor: 'transparent',
+  },
+  checkboxOn: {
+    borderColor: colors.sage,
+    backgroundColor: colors.sage,
+  },
+  checkboxTick: {
+    color: '#FFFFFF',
+    fontSize: 11,
+    fontFamily: 'Inter_700Bold',
+  },
+  ingText: {
+    fontFamily: 'Inter_500Medium',
+    fontSize: 13,
+    color: colors.inkSoft,
+    flex: 1,
+  },
+  ingTextDone: {
+    color: colors.muted,
+    textDecorationLine: 'line-through',
+  },
+  tipText: {
+    fontFamily: 'Inter_500Medium',
+    fontSize: 13,
+    lineHeight: 20,
+    color: colors.inkSoft,
+    marginBottom: 8,
+  },
+
+  footer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingHorizontal: 20,
+    paddingTop: 10,
+    paddingBottom: 12,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+    backgroundColor: colors.bone,
+  },
+  prevBtn: {
+    paddingHorizontal: 18,
+    paddingVertical: 16,
+    borderRadius: radius.pill,
+    backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  prevBtnText: {
+    fontFamily: 'Inter_700Bold',
+    fontSize: 16,
+    color: colors.inkSoft,
+  },
+  btnDisabled: { opacity: 0.35 },
+  nextBtn: {
+    flex: 1,
+    paddingVertical: 16,
+    borderRadius: radius.pill,
+    backgroundColor: colors.sage,
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...shadow.cta,
+  },
+  nextBtnText: {
+    color: '#FFFFFF',
+    fontFamily: 'Inter_700Bold',
+    fontSize: 14,
+    letterSpacing: 0.3,
+  },
+  micBtn: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: colors.claySoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...shadow.cta,
+  },
+  micBtnText: {
+    fontSize: 22,
+  },
+});
