@@ -21,3 +21,6 @@ export const useAuthStore = create<AuthState>((set) => ({
   setProfile: (profile) => set({ profile }),
   setAuthReady: () => set({ isAuthReady: true }),
 }));
+
+export const useHasPalateVector = () =>
+  useAuthStore(s => s.profile?.palate_vector != null);
