@@ -1,7 +1,6 @@
 // app/(tabs)/profile.tsx
 // You — identity + relationships + settings.
-// Stack order: header → stats → palate → circles → friends → sign out.
-import { useRef, useState } from 'react';
+// Stack order: header → stats → palate → circles → friends row → sign out.
 import {
   View,
   Text,
@@ -12,18 +11,15 @@ import {
   Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/store/auth';
-import { EditorialHeading } from '@/components/EditorialHeading';
 import { CircleCard } from '@/components/CircleCard';
 import { colors, radius, shadow } from '@/lib/theme';
 import { parsePalate, PALATE_AXES } from '@/lib/palate';
 import { initialsFor, colorForUserId } from '@/lib/avatar';
 import { getStubCircles } from '@/lib/circles-stub';
-
-type FriendsTab = 'followers' | 'following' | 'blocked';
 
 async function fetchProfile(userId: string) {
   const [profileRes, followersRes, followingRes, triesRes] = await Promise.all([
@@ -41,26 +37,6 @@ async function fetchProfile(userId: string) {
   };
 }
 
-async function fetchFollowers(userId: string) {
-  const { data } = await supabase
-    .from('follows')
-    .select('follower:profiles!follower_id(id, display_name, username, avatar_url)')
-    .eq('following_id', userId);
-  return (data ?? [])
-    .map((row: any) => row.follower)
-    .filter((p: any) => !!p?.id);
-}
-
-async function fetchFollowing(userId: string) {
-  const { data } = await supabase
-    .from('follows')
-    .select('following:profiles!following_id(id, display_name, username, avatar_url)')
-    .eq('follower_id', userId);
-  return (data ?? [])
-    .map((row: any) => row.following)
-    .filter((p: any) => !!p?.id);
-}
-
 const AXIS_LABELS: Record<string, string> = {
   sweet: 'Sweet',
   spicy: 'Spicy',
@@ -71,14 +47,9 @@ const AXIS_LABELS: Record<string, string> = {
 
 export default function ProfileScreen() {
   const router = useRouter();
-  const queryClient = useQueryClient();
   const { user, setSession } = useAuthStore();
   const storedPalate = useAuthStore((s) => s.profile?.palate_vector);
   const palate = parsePalate(storedPalate);
-
-  const friendsRef = useRef<View>(null);
-  const scrollRef = useRef<ScrollView>(null);
-  const [friendsTab, setFriendsTab] = useState<FriendsTab>('following');
 
   const { data, isLoading } = useQuery({
     queryKey: ['profile', user?.id],
@@ -86,56 +57,9 @@ export default function ProfileScreen() {
     enabled: !!user,
   });
 
-  const { data: followers } = useQuery({
-    queryKey: ['friends-followers', user?.id],
-    queryFn: () => fetchFollowers(user!.id),
-    enabled: !!user,
-  });
-
-  const { data: followingList } = useQuery({
-    queryKey: ['friends-following', user?.id],
-    queryFn: () => fetchFollowing(user!.id),
-    enabled: !!user,
-  });
-
-  const removeFollower = useMutation({
-    mutationFn: async (followerId: string) => {
-      const { error } = await supabase
-        .from('follows')
-        .delete()
-        .eq('follower_id', followerId)
-        .eq('following_id', user!.id);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['friends-followers', user?.id] });
-      queryClient.invalidateQueries({ queryKey: ['profile', user?.id] });
-    },
-  });
-
-  const unfollow = useMutation({
-    mutationFn: async (targetId: string) => {
-      const { error } = await supabase
-        .from('follows')
-        .delete()
-        .eq('follower_id', user!.id)
-        .eq('following_id', targetId);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['friends-following', user?.id] });
-      queryClient.invalidateQueries({ queryKey: ['profile', user?.id] });
-    },
-  });
-
   async function handleSignOut() {
     await supabase.auth.signOut();
     setSession(null);
-  }
-
-  function scrollToFriends() {
-    // Reasonable fallback: scroll to bottom.
-    scrollRef.current?.scrollToEnd({ animated: true });
   }
 
   if (isLoading || !data) {
@@ -155,24 +79,9 @@ export default function ProfileScreen() {
 
   const circles = getStubCircles();
 
-  const friendsRows =
-    friendsTab === 'followers'
-      ? followers ?? []
-      : friendsTab === 'following'
-      ? followingList ?? []
-      : [];
-
-  const emptyFriendsCopy =
-    friendsTab === 'followers'
-      ? 'No followers yet.'
-      : friendsTab === 'following'
-      ? "You're not following anyone yet."
-      : 'No one is blocked.';
-
   return (
     <SafeAreaView style={styles.safe}>
       <ScrollView
-        ref={scrollRef}
         contentContainerStyle={{ paddingBottom: 100, paddingHorizontal: 22, paddingTop: 14 }}
       >
         {/* Header */}
@@ -197,20 +106,14 @@ export default function ProfileScreen() {
           </View>
           <Pressable
             style={styles.statCol}
-            onPress={() => {
-              setFriendsTab('followers');
-              scrollToFriends();
-            }}
+            onPress={() => router.push('/friends?tab=followers' as any)}
           >
             <Text style={styles.statNum}>{followerCount}</Text>
             <Text style={styles.statLabel}>FOLLOWERS</Text>
           </Pressable>
           <Pressable
             style={styles.statCol}
-            onPress={() => {
-              setFriendsTab('following');
-              scrollToFriends();
-            }}
+            onPress={() => router.push('/friends?tab=following' as any)}
           >
             <Text style={styles.statNum}>{followingCount}</Text>
             <Text style={styles.statLabel}>FOLLOWING</Text>
@@ -259,75 +162,19 @@ export default function ProfileScreen() {
           ))
         )}
 
-        {/* Friends section */}
-        <View ref={friendsRef}>
-          <Text style={[styles.sectionTitle, { marginTop: 24 }]}>Friends</Text>
-
-          <View style={styles.friendsTabs}>
-            {(['followers', 'following', 'blocked'] as FriendsTab[]).map((t) => {
-              const active = friendsTab === t;
-              return (
-                <Pressable
-                  key={t}
-                  onPress={() => setFriendsTab(t)}
-                  style={[
-                    styles.friendsPill,
-                    active ? styles.friendsPillActive : styles.friendsPillInactive,
-                  ]}
-                >
-                  <Text
-                    style={[
-                      styles.friendsPillText,
-                      active ? styles.friendsPillTextActive : styles.friendsPillTextInactive,
-                    ]}
-                  >
-                    {t}
-                  </Text>
-                </Pressable>
-              );
-            })}
+        {/* Friends row — tap to open standalone /friends page */}
+        <Pressable
+          style={styles.friendsLinkRow}
+          onPress={() => router.push('/friends' as any)}
+        >
+          <View style={{ flex: 1 }}>
+            <Text style={styles.friendsLinkTitle}>Friends</Text>
+            <Text style={styles.friendsLinkSub}>
+              {followerCount} followers · {followingCount} following
+            </Text>
           </View>
-
-          {friendsRows.length === 0 ? (
-            <Text style={styles.empty}>{emptyFriendsCopy}</Text>
-          ) : (
-            friendsRows.map((p: any) => {
-              const label = p.display_name ?? p.username ?? 'unknown';
-              return (
-                <Pressable
-                  key={p.id}
-                  style={styles.friendRow}
-                  onPress={() => router.push(`/user/${p.id}` as any)}
-                >
-                  <View style={[styles.friendAv, { backgroundColor: colorForUserId(p.id) }]}>
-                    <Text style={styles.friendAvText}>{initialsFor(label)}</Text>
-                  </View>
-                  <View style={{ flex: 1, marginLeft: 12 }}>
-                    <Text style={styles.friendName}>{label}</Text>
-                    {p.username && <Text style={styles.friendHandle}>@{p.username}</Text>}
-                  </View>
-                  <Pressable
-                    style={styles.friendAction}
-                    onPress={(e) => {
-                      e.stopPropagation?.();
-                      if (friendsTab === 'followers') removeFollower.mutate(p.id);
-                      else if (friendsTab === 'following') unfollow.mutate(p.id);
-                      // blocked tab is a stub
-                    }}
-                  >
-                    <Text style={styles.friendActionText}>
-                      {friendsTab === 'followers'
-                        ? 'Remove'
-                        : friendsTab === 'following'
-                        ? 'Unfollow'
-                        : 'Unblock'}
-                    </Text>
-                  </Pressable>
-                </Pressable>
-              );
-            })
-          )}
-        </View>
+          <Text style={styles.friendsLinkChevron}>›</Text>
+        </Pressable>
 
         {/* Sign out */}
         <Pressable
@@ -476,74 +323,36 @@ const styles = StyleSheet.create({
     color: colors.muted,
     marginBottom: 12,
   },
-  friendsTabs: {
-    flexDirection: 'row',
-    gap: 6,
-    marginBottom: 14,
-  },
-  friendsPill: {
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: radius.pill,
-  },
-  friendsPillActive: { backgroundColor: colors.ink },
-  friendsPillInactive: {
-    backgroundColor: colors.card,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  friendsPillText: {
-    fontFamily: 'Inter_700Bold',
-    fontSize: 11,
-    letterSpacing: -0.1,
-    textTransform: 'capitalize',
-  },
-  friendsPillTextActive: { color: '#fff' },
-  friendsPillTextInactive: { color: colors.inkSoft },
-
-  friendRow: {
+  friendsLinkRow: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: colors.card,
     borderRadius: radius.md,
     borderWidth: 1,
     borderColor: colors.border,
-    padding: 12,
-    marginBottom: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    marginTop: 20,
+    minHeight: 50,
   },
-  friendAv: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  friendAvText: {
-    fontFamily: 'Inter_800ExtraBold',
-    fontSize: 14,
-    color: '#F5E9D3',
-  },
-  friendName: {
+  friendsLinkTitle: {
     fontFamily: 'Inter_700Bold',
     fontSize: 14,
     color: colors.ink,
+    letterSpacing: -0.2,
   },
-  friendHandle: {
+  friendsLinkSub: {
     fontFamily: 'Inter_500Medium',
-    fontSize: 12,
+    fontSize: 11,
     color: colors.muted,
     marginTop: 2,
   },
-  friendAction: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: radius.pill,
-    backgroundColor: colors.borderSoft,
-  },
-  friendActionText: {
+  friendsLinkChevron: {
     fontFamily: 'Inter_700Bold',
-    fontSize: 11,
-    color: colors.inkSoft,
+    fontSize: 22,
+    color: colors.muted,
+    marginLeft: 12,
+    lineHeight: 24,
   },
 
   signOutBtn: {
