@@ -329,11 +329,11 @@ const styles = StyleSheet.create({
     backgroundColor: colors.card,
     borderRadius: radius.md,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: colors.borderSoft,
     paddingHorizontal: 14,
-    paddingVertical: 10,
-    marginTop: 20,
-    minHeight: 50,
+    paddingVertical: 8,
+    marginTop: 18,
+    height: 52,
   },
   friendsLinkTitle: {
     fontFamily: 'Inter_700Bold',
@@ -345,14 +345,14 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter_500Medium',
     fontSize: 11,
     color: colors.muted,
-    marginTop: 2,
+    marginTop: 1,
   },
   friendsLinkChevron: {
     fontFamily: 'Inter_700Bold',
-    fontSize: 22,
+    fontSize: 20,
     color: colors.muted,
     marginLeft: 12,
-    lineHeight: 24,
+    lineHeight: 22,
   },
 
   signOutBtn: {
