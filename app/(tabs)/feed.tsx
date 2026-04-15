@@ -5,8 +5,10 @@ import {
   FlatList,
   ActivityIndicator,
   RefreshControl,
+  Pressable,
   TouchableOpacity,
   Image,
+  SafeAreaView,
   StyleSheet,
 } from 'react-native';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -14,14 +16,8 @@ import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/store/auth';
 import { FeedCard } from '@/components/FeedCard';
 import { RecipeCard } from '@/components/RecipeCard';
-
-/* ── Design tokens ── */
-const CREAM = '#F8F4EE';
-const CHARCOAL = '#1C1712';
-const TERRA = '#C4622D';
-const MUTED = '#A09590';
-const BORDER = '#D5CCC0';
-const CARD = '#EEE8DF';
+import { colors, radius } from '@/lib/theme';
+import { EditorialHeading } from '@/components/EditorialHeading';
 
 /* ── Types ── */
 type FeedTab = 'discover' | 'following';
@@ -34,7 +30,7 @@ async function fetchFeed(userId: string) {
     .select(`
       id, verb, created_at, try_id,
       actor:profiles!actor_id(id, display_name, username, avatar_url),
-      recipe:recipes!recipe_id(id, title, cover_image_url, cuisine)
+      recipe:recipes!recipe_id(id, title, cover_image_url, cuisine, palate_vector)
     `)
     .order('created_at', { ascending: false })
     .limit(50);
@@ -176,45 +172,46 @@ export default function FeedScreen() {
 
   /* ── Tab header ── */
   const renderHeader = () => (
-    <View style={styles.headerContainer}>
-      <Text style={styles.title}>Dishr</Text>
-
-      {/* Tab toggle */}
-      <View style={styles.tabRow}>
-        <TouchableOpacity
-          style={styles.tabButton}
-          onPress={() => setActiveTab('discover')}
-          activeOpacity={0.7}
-        >
-          <Text
-            style={[
-              styles.tabLabel,
-              activeTab === 'discover' && styles.tabLabelActive,
-            ]}
-          >
-            DISCOVER
+    <View>
+      <View style={styles.headerBlock}>
+        <View style={styles.wordmarkRow}>
+          <Text style={styles.wordmark}>
+            <Text style={{ color: colors.sage }}>◆ </Text>becipe
           </Text>
-          {activeTab === 'discover' && <View style={styles.tabUnderline} />}
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.tabButton}
-          onPress={() => setActiveTab('following')}
-          activeOpacity={0.7}
-        >
-          <Text
-            style={[
-              styles.tabLabel,
-              activeTab === 'following' && styles.tabLabelActive,
-            ]}
-          >
-            FOLLOWING
-          </Text>
-          {activeTab === 'following' && <View style={styles.tabUnderline} />}
-        </TouchableOpacity>
+        </View>
+        <EditorialHeading size={26} emphasis="cooking" emphasisColor="sage">
+          {'See what your circle\nis '}
+        </EditorialHeading>
       </View>
 
-      <View style={styles.headerDivider} />
+      {/* Pill tabs */}
+      <View style={styles.pillRow}>
+        {([
+          { key: 'discover' as FeedTab, label: 'Discover' },
+          { key: 'following' as FeedTab, label: 'Following' },
+        ]).map(({ key, label }) => {
+          const active = activeTab === key;
+          return (
+            <Pressable
+              key={key}
+              onPress={() => setActiveTab(key)}
+              style={[
+                styles.pill,
+                { backgroundColor: active ? colors.ink : 'transparent' },
+              ]}
+            >
+              <Text
+                style={[
+                  styles.pillLabel,
+                  { color: active ? '#fff' : colors.muted },
+                ]}
+              >
+                {label}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </View>
     </View>
   );
 
@@ -294,16 +291,18 @@ export default function FeedScreen() {
   /* ── Loading state ── */
   if (isLoading) {
     return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator color={TERRA} />
-      </View>
+      <SafeAreaView style={styles.screen}>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator color={colors.sage} />
+        </View>
+      </SafeAreaView>
     );
   }
 
   /* ── Discover tab ── */
   if (activeTab === 'discover') {
     return (
-      <View style={styles.screen}>
+      <SafeAreaView style={styles.screen}>
         <FlatList
           data={discoverData as any[]}
           keyExtractor={(item) => item.id}
@@ -317,19 +316,19 @@ export default function FeedScreen() {
             <RefreshControl
               refreshing={isRefetching}
               onRefresh={onRefresh}
-              tintColor={TERRA}
+              tintColor={colors.sage}
             />
           }
           ListHeaderComponent={renderHeader}
           ListEmptyComponent={renderDiscoverEmpty}
         />
-      </View>
+      </SafeAreaView>
     );
   }
 
   /* ── Following tab ── */
   return (
-    <View style={styles.screen}>
+    <SafeAreaView style={styles.screen}>
       <FlatList
         data={feedData as any[]}
         keyExtractor={(item) => item.id}
@@ -339,13 +338,13 @@ export default function FeedScreen() {
           <RefreshControl
             refreshing={isRefetching}
             onRefresh={onRefresh}
-            tintColor={TERRA}
+            tintColor={colors.sage}
           />
         }
         ListHeaderComponent={renderHeader}
         ListEmptyComponent={renderFollowingEmpty}
       />
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -353,60 +352,52 @@ export default function FeedScreen() {
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: CREAM,
+    backgroundColor: colors.bone,
   },
   loadingContainer: {
     flex: 1,
-    backgroundColor: CREAM,
     alignItems: 'center',
     justifyContent: 'center',
   },
   listContent: {
-    padding: 16,
+    paddingHorizontal: 22,
+    paddingBottom: 100,
   },
   cardPadding: {
-    marginBottom: 4,
+    marginBottom: 14,
   },
 
   /* Header */
-  headerContainer: {
-    marginBottom: 20,
-  },
-  title: {
-    fontFamily: 'CormorantGaramond_600SemiBold',
-    fontSize: 38,
-    color: CHARCOAL,
-  },
-  tabRow: {
-    flexDirection: 'row',
-    gap: 24,
-    marginTop: 16,
-  },
-  tabButton: {
+  headerBlock: {
+    paddingTop: 14,
     paddingBottom: 8,
-    position: 'relative',
   },
-  tabLabel: {
-    fontFamily: 'DMMono_400Regular',
-    fontSize: 11,
-    letterSpacing: 1.5,
-    color: MUTED,
+  wordmarkRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 14,
   },
-  tabLabelActive: {
-    color: CHARCOAL,
+  wordmark: {
+    fontFamily: 'Inter_800ExtraBold',
+    fontSize: 22,
+    color: colors.ink,
+    letterSpacing: -0.7,
   },
-  tabUnderline: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: 2,
-    backgroundColor: TERRA,
+  pillRow: {
+    flexDirection: 'row',
+    gap: 6,
+    marginTop: 18,
+    marginBottom: 18,
   },
-  headerDivider: {
-    height: 1,
-    backgroundColor: BORDER,
-    marginTop: 0,
+  pill: {
+    paddingHorizontal: 15,
+    paddingVertical: 9,
+    borderRadius: 999,
+  },
+  pillLabel: {
+    fontFamily: 'Inter_600SemiBold',
+    fontSize: 13,
   },
 
   /* Empty states */
@@ -415,15 +406,16 @@ const styles = StyleSheet.create({
     paddingVertical: 64,
   },
   emptyTitle: {
-    fontFamily: 'CormorantGaramond_600SemiBold',
-    fontSize: 32,
-    color: '#B5ADA8',
+    fontFamily: 'Inter_700Bold',
+    fontSize: 22,
+    color: colors.ink,
     marginBottom: 12,
+    letterSpacing: -0.6,
   },
   emptyBody: {
-    fontFamily: 'Lora_400Regular',
+    fontFamily: 'Inter_500Medium',
     fontSize: 14,
-    color: MUTED,
+    color: colors.muted,
     textAlign: 'center',
     paddingHorizontal: 40,
     lineHeight: 22,
@@ -436,9 +428,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
   },
   suggestedHeading: {
-    fontFamily: 'DMMono_400Regular',
+    fontFamily: 'Inter_600SemiBold',
     fontSize: 10,
-    color: MUTED,
+    color: colors.muted,
     letterSpacing: 2,
     marginBottom: 16,
     textAlign: 'center',
@@ -446,7 +438,10 @@ const styles = StyleSheet.create({
   suggestedUserRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: CARD,
+    backgroundColor: colors.card,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
     paddingHorizontal: 14,
     paddingVertical: 12,
     marginBottom: 8,
@@ -455,7 +450,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: TERRA,
+    backgroundColor: colors.sage,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 12,
@@ -467,35 +462,36 @@ const styles = StyleSheet.create({
     borderRadius: 20,
   },
   suggestedAvatarInitial: {
-    fontFamily: 'DMMono_400Regular',
+    fontFamily: 'Inter_700Bold',
     fontSize: 16,
-    color: '#EDE8DC',
+    color: '#F5E9D3',
   },
   suggestedUserInfo: {
     flex: 1,
     marginRight: 12,
   },
   suggestedDisplayName: {
-    fontFamily: 'DMMono_500Medium',
+    fontFamily: 'Inter_700Bold',
     fontSize: 13,
-    color: CHARCOAL,
+    color: colors.ink,
   },
   suggestedUsername: {
-    fontFamily: 'DMMono_400Regular',
+    fontFamily: 'Inter_500Medium',
     fontSize: 11,
-    color: MUTED,
+    color: colors.muted,
     marginTop: 2,
   },
   followButton: {
     paddingHorizontal: 16,
     paddingVertical: 8,
-    backgroundColor: TERRA,
+    backgroundColor: colors.sage,
+    borderRadius: radius.pill,
   },
   followButtonText: {
-    fontFamily: 'DMMono_400Regular',
+    fontFamily: 'Inter_600SemiBold',
     fontSize: 11,
-    letterSpacing: 1,
-    color: '#EDE8DC',
+    letterSpacing: 0.5,
+    color: '#F5E9D3',
     textTransform: 'uppercase',
   },
 });
