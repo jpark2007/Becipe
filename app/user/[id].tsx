@@ -2,15 +2,26 @@ import {
   View,
   Text,
   FlatList,
-  TouchableOpacity,
+  Pressable,
   ActivityIndicator,
-  Image,
+  SafeAreaView,
+  StyleSheet,
 } from 'react-native';
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/store/auth';
 import { RecipeCard } from '@/components/RecipeCard';
+import { EditorialHeading } from '@/components/EditorialHeading';
+import { colors, shadow } from '@/lib/theme';
+
+const AV_COLORS = [colors.avJ, colors.avE, colors.avS, colors.avM, colors.avD];
+
+function colorForUser(id: string): string {
+  let hash = 0;
+  for (let i = 0; i < id.length; i++) hash = id.charCodeAt(i) + ((hash << 5) - hash);
+  return AV_COLORS[Math.abs(hash) % AV_COLORS.length];
+}
 
 async function fetchUserProfile(userId: string, currentUserId: string) {
   const [profileRes, recipesRes, followersRes, followingRes, isFollowingRes] = await Promise.all([
@@ -51,6 +62,7 @@ async function fetchUserProfile(userId: string, currentUserId: string) {
 
 export default function UserProfileScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  const router = useRouter();
   const { user } = useAuthStore();
   const queryClient = useQueryClient();
 
@@ -67,7 +79,7 @@ export default function UserProfileScreen() {
           .eq('follower_id', user!.id)
           .eq('following_id', id);
       } else {
-        await supabase.from('follows').insert({ follower_id: user!.id, following_id: id });
+        await (supabase.from('follows') as any).insert({ follower_id: user!.id, following_id: id });
       }
     },
     onSuccess: () => {
@@ -78,213 +90,224 @@ export default function UserProfileScreen() {
 
   if (isLoading || !data) {
     return (
-      <View style={{ flex: 1, backgroundColor: '#F8F4EE', alignItems: 'center', justifyContent: 'center' }}>
-        <ActivityIndicator color="#C4622D" />
-      </View>
+      <SafeAreaView style={styles.loading}>
+        <ActivityIndicator color={colors.sage} />
+      </SafeAreaView>
     );
   }
 
-  const { profile, recipes, followerCount, followingCount, isFollowing } = data;
+  const profile = data.profile as any;
+  const { recipes, followerCount, followingCount, isFollowing } = data;
   const isOwnProfile = user?.id === id;
 
-  return (
-    <FlatList
-      data={recipes as any[]}
-      keyExtractor={(item) => item.id}
-      renderItem={({ item }) => (
-        <View style={{ paddingHorizontal: 16 }}>
-          <RecipeCard recipe={item} />
-        </View>
-      )}
-      style={{ backgroundColor: '#F8F4EE' }}
-      ListHeaderComponent={
-        <View>
-          {/* Header section */}
-          <View style={{
-            backgroundColor: '#EEE8DF',
-            paddingHorizontal: 24,
-            paddingTop: 40,
-            paddingBottom: 24,
-            borderBottomWidth: 1,
-            borderBottomColor: '#D5CCC0',
-          }}>
-            {/* Avatar + Follow row */}
-            <View style={{ flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 20 }}>
-              <View style={{
-                width: 60,
-                height: 60,
-                backgroundColor: '#C4622D',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}>
-                {profile?.avatar_url ? (
-                  <Image
-                    source={{ uri: profile.avatar_url }}
-                    style={{ width: 60, height: 60 }}
-                    resizeMode="cover"
-                  />
-                ) : (
-                  <Text style={{
-                    fontFamily: 'CormorantGaramond_600SemiBold',
-                    fontSize: 28,
-                    color: '#EDE8DC',
-                  }}>
-                    {profile?.display_name?.[0]?.toUpperCase()}
-                  </Text>
-                )}
-              </View>
+  const displayName: string = profile?.display_name ?? 'Cook';
+  const username: string = profile?.username ?? '';
+  const bio: string | undefined = profile?.bio;
+  const initial = displayName.charAt(0).toUpperCase();
+  const avColor = profile?.id ? colorForUser(profile.id) : colors.avS;
 
-              {!isOwnProfile && (
-                <TouchableOpacity
-                  style={{
-                    paddingHorizontal: 20,
-                    paddingVertical: 10,
-                    backgroundColor: isFollowing ? 'transparent' : '#C4622D',
-                    borderWidth: 1,
-                    borderColor: '#C4622D',
-                  }}
-                  onPress={() => followMutation.mutate()}
-                  disabled={followMutation.isPending}
-                >
-                  <Text style={{
-                    fontFamily: 'DMMono_400Regular',
-                    fontSize: 11,
-                    letterSpacing: 1.5,
-                    textTransform: 'uppercase',
-                    color: isFollowing ? '#C4622D' : '#EDE8DC',
-                  }}>
-                    {isFollowing ? 'Following' : 'Follow'}
-                  </Text>
-                </TouchableOpacity>
-              )}
+  return (
+    <SafeAreaView style={styles.safe}>
+      <FlatList
+        data={recipes as any[]}
+        keyExtractor={(item) => item.id}
+        renderItem={({ item }) => (
+          <View style={{ paddingHorizontal: 22 }}>
+            <RecipeCard recipe={item} variant="plate" />
+          </View>
+        )}
+        contentContainerStyle={{ paddingBottom: 60 }}
+        ListHeaderComponent={
+          <View style={{ paddingHorizontal: 22, paddingTop: 10 }}>
+            {/* Head row */}
+            <View style={styles.headRow}>
+              <Pressable style={styles.iconBtn} onPress={() => router.back()}>
+                <Text style={styles.iconBtnText}>←</Text>
+              </Pressable>
+              <Pressable style={styles.iconBtn}>
+                <Text style={styles.iconBtnText}>⋯</Text>
+              </Pressable>
+            </View>
+
+            {/* Avatar */}
+            <View style={[styles.av, { backgroundColor: avColor }]}>
+              <Text style={styles.avText}>{initial}</Text>
             </View>
 
             {/* Name */}
-            <Text style={{
-              fontFamily: 'CormorantGaramond_600SemiBold',
-              fontSize: 32,
-              color: '#1C1712',
-              marginBottom: 4,
-            }}>
-              {profile?.display_name}
-            </Text>
+            <View style={{ marginTop: 14 }}>
+              <EditorialHeading size={28}>{displayName}</EditorialHeading>
+              {username ? <Text style={styles.handle}>@{username}</Text> : null}
+            </View>
 
-            {/* Username */}
-            <Text style={{
-              fontFamily: 'DMMono_400Regular',
-              fontSize: 11,
-              color: '#A09590',
-              marginBottom: profile?.bio ? 12 : 20,
-            }}>
-              @{profile?.username}
-            </Text>
+            {/* Bio */}
+            {bio ? <Text style={styles.bio}>{bio}</Text> : null}
 
-            {profile?.bio && (
-              <Text style={{
-                fontFamily: 'Lora_400Regular',
-                fontSize: 14,
-                color: '#1C1712',
-                lineHeight: 22,
-                marginBottom: 20,
-              }}>
-                {profile.bio}
-              </Text>
+            {/* Follow / unfollow */}
+            {!isOwnProfile && (
+              <Pressable
+                style={[styles.followBtn, isFollowing ? styles.followBtnFollowing : styles.followBtnFollow]}
+                onPress={() => followMutation.mutate()}
+                disabled={followMutation.isPending}
+              >
+                <Text style={isFollowing ? styles.followBtnTextFollowing : styles.followBtnTextFollow}>
+                  {isFollowing ? 'following' : 'follow →'}
+                </Text>
+              </Pressable>
             )}
 
-            {/* Stats */}
-            <View style={{ flexDirection: 'row', gap: 32 }}>
-              <View>
-                <Text style={{
-                  fontFamily: 'DMMono_500Medium',
-                  fontSize: 20,
-                  color: '#1C1712',
-                }}>
-                  {recipes.length}
-                </Text>
-                <Text style={{
-                  fontFamily: 'DMMono_400Regular',
-                  fontSize: 9,
-                  color: '#A09590',
-                  letterSpacing: 1.2,
-                  textTransform: 'uppercase',
-                  marginTop: 2,
-                }}>
-                  Recipes
-                </Text>
+            {/* Stats row */}
+            <View style={styles.statsRow}>
+              <View style={styles.statCol}>
+                <Text style={styles.statNum}>{recipes.length}</Text>
+                <Text style={styles.statLabel}>RECIPES</Text>
               </View>
-              <View>
-                <Text style={{
-                  fontFamily: 'DMMono_500Medium',
-                  fontSize: 20,
-                  color: '#1C1712',
-                }}>
-                  {followerCount}
-                </Text>
-                <Text style={{
-                  fontFamily: 'DMMono_400Regular',
-                  fontSize: 9,
-                  color: '#A09590',
-                  letterSpacing: 1.2,
-                  textTransform: 'uppercase',
-                  marginTop: 2,
-                }}>
-                  Followers
-                </Text>
+              <View style={styles.statCol}>
+                <Text style={styles.statNum}>{followerCount}</Text>
+                <Text style={styles.statLabel}>FOLLOWERS</Text>
               </View>
-              <View>
-                <Text style={{
-                  fontFamily: 'DMMono_500Medium',
-                  fontSize: 20,
-                  color: '#1C1712',
-                }}>
-                  {followingCount}
-                </Text>
-                <Text style={{
-                  fontFamily: 'DMMono_400Regular',
-                  fontSize: 9,
-                  color: '#A09590',
-                  letterSpacing: 1.2,
-                  textTransform: 'uppercase',
-                  marginTop: 2,
-                }}>
-                  Following
-                </Text>
+              <View style={styles.statCol}>
+                <Text style={styles.statNum}>{followingCount}</Text>
+                <Text style={styles.statLabel}>FOLLOWING</Text>
               </View>
             </View>
-          </View>
 
-          {/* Section label */}
-          <View style={{
-            paddingHorizontal: 16,
-            paddingTop: 24,
-            paddingBottom: 12,
-            borderBottomWidth: 1,
-            borderBottomColor: '#D5CCC0',
-          }}>
-            <Text style={{
-              fontFamily: 'DMMono_400Regular',
-              fontSize: 10,
-              color: '#A09590',
-              letterSpacing: 2,
-              textTransform: 'uppercase',
-            }}>
-              Recipes
-            </Text>
+            {/* Section header */}
+            <Text style={styles.sectionTitle}>Recipes</Text>
           </View>
-        </View>
-      }
-      ListEmptyComponent={
-        <View style={{ alignItems: 'center', paddingVertical: 48 }}>
-          <Text style={{
-            fontFamily: 'DMMono_400Regular',
-            fontSize: 11,
-            color: '#A09590',
-            letterSpacing: 0.5,
-          }}>
-            No public recipes yet
-          </Text>
-        </View>
-      }
-    />
+        }
+        ListEmptyComponent={
+          <View style={styles.emptyWrap}>
+            <Text style={styles.emptyTitle}>No public recipes yet</Text>
+            <Text style={styles.emptySub}>This cook hasn't shared a recipe.</Text>
+          </View>
+        }
+      />
+    </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  safe: { flex: 1, backgroundColor: colors.bone },
+  loading: {
+    flex: 1,
+    backgroundColor: colors.bone,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  headRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingBottom: 12,
+  },
+  iconBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: colors.card,
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...shadow.cta,
+  },
+  iconBtnText: {
+    fontFamily: 'Inter_700Bold',
+    fontSize: 16,
+    color: colors.ink,
+  },
+
+  av: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 6,
+    ...shadow.cta,
+  },
+  avText: {
+    fontFamily: 'Inter_800ExtraBold',
+    fontSize: 26,
+    color: '#F5E9D3',
+    letterSpacing: -0.5,
+  },
+
+  handle: {
+    fontFamily: 'Inter_500Medium',
+    fontSize: 13,
+    color: colors.muted,
+    marginTop: 4,
+  },
+  bio: {
+    fontFamily: 'Inter_500Medium',
+    fontSize: 14,
+    color: colors.inkSoft,
+    lineHeight: 20,
+    marginTop: 10,
+    marginBottom: 4,
+  },
+
+  followBtn: {
+    alignSelf: 'flex-start',
+    paddingHorizontal: 22,
+    paddingVertical: 12,
+    borderRadius: 999,
+    marginTop: 16,
+  },
+  followBtnFollow: { backgroundColor: colors.sage, ...shadow.cta },
+  followBtnFollowing: {
+    backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  followBtnTextFollow: { fontFamily: 'Inter_700Bold', fontSize: 13, color: '#fff' },
+  followBtnTextFollowing: { fontFamily: 'Inter_700Bold', fontSize: 13, color: colors.inkSoft },
+
+  statsRow: {
+    flexDirection: 'row',
+    gap: 28,
+    marginTop: 24,
+    marginBottom: 22,
+  },
+  statCol: { alignItems: 'flex-start' },
+  statNum: {
+    fontFamily: 'Inter_800ExtraBold',
+    fontSize: 24,
+    color: colors.ink,
+    letterSpacing: -0.8,
+  },
+  statLabel: {
+    fontFamily: 'Inter_700Bold',
+    fontSize: 10,
+    color: colors.muted,
+    letterSpacing: 1.2,
+    marginTop: 2,
+  },
+
+  sectionTitle: {
+    fontFamily: 'Inter_700Bold',
+    fontSize: 15,
+    color: colors.ink,
+    letterSpacing: -0.2,
+    marginTop: 6,
+    marginBottom: 14,
+  },
+
+  emptyWrap: {
+    alignItems: 'center',
+    paddingVertical: 48,
+    paddingHorizontal: 22,
+  },
+  emptyTitle: {
+    fontFamily: 'Inter_700Bold',
+    fontSize: 14,
+    color: colors.inkSoft,
+    marginBottom: 4,
+  },
+  emptySub: {
+    fontFamily: 'Inter_500Medium',
+    fontSize: 12,
+    color: colors.muted,
+    textAlign: 'center',
+  },
+});
