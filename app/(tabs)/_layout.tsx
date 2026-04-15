@@ -1,22 +1,11 @@
 import { Tabs } from 'expo-router';
 import { Text } from 'react-native';
-
-const TERRA = '#C4622D';
-const MUTED = '#B5ADA8';
-const INK   = '#F8F4EE';
+import { colors } from '@/lib/theme';
 
 function TabIcon({ char, focused }: { char: string; focused: boolean }) {
   return (
-    <Text style={{ fontFamily: 'DMMono_400Regular', fontSize: 17, color: focused ? TERRA : MUTED }}>
+    <Text style={{ fontFamily: 'Inter_500Medium', fontSize: 17, color: focused ? colors.ink : colors.muted }}>
       {char}
-    </Text>
-  );
-}
-
-function TabLabel({ label, focused }: { label: string; focused: boolean }) {
-  return (
-    <Text style={{ fontFamily: 'DMMono_400Regular', fontSize: 9, color: focused ? TERRA : MUTED, letterSpacing: 1.5, marginTop: 2 }}>
-      {label}
     </Text>
   );
 }
@@ -25,49 +14,57 @@ export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
+        headerShown: false,
         tabBarStyle: {
-          backgroundColor: INK,
+          backgroundColor: colors.bone,
+          borderTopColor: colors.border,
           borderTopWidth: 1,
-          borderTopColor: '#D8D0C8',
-          height: 70,
-          paddingBottom: 12,
-          paddingTop: 8,
+          height: 88,
+          paddingBottom: 22,
+          paddingTop: 12,
         },
-        headerStyle: { backgroundColor: INK, borderBottomWidth: 1, borderBottomColor: '#D8D0C8' } as any,
-        headerTintColor: '#1C1712',
-        headerTitleStyle: { fontFamily: 'DMMono_400Regular', fontSize: 11, letterSpacing: 2.5 },
+        tabBarLabelStyle: {
+          fontFamily: 'Inter_600SemiBold',
+          fontSize: 10,
+          letterSpacing: 0,
+        },
+        tabBarActiveTintColor: colors.ink,
+        tabBarInactiveTintColor: colors.muted,
       }}
     >
       <Tabs.Screen
         name="feed"
         options={{
-          title: 'FEED',
+          title: 'Discover',
           tabBarIcon: ({ focused }) => <TabIcon char="⊟" focused={focused} />,
-          tabBarLabel: ({ focused }) => <TabLabel label="FEED" focused={focused} />,
         }}
       />
       <Tabs.Screen
         name="explore"
         options={{
-          title: 'EXPLORE',
+          title: 'Explore',
           tabBarIcon: ({ focused }) => <TabIcon char="◎" focused={focused} />,
-          tabBarLabel: ({ focused }) => <TabLabel label="EXPLORE" focused={focused} />,
+        }}
+      />
+      <Tabs.Screen
+        name="circles"
+        options={{
+          title: 'Circles',
+          tabBarIcon: ({ focused }) => <TabIcon char="◯" focused={focused} />,
         }}
       />
       <Tabs.Screen
         name="add"
         options={{
-          title: 'ADD',
+          title: 'Add',
           tabBarIcon: ({ focused }) => <TabIcon char="⊕" focused={focused} />,
-          tabBarLabel: ({ focused }) => <TabLabel label="ADD" focused={focused} />,
         }}
       />
       <Tabs.Screen
         name="profile"
         options={{
-          title: 'PROFILE',
-          tabBarIcon: ({ focused }) => <TabIcon char="◯" focused={focused} />,
-          tabBarLabel: ({ focused }) => <TabLabel label="PROFILE" focused={focused} />,
+          title: 'You',
+          tabBarIcon: ({ focused }) => <TabIcon char="◈" focused={focused} />,
         }}
       />
     </Tabs>
