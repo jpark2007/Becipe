@@ -9,8 +9,8 @@ import {
   ActivityIndicator,
   Image,
   StyleSheet,
-  SafeAreaView,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { supabase } from '@/lib/supabase';
@@ -273,7 +273,7 @@ export default function ExploreScreen() {
         <FlatList
           data={(profiles as any[]) ?? []}
           keyExtractor={(item) => item.id}
-          contentContainerStyle={{ paddingHorizontal: 22, paddingBottom: 60 }}
+          contentContainerStyle={{ paddingHorizontal: 22, paddingBottom: 100 }}
           ListHeaderComponent={
             <View>
               {HeaderBlock}
@@ -350,7 +350,7 @@ export default function ExploreScreen() {
           data={recipes as any[]}
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => <RecipeCard recipe={item} showCreator />}
-          contentContainerStyle={{ paddingHorizontal: 22, paddingBottom: 60 }}
+          contentContainerStyle={{ paddingHorizontal: 22, paddingBottom: 100 }}
           ListHeaderComponent={
             <View>
               {HeaderBlock}
@@ -414,7 +414,7 @@ export default function ExploreScreen() {
               <RecipeCard recipe={item} showCreator />
             </View>
           )}
-          contentContainerStyle={{ paddingHorizontal: 22, paddingBottom: 60 }}
+          contentContainerStyle={{ paddingHorizontal: 22, paddingBottom: 100 }}
           ListHeaderComponent={
             <View>
               {HeaderBlock}
