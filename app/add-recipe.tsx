@@ -17,6 +17,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/store/auth';
 import { queryClient } from '@/lib/query-client';
@@ -211,7 +212,7 @@ export default function AddRecipeScreen() {
               style={styles.iconBtn}
               onPress={() => router.push('/voice-dictate' as any)}
             >
-              <Text style={styles.waveText}>〜</Text>
+              <MaterialCommunityIcons name="waveform" size={22} color={colors.ink} />
             </Pressable>
           </View>
 
