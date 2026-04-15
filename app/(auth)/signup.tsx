@@ -1,28 +1,12 @@
 import { useState } from 'react';
 import {
-  View, Text, TextInput, TouchableOpacity,
-  KeyboardAvoidingView, Platform, ActivityIndicator, Alert, ScrollView,
+  View, Text, TextInput, Pressable,
+  KeyboardAvoidingView, Platform, ActivityIndicator, ScrollView, SafeAreaView, StyleSheet,
 } from 'react-native';
 import { Link, useRouter } from 'expo-router';
 import { supabase } from '@/lib/supabase';
-
-const INK = '#F8F4EE'; const CREAM = '#1C1712'; const MUTED = '#A09590';
-const TERRA = '#C4622D'; const BORDER = '#D5CCC0'; const PH = '#B5ACA4';
-
-function Field({ label, ...props }: any) {
-  return (
-    <View style={{ borderBottomWidth: 1, borderBottomColor: BORDER, marginBottom: 24, paddingBottom: 12 }}>
-      <Text style={{ fontFamily: 'DMMono_400Regular', fontSize: 10, color: MUTED, letterSpacing: 2.5, marginBottom: 10 }}>
-        {label}
-      </Text>
-      <TextInput
-        style={{ fontFamily: 'Lora_400Regular', fontSize: 16, color: CREAM }}
-        placeholderTextColor={PH}
-        {...props}
-      />
-    </View>
-  );
-}
+import { colors, shadow } from '@/lib/theme';
+import { EditorialHeading } from '@/components/EditorialHeading';
 
 export default function SignupScreen() {
   const router = useRouter();
@@ -53,17 +37,15 @@ export default function SignupScreen() {
 
     if (data.user) {
       // Upsert profile in case trigger hasn't run yet or email confirm delayed it
-      await supabase.from('profiles').upsert({
+      await (supabase.from('profiles') as any).upsert({
         id: data.user.id,
         username: username.toLowerCase().trim(),
         display_name: displayName.trim(),
       }, { onConflict: 'id' });
 
       if (data.session) {
-        // Email confirmation disabled — signed in immediately
         router.replace('/(tabs)/feed');
       } else {
-        // Email confirmation required — go to verify screen
         router.push({ pathname: '/(auth)/verify-email', params: { email } });
       }
     }
@@ -71,48 +53,116 @@ export default function SignupScreen() {
   }
 
   return (
-    <KeyboardAvoidingView style={{ flex: 1, backgroundColor: INK }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <ScrollView contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 32, paddingTop: 80, paddingBottom: 48 }}>
+    <SafeAreaView style={styles.safe}>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
+          {/* Wordmark */}
+          <View style={styles.wordmarkRow}>
+            <Text style={styles.diamond}>◆</Text>
+            <Text style={styles.wordmark}>becipe</Text>
+          </View>
 
-        {/* Header */}
-        <View style={{ marginBottom: 48 }}>
-          <Text style={{ fontFamily: 'CormorantGaramond_400Regular', fontSize: 13, color: MUTED, letterSpacing: 2, marginBottom: 8 }}>
-            NEW ACCOUNT
-          </Text>
-          <Text style={{ fontFamily: 'CormorantGaramond_600SemiBold', fontSize: 48, color: CREAM, lineHeight: 48 }}>
-            Join Dishr
-          </Text>
-          <View style={{ height: 1, backgroundColor: BORDER, marginTop: 20, width: '25%' }} />
-        </View>
+          <View style={{ height: 48 }} />
 
-        <Field label="YOUR NAME" placeholder="Julia Child" value={displayName} onChangeText={setDisplayName} />
-        <Field label="USERNAME"  placeholder="@juliachild" value={username}     onChangeText={setUsername} autoCapitalize="none" />
-        <Field label="EMAIL"     placeholder="your@email.com" value={email}     onChangeText={setEmail}    autoCapitalize="none" keyboardType="email-address" />
-        <Field label="PASSWORD"  placeholder="••••••••"       value={password}  onChangeText={setPassword} secureTextEntry />
+          <EditorialHeading size={36} emphasis="cooking" emphasisColor="sage">
+            {'Start\n'}
+          </EditorialHeading>
+          <Text style={styles.subtitle}>make something worth sharing</Text>
 
-        {errorMsg ? (
-          <Text style={{ fontFamily: 'Lora_400Regular', fontSize: 13, color: '#E05C3A', marginBottom: 16, lineHeight: 20 }}>
-            {errorMsg}
-          </Text>
-        ) : null}
+          <TextInput
+            style={styles.input}
+            placeholder="username"
+            placeholderTextColor={colors.muted}
+            value={username}
+            onChangeText={setUsername}
+            autoCapitalize="none"
+          />
+          <TextInput
+            style={styles.input}
+            placeholder="display name"
+            placeholderTextColor={colors.muted}
+            value={displayName}
+            onChangeText={setDisplayName}
+          />
+          <TextInput
+            style={styles.input}
+            placeholder="email"
+            placeholderTextColor={colors.muted}
+            value={email}
+            onChangeText={setEmail}
+            autoCapitalize="none"
+            keyboardType="email-address"
+          />
+          <TextInput
+            style={styles.input}
+            placeholder="password"
+            placeholderTextColor={colors.muted}
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry
+          />
 
-        <TouchableOpacity
-          style={{ backgroundColor: TERRA, paddingVertical: 17, alignItems: 'center', marginTop: 20 }}
-          onPress={handleSignup} disabled={loading}
-        >
-          {loading
-            ? <ActivityIndicator color="#EDE8DC" />
-            : <Text style={{ fontFamily: 'DMMono_500Medium', fontSize: 11, color: '#EDE8DC', letterSpacing: 3.5 }}>CREATE ACCOUNT</Text>
-          }
-        </TouchableOpacity>
+          {errorMsg ? <Text style={styles.errorText}>{errorMsg}</Text> : null}
 
-        <View style={{ flexDirection: 'row', justifyContent: 'center', marginTop: 32 }}>
-          <Text style={{ fontFamily: 'DMMono_400Regular', fontSize: 12, color: MUTED }}>Have an account? </Text>
-          <Link href="/(auth)/login">
-            <Text style={{ fontFamily: 'DMMono_400Regular', fontSize: 12, color: TERRA }}>Sign in →</Text>
-          </Link>
-        </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+          <Pressable style={styles.cta} onPress={handleSignup} disabled={loading}>
+            {loading
+              ? <ActivityIndicator color="#fff" />
+              : <Text style={styles.ctaText}>create account →</Text>}
+          </Pressable>
+
+          <View style={styles.footer}>
+            <Text style={styles.footerText}>have an account? </Text>
+            <Link href="/(auth)/login">
+              <Text style={styles.footerLink}>log in</Text>
+            </Link>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  safe: { flex: 1, backgroundColor: colors.bone },
+  scroll: { flexGrow: 1, paddingHorizontal: 24, paddingBottom: 40 },
+  wordmarkRow: { flexDirection: 'row', alignItems: 'center', marginTop: 16, gap: 6 },
+  diamond: { fontFamily: 'Inter_800ExtraBold', fontSize: 14, color: colors.sage },
+  wordmark: { fontFamily: 'Inter_800ExtraBold', fontSize: 14, color: colors.ink, letterSpacing: -0.2 },
+  subtitle: {
+    fontFamily: 'Inter_500Medium',
+    fontSize: 14,
+    color: colors.muted,
+    marginTop: 12,
+    marginBottom: 28,
+  },
+  input: {
+    backgroundColor: colors.card,
+    borderRadius: 14,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: colors.border,
+    fontFamily: 'Inter_500Medium',
+    fontSize: 14,
+    color: colors.ink,
+    marginBottom: 12,
+  },
+  errorText: {
+    color: colors.clay,
+    fontFamily: 'Inter_500Medium',
+    fontSize: 12,
+    marginTop: 4,
+    marginBottom: 12,
+  },
+  cta: {
+    backgroundColor: colors.sage,
+    borderRadius: 999,
+    paddingVertical: 17,
+    alignItems: 'center',
+    marginTop: 12,
+    ...shadow.cta,
+  },
+  ctaText: { fontFamily: 'Inter_700Bold', fontSize: 14, color: '#fff' },
+  footer: { flexDirection: 'row', justifyContent: 'center', marginTop: 32, marginBottom: 16 },
+  footerText: { fontFamily: 'Inter_500Medium', fontSize: 13, color: colors.muted },
+  footerLink: { color: colors.clay, fontFamily: 'Inter_700Bold', fontSize: 13 },
+});
