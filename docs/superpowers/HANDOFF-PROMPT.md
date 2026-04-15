@@ -31,20 +31,21 @@ You're picking up implementation work on the **Becipe** app (formerly Dishr — 
 
 Previous work on this branch:
 - **22 commits** (`aa1f0a91`..`c7102f51`) shipped the v2 redesign: 4-tab IA (Home/Explore/+/Kitchen/You), modal add sheet, mock circles, AsyncStorage fridge, palate-match Explore, drafts, etc.
-- **Plan 1 (UI polish round 2)** has been partially implemented in a parallel session. 7 commits landed: `a6e1c01c`..`407e32aa`. These cover Tasks 1–7 of Plan 1. **Task 8 (Friends row visual distinction from Circle bars in the You tab) may still be outstanding** — verify by reading `app/(tabs)/profile.tsx` and the relevant Plan 1 section. If Task 8 isn't done, finish it before moving on.
+- **Plan 1 (UI polish round 2)** is **complete**. 8 commits landed: `a6e1c01c`..`737906ec` (plus unrelated docs commit `803a3454`). Verified in a separate pass.
+- **Migration 013** (`013_rename_palate_axes.sql`) has been applied in the Supabase dashboard. Palate axes are now `sweet / spicy / savory / sour / bitter` in both code and DB.
 
-Current HEAD at handoff: check `git log --oneline -1` — should be at least `803a3454` or later.
+Current HEAD at handoff: `737906ec` or later.
 
 ## The plans
 
 Read each plan in full before starting it. They live in `docs/superpowers/plans/`:
 
-1. **`2026-04-15-plan1-ui-polish-round2.md`** — 8 surgical UI fixes. **Likely mostly done.** Check status, finish Task 8 if needed, then move on.
+1. **`2026-04-15-plan1-ui-polish-round2.md`** — 8 surgical UI fixes. **Done.** Skip. Start at Plan 2.
 2. **`2026-04-15-plan2-backend-v2-stubs.md`** — replace stubs (circles, fridge, friends blocking) with real Supabase data. Includes migrations 008, 009, 010 that Drew runs in the dashboard.
 3. **`2026-04-15-plan5-baking-support.md`** — unit coverage, metric/imperial toggle, F/C toggle, pan size field, tappable inline step timers with `expo-notifications`. Includes migration 012.
 4. **`2026-04-15-plan3-voice-stt.md`** — voice dictation + cook-mode commands. **FREE OPTIONS ONLY** (Apple Speech Framework, `expo-speech-recognition`, or iOS 18.1+ Apple Intelligence). Cloud STT is explicitly forbidden. Starts with a research pass. **Run this LAST** because it requires leaving Expo Go for a dev-client build.
 
-**Run order:** Plan 1 (finish if needed) → Plan 2 → Plan 5 → Plan 3.
+**Run order:** Plan 2 → Plan 5 → Plan 3.
 
 **Plan 4 (Ask Julian AI assistant) is deleted and deferred.** Do not resurrect it. Any reference you see in older docs to "Ask Julian" or "Plan 4" is stale.
 
@@ -93,6 +94,80 @@ git status --short
 npx tsc --noEmit 2>&1 | wc -l
 ```
 
-Then read `CLAUDE.md`, read `docs/superpowers/plans/2026-04-15-plan1-ui-polish-round2.md`, verify whether Plan 1 Task 8 is done (check `app/(tabs)/profile.tsx` for the Friends row styling vs `components/CircleCard.tsx` bar variant), finish Task 8 if outstanding, then move to Plan 2. Work through each plan in order, reporting between plans.
+Then read `CLAUDE.md`, then read `docs/superpowers/plans/2026-04-15-plan2-backend-v2-stubs.md`, and start Plan 2. Work through Plans 2 → 5 → 3 in order, reporting between plans.
 
 If you hit an unrecoverable blocker, STOP, commit whatever is safe, and report. Do not push, do not amend prior commits, do not force-anything.
+
+## Deferred backlog
+
+Do NOT pick these up unless Drew explicitly asks. Recorded here so they don't get lost:
+
+- **Onboarding tutorial screen.** After the palate quiz, Drew wants a brief "how to use the app" walkthrough (tap the tabs, add a recipe, log a try, join a circle). Not built yet. Parked until Plans 2/5/3 ship. Onboarding stays *quiz + tutorial* — appliances, equipment, diet, and other prefs belong in **Settings**, not onboarding.
+- **Constraint-based onboarding pivot (ex-"Plan 6").** Replacing the palate quiz with equipment/time/difficulty/diet filters was considered and explicitly rejected by Drew. Do not resurrect.
+
+---
+
+# For Drew — sharing with Jonah without merging to main
+
+Below is for Drew (the human), not the agent. Instructions for showing this branch to Jonah (co-founder, `@jpark2007` on GitHub) for review without pushing to `main`.
+
+## Why draft PRs are the right tool here
+
+A **draft PR** is GitHub's explicit "review this, don't merge yet" state. GitHub will not let anyone merge a draft PR until someone manually marks it ready for review, so it's a safety rail against accidental merges. Jonah gets the full Files Changed diff, can leave inline comments, and can pull the branch locally if he wants to run it.
+
+## Commands to run (once, from the repo root)
+
+```bash
+# 1. Push the branch to origin (-u sets upstream tracking so later git push
+#    from this branch doesn't need args)
+git push -u origin ak-ui-v2
+
+# 2. Open a draft PR against main. --draft is the important flag.
+gh pr create --draft --base main --head ak-ui-v2 \
+  --title "v2 redesign — review only, do not merge yet" \
+  --body "Draft for Jonah's review. Do not merge — we may roll this back if we decide v2 isn't the direction.
+
+What's in this branch:
+- v2 editorial redesign (22 commits)
+- Plan 1 UI polish round 2 (8 commits)
+- Migration 013 (palate axis rename — already applied to the live Supabase DB)
+
+How to review:
+- Read the Files Changed tab on GitHub, or check out locally with: git fetch && git checkout ak-ui-v2
+- Leave inline comments on anything you want changed
+- Do NOT mark Ready for Review or merge — this stays draft until Drew says otherwise
+
+If we scrap it:
+- Close this PR without merging
+- Nothing has been merged to main, so there is nothing to revert"
+```
+
+## Sharing with Jonah
+
+`gh pr create` prints the PR URL when it finishes. Send that URL to Jonah directly — no need to wait for GitHub notifications.
+
+## If you decide to ship it
+
+Once Jonah approves and you want to actually merge:
+1. On GitHub, click **Ready for review** to promote the draft PR.
+2. Approve it.
+3. Merge via the GitHub UI (squash or merge commit — your call). Do NOT merge locally with `git merge` into `main`.
+
+## If you decide to scrap it
+
+```bash
+# Close the PR on GitHub (or: gh pr close <pr-number>)
+# Then delete the branches:
+git push origin --delete ak-ui-v2   # removes remote branch
+git checkout main
+git branch -D ak-ui-v2               # removes local branch
+```
+
+`main` is untouched throughout. There is nothing to revert.
+
+## Hard don'ts
+
+- **Don't** push to `main` directly.
+- **Don't** merge the PR while it's still draft (you can't anyway, that's the point).
+- **Don't** force-push `ak-ui-v2` after Jonah starts reviewing — it will invalidate his line comments and make them hard to follow.
+- **Don't** amend prior commits on the branch while the PR is open — same reason.
