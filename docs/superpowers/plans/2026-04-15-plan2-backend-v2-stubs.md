@@ -24,7 +24,7 @@ The v2 redesign (commits `aa1f0a91`–`c7102f51`) shipped UI for circles, fridge
 ## Out of scope
 
 - Voice real STT (Plan 3)
-- Ask Julian AI (Plan 4)
+- Ask Julian AI (deferred — removed from plan set; no LLM work until monetization lands)
 - Baking support (Plan 5)
 - Push notifications, analytics
 - Circle invitations by phone/email (v1 is username-only)

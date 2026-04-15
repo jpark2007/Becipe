@@ -10,7 +10,7 @@ Drew asked: "also this should support baking right." Baking is a specific kind o
 
 The current app treats baking as "just another recipe" — same ingredient input, same step list, same detail view. This plan tightens a few specific surfaces to make baking recipes more usable without rebuilding anything.
 
-**Best run after Plan 4 (Ask Julian)** since Julian is the substitution authority and needs bake-aware answers — which Plan 4 already implements.
+**Note:** the earlier plan set included an "Ask Julian" AI recipe assistant that would have handled substitution questions. That plan is deferred (no paid AI allowed until monetization lands). Baking support is fully standalone — no dependency on Julian.
 
 ## Scope
 
@@ -26,7 +26,7 @@ The current app treats baking as "just another recipe" — same ingredient input
 - Altitude adjustment (future, rare use case)
 - Humidity adjustment (future, expert-only)
 - Full baking book / tutorial content
-- Scale-to-fit calculator beyond pan size (e.g. scale a 6-egg cake to 4 eggs — Julian handles that via Ask Julian, Plan 4)
+- Scale-to-fit calculator beyond pan size (e.g. scale a 6-egg cake to 4 eggs — future work)
 
 ---
 
@@ -205,7 +205,7 @@ alter table recipes
 
 ### Note on flour conversion
 
-Flour is weight-first in baking — volume is wildly imprecise. Ideal conversion of "1 cup flour" is "120 g" (sifted) or "125 g" (spooned) or "140 g" (scooped). This plan ships a *generic* volume→ml conversion; a flour-specific density table is **Future Work** or is handled by Ask Julian when the user asks.
+Flour is weight-first in baking — volume is wildly imprecise. Ideal conversion of "1 cup flour" is "120 g" (sifted) or "125 g" (spooned) or "140 g" (scooped). This plan ships a *generic* volume→ml conversion; a flour-specific density table is **Future Work**.
 
 ## Done =
 
@@ -221,4 +221,4 @@ Flour is weight-first in baking — volume is wildly imprecise. Ideal conversion
 - **expo-notifications setup** is a small ceremony — permission request, permission handler, notification scheduling. Follow Expo docs exactly. This is the main risk for this plan.
 - **Conversion rounding** is an aesthetic decision. Aim for user-friendly numbers ("1/4 cup → 60 ml", not "59.147 ml"). Match any existing app conventions.
 - **Density-aware conversions** (flour → g via density) are out of scope. Flag as Future Work if a user complains.
-- **Pairs with Ask Julian** — Plan 4 already has baking awareness in the system prompt. If a user asks Julian "can I use oil instead of butter?" on a cake recipe, Julian gives a weight-based answer. Good handoff.
+- **Substitution helper is deferred.** Originally this plan had a handoff to "Ask Julian" (an LLM-backed recipe assistant) for substitution questions. That plan is removed until monetization is in place. For v1, substitution answers are not in scope — users with questions figure it out themselves or Google. A future plan may add a static substitution lookup table (free, no AI) as an intermediate step.

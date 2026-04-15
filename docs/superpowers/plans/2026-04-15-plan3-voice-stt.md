@@ -31,11 +31,8 @@ Spend ~15 minutes on this. Options to evaluate:
 - **Pros:** Battle-tested, on-device, free, low latency, no internet needed
 - **Cons:** requires dev-client build, dropping Expo Go. Must add `NSSpeechRecognitionUsageDescription` and `NSMicrophoneUsageDescription` to `Info.plist`.
 
-### Option C — Cloud STT (OpenAI Whisper API)
-- Send audio blob to `https://api.openai.com/v1/audio/transcriptions`
-- Record audio with `expo-av` (record), upload, receive text
-- **Pros:** high accuracy, all platforms, no native module
-- **Cons:** costs money (~$0.006/min), requires internet, latency ~1–3s, API key management
+### Option C — ~~Cloud STT~~ (REMOVED)
+Any cloud STT that costs money is explicitly out of scope. Drew wants this feature free-to-host except Apple Developer Program. Do not propose Whisper, Deepgram, AssemblyAI, or any other paid API.
 
 ### Option D — iOS 18+ Apple Intelligence (native)
 - On-device LLM-enhanced STT if user is on iOS 18.1+
@@ -43,14 +40,14 @@ Spend ~15 minutes on this. Options to evaluate:
 - **Pros:** best-in-class on-device accuracy, zero cost, private
 - **Cons:** iOS-18-only, still cutting-edge, limited documentation
 
-**Deliverable for Task 1:** a short written comparison (save to this plan file as a trailing note or new doc `docs/voice-stt-research.md`). Pick ONE option and justify it in ≤100 words. Factors to weigh:
-- Cost (free strongly preferred per Drew's low-cost preference in memory)
+**Deliverable for Task 1:** a short written comparison (save to this plan file as a trailing note or new doc `docs/voice-stt-research.md`). Pick ONE **free** option (A, B, or D only) and justify it in ≤100 words. Factors to weigh:
+- **Cost: MUST be $0/month.** No paid APIs under any circumstances.
 - Dev experience (Expo Go vs dev client)
 - Cross-platform (iOS-only acceptable for v1 if Android path is documented)
 - Latency (cook mode especially needs <500ms response to "next" commands)
 - Privacy (on-device preferred)
 
-**My prior lean (implementer should validate):** Option A (`expo-speech-recognition`) if it's still maintained and works on iOS. Fallback to Option B if the package is abandoned.
+**My prior lean (implementer should validate):** Option A (`expo-speech-recognition`) if it's still maintained and works on iOS. Fallback to Option B if the package is abandoned. Option D (Apple Intelligence) if you're willing to iOS-18.1+-gate the feature.
 
 ## Task 2 — Add Recipe voice dictation (Phase 1)
 
@@ -134,7 +131,7 @@ Speech.speak(currentStep.instruction, { language: 'en-US', rate: 1.0 });
 
 - Permission denied → show a clear CTA to re-grant in Settings
 - Listening fails mid-session → auto-restart once, then surface an error
-- No internet (if Option C chosen) → cook mode falls back to manual navigation
+- No internet → on-device STT still works (this is one reason cloud STT is out)
 - Background / foreground transition → stop listening on background, restart on foreground
 - User starts listening but never speaks → auto-timeout after 10s
 
@@ -145,7 +142,7 @@ Update `docs/voice-stt.md` (new file) with:
 - Permission setup steps
 - Command grammar reference
 - Known limitations
-- Upgrade path (e.g. "if we outgrow on-device, swap to Whisper")
+- Upgrade path (future: only if monetization lands, cloud STT could be considered — not now)
 
 ---
 
@@ -187,4 +184,4 @@ Update `docs/voice-stt.md` (new file) with:
 
 - **If this plan hits a dead end** (e.g. `expo-speech-recognition` is abandoned, all options are painful) — STOP. Report back with the research writeup. Voice is not launch-critical; better to defer than ship broken.
 - **Dev client required** for most options. If Drew is still on Expo Go, either: (a) build a dev client first via `npx expo prebuild` + `npx expo run:ios`, or (b) defer until he's ready to leave Expo Go.
-- **Low cost priority:** Options A, B, D are free; Option C (Whisper) costs money. Strongly prefer the free paths unless accuracy is unusable.
+- **Free-only:** only Options A, B, or D are allowed. Cloud STT is explicitly forbidden. If accuracy is unusable on all three free options, STOP and defer the feature — do not reach for a paid fallback.
