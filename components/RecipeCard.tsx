@@ -1,4 +1,4 @@
-import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, Image, TouchableOpacity, Pressable, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import type { Recipe } from '@/lib/database.types';
 import { colors, radius, shadow } from '@/lib/theme';
@@ -8,7 +8,7 @@ interface Props {
   recipe: Recipe & {
     avg_rating?: number;
     try_count?: number;
-    creator?: { display_name: string; username: string; avatar_url: string | null };
+    creator?: { id?: string; display_name: string; username: string; avatar_url: string | null };
   };
   variant?: 'plate' | 'flat';
   showCreator?: boolean;
@@ -39,9 +39,16 @@ export function RecipeCard({ recipe, variant = 'plate', showCreator }: Props) {
         </Text>
         <View style={styles.plateMetaRow}>
           {showCreator && recipe.creator && (
-            <Text style={styles.plateMeta} numberOfLines={1}>
-              by {recipe.creator.display_name}
-            </Text>
+            <Pressable
+              onPress={(e) => {
+                e.stopPropagation?.();
+                if (recipe.creator?.id) router.push(`/user/${recipe.creator.id}` as any);
+              }}
+            >
+              <Text style={styles.plateMeta} numberOfLines={1}>
+                by {recipe.creator.display_name}
+              </Text>
+            </Pressable>
           )}
           {recipe.cuisine && (
             <Text style={styles.plateMeta}>{recipe.cuisine}</Text>
@@ -131,9 +138,15 @@ export function RecipeCard({ recipe, variant = 'plate', showCreator }: Props) {
       </View>
 
       {showCreator && recipe.creator && (
-        <View style={styles.creatorRow}>
+        <Pressable
+          style={styles.creatorRow}
+          onPress={(e) => {
+            e.stopPropagation?.();
+            if (recipe.creator?.id) router.push(`/user/${recipe.creator.id}` as any);
+          }}
+        >
           <Text style={styles.creatorText}>by {recipe.creator.display_name}</Text>
-        </View>
+        </Pressable>
       )}
 
       <View style={styles.hairline} />
