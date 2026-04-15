@@ -7,8 +7,8 @@ import {
   Dimensions,
   ActivityIndicator,
   StyleSheet,
-  SafeAreaView,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { GestureDetector, Gesture } from 'react-native-gesture-handler';

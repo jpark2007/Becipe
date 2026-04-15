@@ -4,10 +4,10 @@ import {
   FlatList,
   Pressable,
   ActivityIndicator,
-  SafeAreaView,
   StyleSheet,
   Alert,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/store/auth';
@@ -106,7 +106,7 @@ export default function ProfileScreen() {
             <RecipeCard recipe={item} variant="plate" />
           </View>
         )}
-        contentContainerStyle={{ paddingBottom: 60 }}
+        contentContainerStyle={{ paddingBottom: 100 }}
         ListHeaderComponent={
           <View>
             <View style={{ paddingHorizontal: 22, paddingTop: 14 }}>

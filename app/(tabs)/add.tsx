@@ -9,9 +9,9 @@ import {
   Alert,
   KeyboardAvoidingView,
   Platform,
-  SafeAreaView,
   StyleSheet,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useShareIntent } from 'expo-share-intent';
 import { supabase } from '@/lib/supabase';
@@ -721,7 +721,7 @@ export default function AddScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.bone },
-  scroll: { paddingHorizontal: 22, paddingBottom: 48, paddingTop: 12 },
+  scroll: { paddingHorizontal: 22, paddingBottom: 100, paddingTop: 12 },
   subtitle: {
     fontFamily: 'Inter_500Medium',
     fontSize: 13,

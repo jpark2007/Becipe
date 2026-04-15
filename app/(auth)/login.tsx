@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import {
   View, Text, TextInput, Pressable,
-  KeyboardAvoidingView, Platform, ActivityIndicator, SafeAreaView, StyleSheet,
+  KeyboardAvoidingView, Platform, ActivityIndicator, StyleSheet,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Link, useRouter } from 'expo-router';
 import { supabase } from '@/lib/supabase';
 import { colors, shadow } from '@/lib/theme';
