@@ -17,6 +17,13 @@ import {
 import {
   Lora_400Regular,
 } from '@expo-google-fonts/lora';
+import {
+  Inter_500Medium,
+  Inter_600SemiBold,
+  Inter_700Bold,
+  Inter_800ExtraBold,
+  Inter_900Black,
+} from '@expo-google-fonts/inter';
 import { queryClient } from '@/lib/query-client';
 import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/store/auth';
@@ -76,6 +83,11 @@ export default function RootLayout() {
     DMMono_400Regular,
     DMMono_500Medium,
     Lora_400Regular,
+    Inter_500Medium,
+    Inter_600SemiBold,
+    Inter_700Bold,
+    Inter_800ExtraBold,
+    Inter_900Black,
   });
 
   const isAuthReady = useAuthStore((s) => s.isAuthReady);
