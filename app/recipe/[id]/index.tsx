@@ -18,6 +18,8 @@ import { EditorialHeading } from '@/components/EditorialHeading';
 import { matchScore, parsePalate } from '@/lib/palate';
 import { useAuthStore } from '@/store/auth';
 import type { Ingredient, Tip } from '@/lib/database.types';
+import { emojiFor } from '@/lib/ingredient-emoji';
+import { initialsFor, colorForUserId } from '@/lib/avatar';
 
 async function fetchRecipe(id: string) {
   const { data, error } = await supabase
@@ -106,19 +108,21 @@ export default function RecipeDetailScreen() {
           </Pressable>
         </View>
 
-        <Text style={styles.eyebrow}>
-          {(recipe.cuisine || 'recipe').toUpperCase()} · CANONICAL
-        </Text>
-
         {/* Hero card */}
         <View style={styles.hero}>
+          <Text style={styles.eyebrow}>
+            {(recipe.cuisine || 'recipe').toUpperCase()} · CANONICAL
+          </Text>
           <EditorialHeading size={32} emphasis={emphasisWord} emphasisColor="ink">
             {titleLead}
           </EditorialHeading>
-          <View style={styles.byline}>
-            <View style={styles.miniAv}>
+          <Pressable
+            style={styles.byline}
+            onPress={() => recipe.creator?.id && router.push(`/user/${recipe.creator.id}` as any)}
+          >
+            <View style={[styles.miniAv, { backgroundColor: colorForUserId(recipe.creator?.id) }]}>
               <Text style={styles.miniAvText}>
-                {recipe.creator?.display_name?.charAt(0).toUpperCase() ?? '?'}
+                {initialsFor(recipe.creator?.display_name)}
               </Text>
             </View>
             <Text style={styles.bylineText}>
@@ -127,7 +131,7 @@ export default function RecipeDetailScreen() {
                 {recipe.creator?.display_name?.toLowerCase() ?? 'someone'}
               </Text>
             </Text>
-          </View>
+          </Pressable>
           <View style={styles.statRow}>
             <Stat dot="sage" text={`${totalTime || '-'} min`} />
             <Stat dot="clay" text={`serves ${recipe.servings ?? '-'}`} />
@@ -169,16 +173,21 @@ export default function RecipeDetailScreen() {
           <Text style={styles.count}>{ingredients.length} items</Text>
         </View>
         <View style={{ gap: 10, marginBottom: 22 }}>
-          {ingredients.slice(0, 6).map((ing, i) => (
-            <View key={i} style={styles.ingItem}>
-              <Plate uri={recipe.cover_image_url} size={44} />
-              <Text style={styles.ingName}>{ing.name}</Text>
-              <Text style={styles.ingQ}>
-                {ing.amount}
-                {ing.unit ? ` ${ing.unit}` : ''}
-              </Text>
-            </View>
-          ))}
+          {ingredients.slice(0, 6).map((ing, i) => {
+            const emoji = emojiFor(ing.name);
+            return (
+              <View key={i} style={styles.ingItem}>
+                <View style={styles.ingGlyph}>
+                  <Text style={styles.ingGlyphText}>{emoji ?? '·'}</Text>
+                </View>
+                <Text style={styles.ingName}>{ing.name}</Text>
+                <Text style={styles.ingQ}>
+                  {ing.amount}
+                  {ing.unit ? ` ${ing.unit}` : ''}
+                </Text>
+              </View>
+            );
+          })}
           {ingredients.length > 6 && (
             <Text style={styles.moreText}>+ {ingredients.length - 6} more in cook mode</Text>
           )}
@@ -230,9 +239,9 @@ export default function RecipeDetailScreen() {
               {recipe.tries.slice(0, 5).map((t: any, i: number) => (
                 <View key={i} style={styles.tryCard}>
                   <View style={styles.tryHead}>
-                    <View style={styles.tryAv}>
+                    <View style={[styles.tryAv, { backgroundColor: colorForUserId(t.user_id) }]}>
                       <Text style={styles.tryAvText}>
-                        {t.author?.display_name?.[0]?.toUpperCase() ?? '?'}
+                        {initialsFor(t.author?.display_name)}
                       </Text>
                     </View>
                     <Text style={styles.tryName}>{t.author?.display_name}</Text>
@@ -276,7 +285,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     paddingTop: 0,
-    paddingBottom: 16,
+    paddingBottom: 8,
   },
   iconBtn: {
     width: 40,
@@ -290,15 +299,15 @@ const styles = StyleSheet.create({
   iconText: { fontSize: 18, color: colors.ink },
   eyebrow: {
     fontFamily: 'Inter_700Bold',
-    fontSize: 11,
+    fontSize: 10,
     color: colors.sage,
     letterSpacing: 1.2,
-    marginBottom: 8,
+    marginBottom: 6,
   },
   hero: {
     backgroundColor: colors.card,
     borderRadius: 26,
-    paddingVertical: 26,
+    paddingVertical: 18,
     paddingLeft: 24,
     paddingRight: 150,
     minHeight: 220,
@@ -413,6 +422,17 @@ const styles = StyleSheet.create({
     padding: 8,
     borderWidth: 1,
     borderColor: colors.border,
+  },
+  ingGlyph: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: colors.borderSoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  ingGlyphText: {
+    fontSize: 20,
   },
   ingName: { flex: 1, fontFamily: 'Inter_600SemiBold', fontSize: 13, color: colors.ink },
   ingQ: { fontFamily: 'Inter_600SemiBold', fontSize: 12, color: colors.muted, paddingRight: 8 },
