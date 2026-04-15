@@ -14,14 +14,7 @@ import { useAuthStore } from '@/store/auth';
 import { RecipeCard } from '@/components/RecipeCard';
 import { EditorialHeading } from '@/components/EditorialHeading';
 import { colors, shadow } from '@/lib/theme';
-
-const AV_COLORS = [colors.avJ, colors.avE, colors.avS, colors.avM, colors.avD];
-
-function colorForUser(id: string): string {
-  let hash = 0;
-  for (let i = 0; i < id.length; i++) hash = id.charCodeAt(i) + ((hash << 5) - hash);
-  return AV_COLORS[Math.abs(hash) % AV_COLORS.length];
-}
+import { initialsFor, colorForUserId } from '@/lib/avatar';
 
 async function fetchUserProfile(userId: string, currentUserId: string) {
   const [profileRes, recipesRes, followersRes, followingRes, isFollowingRes] = await Promise.all([
@@ -103,8 +96,8 @@ export default function UserProfileScreen() {
   const displayName: string = profile?.display_name ?? 'Cook';
   const username: string = profile?.username ?? '';
   const bio: string | undefined = profile?.bio;
-  const initial = displayName.charAt(0).toUpperCase();
-  const avColor = profile?.id ? colorForUser(profile.id) : colors.avS;
+  const initial = initialsFor(displayName);
+  const avColor = colorForUserId(profile?.id);
 
   return (
     <SafeAreaView style={styles.safe}>
