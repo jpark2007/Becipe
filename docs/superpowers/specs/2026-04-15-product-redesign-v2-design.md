@@ -5,6 +5,10 @@
 **Status:** APPROVED — ready for implementation
 **Baseline tsc:** whatever the branch tip produces at the start of implementation. Do not grow it. Existing noise (edge-function Deno imports, `App/` vs `app/` casing, stale `scripts/seed/run.ts`) is pre-existing and not owned by this cycle.
 
+## Spec review applied
+
+Spec was reviewed by a separate subagent after initial writing. Fixes applied inline: flattened route structure (no nested `add-sheet/` folder), corrected ingredient dictionary path to `lib/ingredients.ts`, added `source_type`-based imported badge (schema was unambiguous after verification), added cook.tsx footer mic swap to the surgical bug list, corrected cook-mode auto-log hook location to `cook.tsx:242`, clarified that `voice-cook.tsx` does NOT share step state. Minor contradictions on tsc baseline and circle page routing resolved.
+
 ## Context
 
 Drew tested the v2 shell (4-tab layout + circles + voice stubs + seed migration) on iOS simulator and flagged a mix of surgical bugs and IA problems. After brainstorming, the resolution is a single implementation cycle that restructures the tab IA, replaces the Circles tab with a new Kitchen tab, moves people/circles management into the You tab, cleans up several surgical bugs, and adds an ingredient-emoji system. **No schema changes, no backend work.** All data uses existing tables; new surfaces that require backend (real circles, fridge sync, voice STT, blocking) run on stubs or device-local storage for this cycle.
@@ -109,17 +113,19 @@ No surface does two jobs. No overlap. Home no longer pretends to be "Discover"; 
 3. **My Recipes section**
    - Subheading "Your recipes" + count pill
    - Grid of `RecipeCard` for recipes where `created_by = user.id`
-   - Badge on cards: `is_public = false` → small "DRAFT" badge (ochre). No imported-badge in v1 (schema column is ambiguous — revisit later).
+   - Badges on cards:
+     - `is_public = false` → small "DRAFT" badge (ochre)
+     - `source_type != 'manual'` → small "IMPORTED" badge (muted). The schema has a clean `source_type` check-constrained column (`'manual' | 'url' | 'tiktok' | 'instagram'`), so this is unambiguous.
    - Tap card → recipe detail. Drafts get an "Edit" CTA stub on the detail screen; actual edit UI is out of scope.
    - Empty state: "No recipes yet. Tap the + button to add your first."
 
-**Fridge sub-screen (`app/kitchen/fridge.tsx` — new file)**
+**Fridge sub-screen (`app/fridge.tsx` — new file, root-level push)**
 
 - Back arrow top-left (pushes off Kitchen, so back arrow is correct)
 - Heading "Your Fridge"
 - Vertical list of ingredients on hand
 - Each row: ingredient name + tap × to remove (same pattern as Queue — no swipe)
-- Add input at the top with autocomplete from the existing ~500 ingredient dictionary (`scripts/seed/lib/ingredient-dictionary` or wherever it was shipped in commit 6bc9d5af — implementer locates it)
+- Add input at the top with autocomplete from the existing ~500 ingredient dictionary at `lib/ingredients.ts` (shipped in commit 6bc9d5af)
 - Big clay CTA at the bottom: "**What can I make tonight?**"
   - Filters Queue + My Recipes by % of ingredients present in fridge
   - Shows a ranked list (sort by % match descending)
@@ -155,7 +161,7 @@ No surface does two jobs. No overlap. Home no longer pretends to be "Discover"; 
 
 ### "+" modal sheet
 
-**Route:** `app/add-sheet.tsx` (new, root-level — NOT under `(tabs)`). Registered in `app/_layout.tsx` root Stack with `presentation: 'formSheet'` (iOS native) or fall back to `'modal'`.
+**Route:** `app/add-sheet.tsx` (new, root-level — NOT under `(tabs)`, NOT nested with other add-sheet children). Registered in `app/_layout.tsx` root Stack with `presentation: 'formSheet'` (iOS native) or fall back to `'modal'`.
 
 **Entry:** the "+" button in `CustomTabBar` (`app/(tabs)/_layout.tsx`) changes its press handler from `router.push('/(tabs)/add')` to `router.push('/add-sheet')`.
 
@@ -166,13 +172,13 @@ No surface does two jobs. No overlap. Home no longer pretends to be "Discover"; 
 
 Tapping outside the sheet, pulling down, or hitting a small × in the corner closes it.
 
-**Tapping "Add a Recipe"** → pushes `app/add-sheet/add-recipe.tsx` (new file) which is the full add-recipe form.
+**Tapping "Add a Recipe"** → pushes `app/add-recipe.tsx` (new file, root-level sibling) which is the full add-recipe form.
 
-**Tapping "Log a Try"** → pushes `app/add-sheet/try-picker.tsx` (new file).
+**Tapping "Log a Try"** → pushes `app/try-picker.tsx` (new file, root-level sibling).
 
-**Delete the current `app/(tabs)/add.tsx`.** Lift its form content into `app/add-sheet/add-recipe.tsx`.
+**Delete the current `app/(tabs)/add.tsx`.** Lift its form content into `app/add-recipe.tsx`.
 
-### Add Recipe form (`app/add-sheet/add-recipe.tsx`)
+### Add Recipe form (`app/add-recipe.tsx`)
 
 **Content** (adapted from current `(tabs)/add.tsx`):
 
@@ -184,7 +190,7 @@ Tapping outside the sheet, pulling down, or hitting a small × in the corner clo
    - If publish toggle off: label reads "Save as draft", always enabled once title is non-empty, inserts with `is_public = false`
    - If publish toggle on: label reads "Publish", enabled only when title + ≥1 ingredient + ≥1 step are filled, inserts with `is_public = true`. On click with invalid state, show inline field errors.
 
-### Log a Try recipe picker (`app/add-sheet/try-picker.tsx`)
+### Log a Try recipe picker (`app/try-picker.tsx`)
 
 **Purpose:** let the user log a try without knowing the recipe's id, from a fresh app-open.
 
@@ -199,15 +205,15 @@ Tapping any result → `router.replace('/try/[id]')` with the selected recipe id
 
 ### Cook Mode auto-log prompt (`app/recipe/[id]/cook.tsx`)
 
-**Trigger:** user taps "done" on the last step of cook mode.
+**Trigger:** user taps "finish" on the last step of cook mode. `cook.tsx` already tracks `stepIndex` and `isDone = stepIndex === steps.length - 1` (line ~98), and the button at line ~242 has an `onPress={() => (isDone ? router.back() : goTo(stepIndex + 1))}` pattern. Replace the `router.back()` branch with a call that shows the prompt first, then routes.
 
-**Behavior:** show a full-screen overlay card:
+**Behavior:** show a full-screen overlay card (or a modal dialog):
 - Heading "Log your try?"
 - Body "How did it turn out? Share a rating so others can see."
 - Primary button: "Log a try" → `router.replace('/try/[id]')` with the current recipe id
 - Secondary link: "Not now" → `router.back()`
 
-This is purely additive — no changes to step navigation or voice stub.
+`voice-cook.tsx` has its own separate state and does NOT share step logic with `cook.tsx` — only `cook.tsx` needs this hook. Purely additive.
 
 ### People search modal (`app/people-search.tsx`)
 
@@ -239,18 +245,20 @@ The wooden table / ritual / members screen already exists from commit `cb2aa8ef`
 ### New files
 
 ```
-lib/avatar.ts                         # initialsFor + colorForUserId
+lib/avatar.ts                         # initialsFor + colorForUserId + colorForCircleId
 lib/ingredient-emoji.ts               # emoji lookup + normalization
 lib/circles-stub.ts                   # mock circles data
 lib/fridge-store.ts                   # AsyncStorage wrapper
 components/CircleCard.tsx             # circle card/bar component
 app/(tabs)/kitchen.tsx                # Queue + My Recipes + Fridge link
-app/kitchen/fridge.tsx                # Fridge sub-screen
-app/add-sheet.tsx                     # modal sheet with 2 actions
-app/add-sheet/add-recipe.tsx          # add recipe form
-app/add-sheet/try-picker.tsx          # log-a-try recipe picker
+app/fridge.tsx                        # Fridge sub-screen (root-level push)
+app/add-sheet.tsx                     # modal sheet with 2 action buttons
+app/add-recipe.tsx                    # add recipe form (root-level push from sheet)
+app/try-picker.tsx                    # log-a-try recipe picker (root-level push from sheet)
 app/people-search.tsx                 # people search modal
 ```
+
+**Note on route structure:** all new modal/push screens are **root-level siblings**, not nested under `add-sheet/`. Expo-router treats a file and a same-named directory as a layout segment, which would break the modal hosting. Flat is correct. The `add-sheet.tsx` modal pushes `add-recipe.tsx` or `try-picker.tsx` as siblings, not children.
 
 ### Deletions
 
@@ -427,6 +435,7 @@ Add `colorForCircleId(id: string)` to `lib/avatar.ts` (same hash trick, differen
 3. **Bottom tab bar has extended blank space** — `app/(tabs)/_layout.tsx:83`. Fix: safe-area inset.
 4. **Mic icon in add screen** — swap to sound-wave icon.
 5. **Mic icon in cook-mode voice-cook** — `app/recipe/[id]/voice-cook.tsx`. Swap to sound-wave icon.
+5b. **Mic icon in cook mode footer** — `app/recipe/[id]/cook.tsx:252` renders a 🎤 button that launches voice-cook. Swap to sound-wave so the whole voice surface is consistent.
 6. **"+" opens as stack push instead of modal sheet** — `app/(tabs)/_layout.tsx:34`. Fix: route to root-level `/add-sheet` with `presentation: 'formSheet'`.
 7. **Avatars use single initial and fixed color** — audit every avatar render site, use new `initialsFor()` + `colorForUserId()`.
 8. **Recipe detail has ~40px dead beige space above title** — `app/recipe/[id]/index.tsx`. Fix: compress `head` and `hero` padding.
@@ -480,18 +489,18 @@ Grouped by dependency order. Each bullet is a single commit, conventional `type(
   - Wrap the tab bar with `useSafeAreaInsets()` — replace hardcoded `paddingBottom: 22` with `insets.bottom + 6`
 - [ ] Delete `app/(tabs)/add.tsx`
 - [ ] Delete `app/(tabs)/circles.tsx`
-- [ ] `app/_layout.tsx` — register `add-sheet`, `add-sheet/add-recipe`, `add-sheet/try-picker`, `people-search`, `kitchen/fridge`, and `circle/[id]` (if the wooden table page moves) in root Stack with appropriate `presentation` options (`'formSheet'` for modal sheets on iOS, `'modal'` fallback)
+- [ ] `app/_layout.tsx` — register `add-sheet`, `add-recipe`, `try-picker`, `people-search`, `fridge` as root Stack screens. `add-sheet` and `people-search` get `presentation: 'formSheet'` (iOS) or `'modal'` (fallback). `add-recipe`, `try-picker`, `fridge` are full-screen pushes (default presentation). Do NOT touch the existing `circle/[id]` page — it stays at its current route, just rewire entry points in Home and You. No new circle route needed.
 
 ### "+" modal
 
 - [ ] `app/add-sheet.tsx` — 2-action sheet (Add Recipe / Log a Try)
-- [ ] `app/add-sheet/add-recipe.tsx` — full add form lifted from deleted `(tabs)/add.tsx`, plus a "Paste a link" input at the top, plus a draft/publish toggle at the bottom, plus a sound-wave voice dictation button (replacing the old mic icon)
-- [ ] `app/add-sheet/try-picker.tsx` — Queue + Recent + Search picker; tapping a result calls `router.replace('/try/[id]')`
+- [ ] `app/add-recipe.tsx` — full add form lifted from deleted `(tabs)/add.tsx`, plus a "Paste a link" input at the top, plus a draft/publish toggle at the bottom, plus a sound-wave voice dictation button (replacing the old mic icon)
+- [ ] `app/try-picker.tsx` — Queue + Recent + Search picker; tapping a result calls `router.replace('/try/[id]')`
 
 ### Home redesign
 
-- [ ] `app/(tabs)/feed.tsx` — kill Discover pill, add header with search icon, add circle row above feed, use Following as the only data source, reuse existing suggested-users empty state
-- [ ] `app/people-search.tsx` — lightweight search modal
+- [ ] `app/people-search.tsx` — lightweight search modal (land first so the feed task can reference it)
+- [ ] `app/(tabs)/feed.tsx` — kill Discover pill, add header with search icon (→ opens `people-search`), add circle row above feed (reads from `circles-stub`), use Following as the only data source, reuse existing suggested-users empty state
 
 ### Explore rewrite
 
@@ -500,7 +509,7 @@ Grouped by dependency order. Each bullet is a single commit, conventional `type(
 ### Kitchen + Fridge
 
 - [ ] `app/(tabs)/kitchen.tsx` — Queue + Fridge link + My Recipes
-- [ ] `app/kitchen/fridge.tsx` — fridge screen with autocomplete and "what can I make" CTA
+- [ ] `app/fridge.tsx` — fridge screen with autocomplete and "what can I make" CTA (root-level push, not nested)
 
 ### You tab restack
 
@@ -510,10 +519,12 @@ Grouped by dependency order. Each bullet is a single commit, conventional `type(
 ### Recipe detail polish
 
 - [ ] `app/recipe/[id]/index.tsx` — emoji ingredient rows, compress head+hero padding, avatar update
-- [ ] `app/recipe/[id]/cook.tsx` — last-step "Log your try?" prompt
+- [ ] `app/recipe/[id]/cook.tsx` — last-step "Log your try?" prompt (hook at line ~242 where finish button calls `router.back()`) AND swap footer 🎤 at line ~252 to sound-wave icon
 - [ ] `app/recipe/[id]/voice-cook.tsx` — sound-wave icon (e.g. `MaterialCommunityIcons` name `waveform` or `waveform-bold`, or any equivalent from expo-vector-icons the implementer finds cleanest)
 
 ### Avatars everywhere (sweep)
+
+Grep `components/` and the app tree for any place that renders an avatar initial, a single-letter fallback, or imports `colorForUser`. Sweep all hits to use `initialsFor` + `colorForUserId` from `lib/avatar.ts`. Known hits (non-exhaustive):
 
 - [ ] `components/FeedCard.tsx` — use `initialsFor` + `colorForUserId`
 - [ ] `components/RecipeCard.tsx` — same, if it renders creator avatars
@@ -548,7 +559,7 @@ Grouped by dependency order. Each bullet is a single commit, conventional `type(
 - **Fridge is local.** AsyncStorage only, keyed per user. Do not add a migration.
 - **Drafts use existing `is_public` column.** No schema work.
 - **URL/TikTok import:** wire the paste-link input to whichever parse function currently exists. If it returns garbage, that's Future Work — do not try to fix it in this cycle. Just ensure the form handles success, failure, and empty-response cases without crashing.
-- **Cook-mode "Log your try?" prompt:** find where step navigation advances in `app/recipe/[id]/cook.tsx` and hook the prompt onto the last-step-completion event. If cook.tsx and voice-cook.tsx share step logic, add the prompt at the shared exit point.
+- **Cook-mode "Log your try?" prompt:** hook at `cook.tsx:242` where the finish button currently calls `router.back()` when `isDone` is true. Replace that branch to show the prompt, then route. `voice-cook.tsx` does NOT share step logic — only `cook.tsx` needs this.
 - **Creator tappability:** any `FeedCard` / `RecipeCard` / recipe-detail byline that renders a creator name or avatar should wrap it in a `Pressable` → `router.push('/user/${creatorId}')`. Low-effort sweep, real UX win.
 - **When in doubt about visual details**, prefer fewer lines of code over more. The design tokens in `lib/theme.ts` are the only source of color/radius/shadow — never hardcode hex.
 - **`useSafeAreaInsets()`:** custom tab bar is a child of `Tabs`, which is inside the SafeAreaProvider set up by expo-router. You can call the hook directly in `CustomTabBar`. No need to lift state.
