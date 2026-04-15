@@ -48,6 +48,7 @@ export default function CookScreen() {
   const [checked, setChecked] = useState<Record<number, boolean>>({});
   const [tipsOpen, setTipsOpen] = useState(false);
   const [ingredientsOpen, setIngredientsOpen] = useState(false);
+  const [showLogPrompt, setShowLogPrompt] = useState(false);
 
   const translateX = useSharedValue(0);
 
@@ -239,7 +240,7 @@ export default function CookScreen() {
           </Pressable>
           <Pressable
             style={styles.nextBtn}
-            onPress={() => (isDone ? router.back() : goTo(stepIndex + 1))}
+            onPress={() => (isDone ? setShowLogPrompt(true) : goTo(stepIndex + 1))}
           >
             <Text style={styles.nextBtnText}>
               {isDone ? 'finish' : 'next step →'}
@@ -249,9 +250,38 @@ export default function CookScreen() {
             style={styles.micBtn}
             onPress={() => router.push(`/recipe/${id}/voice-cook`)}
           >
-            <Text style={styles.micBtnText}>🎤</Text>
+            <Text style={styles.micBtnText}>〜</Text>
           </Pressable>
         </View>
+
+        {showLogPrompt && (
+          <View style={styles.promptOverlay}>
+            <View style={styles.promptCard}>
+              <Text style={styles.promptTitle}>Log your try?</Text>
+              <Text style={styles.promptBody}>
+                How did it turn out? Share a rating so others can see.
+              </Text>
+              <Pressable
+                style={styles.promptPrimary}
+                onPress={() => {
+                  setShowLogPrompt(false);
+                  router.replace(`/try/${id}` as any);
+                }}
+              >
+                <Text style={styles.promptPrimaryText}>Log a try</Text>
+              </Pressable>
+              <Pressable
+                style={styles.promptSecondary}
+                onPress={() => {
+                  setShowLogPrompt(false);
+                  router.back();
+                }}
+              >
+                <Text style={styles.promptSecondaryText}>Not now</Text>
+              </Pressable>
+            </View>
+          </View>
+        )}
       </SafeAreaView>
     </View>
   );
@@ -474,5 +504,59 @@ const styles = StyleSheet.create({
   },
   micBtnText: {
     fontSize: 22,
+    fontFamily: 'Inter_700Bold',
+    color: colors.ink,
+  },
+
+  promptOverlay: {
+    position: 'absolute',
+    top: 0, left: 0, right: 0, bottom: 0,
+    backgroundColor: 'rgba(12, 10, 8, 0.55)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 28,
+  },
+  promptCard: {
+    width: '100%',
+    backgroundColor: colors.card,
+    borderRadius: radius.xl,
+    padding: 22,
+    ...shadow.card,
+  },
+  promptTitle: {
+    fontFamily: 'Inter_800ExtraBold',
+    fontSize: 20,
+    color: colors.ink,
+    letterSpacing: -0.4,
+    marginBottom: 8,
+  },
+  promptBody: {
+    fontFamily: 'Inter_500Medium',
+    fontSize: 13,
+    color: colors.inkSoft,
+    lineHeight: 20,
+    marginBottom: 18,
+  },
+  promptPrimary: {
+    backgroundColor: colors.clay,
+    borderRadius: radius.pill,
+    paddingVertical: 14,
+    alignItems: 'center',
+    marginBottom: 10,
+    ...shadow.cta,
+  },
+  promptPrimaryText: {
+    fontFamily: 'Inter_800ExtraBold',
+    fontSize: 14,
+    color: '#fff',
+  },
+  promptSecondary: {
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+  promptSecondaryText: {
+    fontFamily: 'Inter_700Bold',
+    fontSize: 13,
+    color: colors.muted,
   },
 });
