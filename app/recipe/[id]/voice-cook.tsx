@@ -142,7 +142,7 @@ export default function VoiceCookScreen() {
               <Text style={styles.vBtnText}>← back</Text>
             </Pressable>
             <Pressable style={styles.mic} onPress={handleMicPress}>
-              <Text style={{ fontSize: 22 }}>🎤</Text>
+              <Text style={{ fontSize: 22, fontFamily: 'Inter_700Bold', color: '#fff' }}>〜</Text>
             </Pressable>
             <Pressable
               style={styles.vBtn}
