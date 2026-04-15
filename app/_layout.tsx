@@ -32,7 +32,7 @@ import { ErrorBoundary } from '@/components/ErrorBoundary';
 function AuthGate() {
   const router = useRouter();
   const segments = useSegments();
-  const { session, setSession, setProfile, isAuthReady, setAuthReady } = useAuthStore();
+  const { session, setSession, setProfile, isAuthReady, setAuthReady, profile } = useAuthStore();
   const navigationState = useRootNavigationState();
 
   useEffect(() => {
@@ -63,15 +63,20 @@ function AuthGate() {
     return () => subscription.unsubscribe();
   }, []);
 
+  const hasPalate = profile?.palate_vector != null;
+
   useEffect(() => {
     if (!isAuthReady || !navigationState?.key) return;
     const inAuthGroup = segments[0] === '(auth)';
+    const inOnboarding = segments[0] === '(onboarding)';
     if (!session && !inAuthGroup) {
       router.replace('/(auth)/login');
-    } else if (session && inAuthGroup) {
+    } else if (session && !hasPalate && !inOnboarding) {
+      router.replace('/(onboarding)/welcome');
+    } else if (session && hasPalate && (inAuthGroup || inOnboarding)) {
       router.replace('/(tabs)/feed');
     }
-  }, [session, segments, navigationState?.key, isAuthReady]);
+  }, [session, segments, navigationState?.key, isAuthReady, hasPalate]);
 
   return null;
 }
@@ -107,6 +112,7 @@ export default function RootLayout() {
             }}
           >
             <Stack.Screen name="(auth)" />
+            <Stack.Screen name="(onboarding)" />
             <Stack.Screen name="(tabs)" />
             <Stack.Screen name="recipe/[id]" options={{ headerShown: false }} />
             <Stack.Screen
