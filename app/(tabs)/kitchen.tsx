@@ -136,7 +136,7 @@ export default function KitchenScreen() {
             const isDraft = r.is_public === false;
             const isImported = r.source_type && r.source_type !== 'manual';
             return (
-              <View key={r.id} style={{ position: 'relative' }}>
+              <View key={r.id}>
                 {(isDraft || isImported) && (
                   <View style={styles.badgeRow}>
                     {isDraft && (
@@ -228,12 +228,9 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   badgeRow: {
-    position: 'absolute',
-    top: 6,
-    left: 6,
     flexDirection: 'row',
     gap: 6,
-    zIndex: 2,
+    marginBottom: 6,
   },
   badge: {
     paddingHorizontal: 8,
