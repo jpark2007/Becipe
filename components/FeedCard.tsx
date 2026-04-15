@@ -6,6 +6,7 @@ import { MatchPill } from '@/components/MatchPill';
 import { colors, radius, shadow } from '@/lib/theme';
 import { matchScore, parsePalate } from '@/lib/palate';
 import { useAuthStore } from '@/store/auth';
+import { initialsFor, colorForUserId } from '@/lib/avatar';
 
 type FeedItem = {
   id: string;
@@ -25,36 +26,40 @@ type FeedItem = {
   } | null;
 };
 
-const AV_COLORS = [colors.avJ, colors.avE, colors.avS, colors.avM, colors.avD];
-
-function colorForUser(id: string): string {
-  let hash = 0;
-  for (let i = 0; i < id.length; i++) hash = id.charCodeAt(i) + ((hash << 5) - hash);
-  return AV_COLORS[Math.abs(hash) % AV_COLORS.length];
-}
-
 export function FeedCard({ item }: { item: FeedItem }) {
   const router = useRouter();
   const userPalate = useAuthStore(s => s.profile?.palate_vector ?? null);
   if (!item.recipe || !item.actor) return null;
 
-  const initial = (item.actor.display_name || item.actor.username || '?').charAt(0).toUpperCase();
-  const avColor = colorForUser(item.actor.id);
+  const actorName = item.actor.display_name || item.actor.username;
+  const avInitials = initialsFor(actorName);
+  const avColor = colorForUserId(item.actor.id);
   const score = matchScore(parsePalate(userPalate), parsePalate(item.recipe.palate_vector));
   const time = formatRelative(item.created_at);
+  const actorId = item.actor.id;
 
   return (
     <Pressable
       style={styles.row}
       onPress={() => router.push(`/recipe/${item.recipe!.id}`)}
     >
-      <View style={[styles.av, { backgroundColor: avColor }]}>
-        <Text style={styles.avText}>{initial}</Text>
-      </View>
+      <Pressable
+        style={[styles.av, { backgroundColor: avColor }]}
+        onPress={() => router.push(`/user/${actorId}` as any)}
+      >
+        <Text style={styles.avText}>{avInitials}</Text>
+      </Pressable>
       <View style={styles.card}>
-        <Text style={styles.byline} numberOfLines={1}>
-          {(item.actor.display_name || item.actor.username || 'someone').toLowerCase()} · {item.verb} · {time}
-        </Text>
+        <Pressable
+          onPress={(e) => {
+            e.stopPropagation?.();
+            router.push(`/user/${actorId}` as any);
+          }}
+        >
+          <Text style={styles.byline} numberOfLines={1}>
+            {(actorName || 'someone').toLowerCase()} · {item.verb} · {time}
+          </Text>
+        </Pressable>
         <Text style={styles.title} numberOfLines={2}>{item.recipe.title}</Text>
         <View style={styles.tagsRow}>
           {score != null && <MatchPill score={score} />}
