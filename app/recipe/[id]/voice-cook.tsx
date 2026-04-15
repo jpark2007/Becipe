@@ -1,4 +1,5 @@
 // app/recipe/[id]/voice-cook.tsx
+import { useState, useEffect, useRef } from 'react';
 import { View, Text, Pressable, StyleSheet, ImageBackground } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -6,6 +7,22 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { colors } from '@/lib/theme';
 import { EditorialHeading } from '@/components/EditorialHeading';
+
+type VoiceState = 'idle' | 'listening' | 'thinking' | 'speaking';
+
+const STATE_LABELS: Record<VoiceState, string> = {
+  idle: '◎ IDLE',
+  listening: '● LISTENING',
+  thinking: '◌ THINKING',
+  speaking: '▶ SPEAKING',
+};
+
+const STATE_COLORS: Record<VoiceState, string> = {
+  listening: '#E8B87C',
+  thinking: 'rgba(255,255,255,0.6)',
+  speaking: '#C8E6C9',
+  idle: 'rgba(255,255,255,0.4)',
+};
 
 export default function VoiceCookScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -25,15 +42,54 @@ export default function VoiceCookScreen() {
   });
 
   const steps: string[] = (recipe?.steps as any[]) || [];
-  // TODO: wire to actual cook state when voice mode goes live (Whisper + TTS).
-  // Hardcoded for the v2 visual mockup.
-  const stepIndex = 2;
-  const stepText = steps[stepIndex] || 'Slice the cremini thinly — about a quarter inch, roughly the same size. Say next when you\'re done.';
+  const [stepIndex, setStepIndex] = useState(0);
+  const [voiceState, setVoiceState] = useState<VoiceState>('listening');
+  const cycleRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  function clearCycle() {
+    if (cycleRef.current) clearTimeout(cycleRef.current);
+  }
+
+  function startCycle() {
+    clearCycle();
+    setVoiceState('listening');
+    cycleRef.current = setTimeout(() => {
+      setVoiceState('thinking');
+      cycleRef.current = setTimeout(() => {
+        setVoiceState('speaking');
+        cycleRef.current = setTimeout(() => {
+          startCycle();
+        }, 2000);
+      }, 1500);
+    }, 3000);
+  }
+
+  useEffect(() => {
+    startCycle();
+    return () => clearCycle();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  function handleMicPress() {
+    if (voiceState === 'idle') {
+      startCycle();
+    } else {
+      clearCycle();
+      setVoiceState('idle');
+    }
+  }
+
+  const stepText =
+    steps[stepIndex]
+      ? (typeof steps[stepIndex] === 'object'
+          ? (steps[stepIndex] as any).instruction ?? ''
+          : String(steps[stepIndex]))
+      : 'Slice the cremini thinly — about a quarter inch, roughly the same size. Say next when you\'re done.';
 
   return (
     <View style={styles.root}>
       <ImageBackground
-        source={{ uri: recipe?.cover_image_url ?? undefined }}
+        source={{ uri: (recipe as any)?.cover_image_url ?? undefined }}
         style={styles.bg}
       >
         <View style={styles.dim} />
@@ -72,14 +128,28 @@ export default function VoiceCookScreen() {
           </View>
 
           <View style={styles.caption}>
-            <Text style={styles.capLabel}>● LISTENING</Text>
-            <Text style={styles.capText}>"{stepText}"</Text>
+            <Text style={[styles.capLabel, { color: STATE_COLORS[voiceState] }]}>
+              {STATE_LABELS[voiceState]}
+            </Text>
+            <Text style={styles.capText}>&ldquo;{stepText}&rdquo;</Text>
           </View>
 
           <View style={styles.foot}>
-            <Pressable style={styles.vBtn}><Text style={styles.vBtnText}>← back</Text></Pressable>
-            <Pressable style={styles.mic}><Text style={{ fontSize: 22 }}>🎤</Text></Pressable>
-            <Pressable style={styles.vBtn}><Text style={styles.vBtnText}>next →</Text></Pressable>
+            <Pressable
+              style={styles.vBtn}
+              onPress={() => setStepIndex(i => Math.max(0, i - 1))}
+            >
+              <Text style={styles.vBtnText}>← back</Text>
+            </Pressable>
+            <Pressable style={styles.mic} onPress={handleMicPress}>
+              <Text style={{ fontSize: 22 }}>🎤</Text>
+            </Pressable>
+            <Pressable
+              style={styles.vBtn}
+              onPress={() => setStepIndex(i => Math.min(Math.max(steps.length - 1, 0), i + 1))}
+            >
+              <Text style={styles.vBtnText}>next →</Text>
+            </Pressable>
           </View>
         </SafeAreaView>
       </ImageBackground>
@@ -90,8 +160,6 @@ export default function VoiceCookScreen() {
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#1A1512' },
   bg: { flex: 1 },
-  // Heavier scrim instead of blurRadius — RN's blurRadius is slow / broken on Android.
-  // expo-blur is the production answer if we ever ship this for real.
   dim: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(10,8,6,0.72)' },
   safe: { flex: 1, paddingHorizontal: 22, paddingBottom: 24, position: 'relative' },
   head: { flexDirection: 'row', justifyContent: 'space-between', paddingTop: 14 },
@@ -117,7 +185,7 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: 'rgba(255,255,255,0.14)',
     marginBottom: 16,
   },
-  capLabel: { color: '#E8B87C', fontFamily: 'Inter_700Bold', fontSize: 9, letterSpacing: 1.5, marginBottom: 6 },
+  capLabel: { fontFamily: 'Inter_700Bold', fontSize: 9, letterSpacing: 1.5, marginBottom: 6 },
   capText: { color: 'rgba(255,255,255,0.95)', fontFamily: 'Inter_500Medium', fontSize: 14, lineHeight: 20, fontStyle: 'italic' },
   foot: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   vBtn: {
