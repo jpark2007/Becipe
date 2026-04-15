@@ -93,27 +93,86 @@ Visual: match the existing `tryBtn` outline style (`styles.tryBtn` and `styles.t
 ```
 Since the user already has a palate vector, the moment they land in the onboarding segment the gate bounces them to feed. That's why it "takes me to home."
 
-**Real fix:** build a dedicated editor outside the onboarding group. New route `app/palate-editor.tsx`.
+**Real fix:** build a dedicated editor outside the onboarding group. New route `app/palate-editor.tsx`. **This task also renames the palate axes** (see below) — the new editor ships with the new names.
 
-**UI choice — pentagon radar, not sliders:**
+**Axis rename: salt/sweet/umami/spice/acid → sweet/spicy/savory/sour/bitter**
 
-Drew wants "a cooler ui thing instead of slider." Build a draggable pentagon/radar chart using `react-native-svg` (already installed — verify). Five axes (salt, sweet, umami, spice, acid) as vertices of a regular pentagon. Each axis is a 0–100 scale from center (0) to vertex (100). The user's current palate is a filled polygon inside the pentagon.
+Drew's call: "we gotta find stuff ppl can relate to like sweet or spicy." The new 5 are the basic tastes every user knows from school. The old set was too cheffy (umami, acid). Mapping:
 
-- Five draggable handles at each axis position
-- Drag a handle along its axis line to adjust that value
-- Polygon fill updates live
-- Axis labels around the pentagon
-- Numeric readout below ("Salt 55 · Sweet 50 · Umami 60 · Spice 45 · Acid 50") for precision
-- A reset-to-neutral button
-- A save button at the bottom (clay primary) — writes back to `profiles.palate_vector` via supabase update, invalidates profile query in react-query cache, navigates back
+| Old | New | Notes |
+|-----|-----|-------|
+| salt | — | dropped (was rarely meaningful) |
+| sweet | sweet | same |
+| umami | savory | rename for clarity |
+| spice | spicy | minor wording |
+| acid | sour | much clearer |
+| — | bitter | new axis, neutral default |
 
-**If pentagon drag gets hairy, fallback:** clean slider UI with ink-on-parchment styling — five horizontal tracks, bigger thumb, labeled tick marks at 0/50/100. Still not the current basic slider, but simpler than SVG drag. Pick the slider fallback only if the pentagon takes more than one commit to get working.
+**Migration SQL (new file `supabase/migrations/013_rename_palate_axes.sql`, Drew runs in dashboard):**
+
+```sql
+update profiles
+set palate_vector = jsonb_build_object(
+  'sweet',  coalesce((palate_vector->>'sweet')::int, 50),
+  'spicy',  coalesce((palate_vector->>'spice')::int, 50),
+  'savory', coalesce((palate_vector->>'umami')::int, 50),
+  'sour',   coalesce((palate_vector->>'acid')::int, 50),
+  'bitter', 50
+)
+where palate_vector is not null;
+
+update recipes
+set palate_vector = jsonb_build_object(
+  'sweet',  coalesce((palate_vector->>'sweet')::int, 50),
+  'spicy',  coalesce((palate_vector->>'spice')::int, 50),
+  'savory', coalesce((palate_vector->>'umami')::int, 50),
+  'sour',   coalesce((palate_vector->>'acid')::int, 50),
+  'bitter', 50
+)
+where palate_vector is not null;
+```
+
+**Code updates:**
+- `lib/palate.ts`: `PalateVector` type + `PALATE_AXES` array reflect new keys. `parsePalate()` loop auto-updates since it iterates PALATE_AXES. `matchScore()` stays identical (works on keys generically).
+- `app/(tabs)/profile.tsx`: `AXIS_LABELS` map rewritten with new keys + display names: `{sweet: 'Sweet', spicy: 'Spicy', savory: 'Savory', sour: 'Sour', bitter: 'Bitter'}`.
+- `app/(onboarding)/palate-quiz.tsx`: if this file exists, update its question set to use the new axes (or leave it — it's being replaced by constraint-based onboarding, see Plan 6 / future work).
+- `supabase/migrations/007_seed_becipe_content.sql`: the 50 seed recipe inserts use the old keys. The data migration 013 rewrites them in place, so no edit to 007 needed. New recipes going forward use new keys.
+
+**UI choice — tactile slider cards (matches Drew's mockup):**
+
+Not a pentagon — Drew sent a mockup showing a cleaner design. Five stacked large-card sliders, one per axis. Each card has:
+
+- **Emoji icon** (top-left of card): 🍬 sweet, 🌶️ spicy, 🍖 savory, 🍋 sour, 🌿 bitter
+- **Label** in small caps (e.g. `SWEET`) with a subtitle describing the scale (`FROM SUBTLE TO SYRUPY`)
+- **Big percentage readout** (right side, ochre or axis-themed color, Inter_800 28pt)
+- **Horizontal slider track** with a gradient fill reflecting the axis color (e.g. sour = yellow→green gradient)
+- **Axis end labels** below the track (`SUBTLE` left, `DOMINANT` right)
+- **Soft card shadow**, `colors.card` background, rounded 20
+
+Use React Native's built-in `Slider` component (from `@react-native-community/slider` if installed, else `react-native`'s deprecated Slider works fine). Layout is a ScrollView of 5 slider cards.
+
+Color per axis (pick gradient stops that fit the editorial palette):
+- Sweet: cream → clay (warm)
+- Spicy: ochre → clay (hot)
+- Savory: ochreSoft → ochre (earthy)
+- Sour: sageSoft → ochre (yellow-green)
+- Bitter: borderSoft → ink (muted)
+
+**Other UI bits:**
+- Header: "The Ledger" title with a close × top-left (from mockup) — or "Your Flavor Profile" if you want to keep it descriptive
+- Below header: small helper text "Fine-tune your sensory signature. Use the sliders below to shape your preferred flavor profile."
+- Above first slider: a "BALANCED PROFILE" pill showing current profile-shape label (balanced / sweet-leaning / spicy-leaning / etc. — cosmetic, optional in v1)
+- Bottom: big clay "Save Flavor Profile ✓" button, pinned
+
+**Fallback:** if `@react-native-community/slider` isn't available and adding a dep is undesired, use simple `Pressable` + gesture-handler tap positioning. Not worth adding a dep for this.
 
 **Fix the profile button:** change `profile.tsx:240` from `router.push('/(onboarding)/palate-quiz' as any)` to `router.push('/palate-editor' as any)`.
 
-**Register the new route:** in `app/_layout.tsx` root Stack, add `<Stack.Screen name="palate-editor" options={{ headerShown: false }} />`.
+**Register the new route:** in `app/_layout.tsx` root Stack, add `<Stack.Screen name="palate-editor" options={{ headerShown: false, presentation: 'modal' }} />`.
 
-**Commit:** `feat(palate): inline palate editor with pentagon UI (fix quiz redirect)`
+**Run migration 013 before testing** — or the editor will try to read keys that don't exist yet on profiles.
+
+**Commit:** `feat(palate): rename axes to basic tastes + new tactile slider editor`
 
 ### 7. Friends → standalone page, not a section in You
 
