@@ -110,9 +110,10 @@ export default function ProfileScreen() {
         ListHeaderComponent={
           <View>
             <View style={{ paddingHorizontal: 22, paddingTop: 14 }}>
-              <EditorialHeading size={30} emphasis="kitchen" emphasisColor="sage">
-                {'Your\n'}
-              </EditorialHeading>
+              <View>
+                <EditorialHeading size={30}>{'Your'}</EditorialHeading>
+                <EditorialHeading size={30} emphasis="kitchen" emphasisColor="sage">{''}</EditorialHeading>
+              </View>
 
               {/* Avatar + name row */}
               <View style={styles.userRow}>

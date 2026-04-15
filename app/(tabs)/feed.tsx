@@ -179,7 +179,7 @@ export default function FeedScreen() {
             <Text style={{ color: colors.sage }}>◆ </Text>becipe
           </Text>
         </View>
-        <EditorialHeading size={26} emphasis="cooking" emphasisColor="sage">
+        <EditorialHeading size={20} emphasis="cooking" emphasisColor="sage">
           {'See what your circle\nis '}
         </EditorialHeading>
       </View>
@@ -369,14 +369,14 @@ const styles = StyleSheet.create({
 
   /* Header */
   headerBlock: {
-    paddingTop: 14,
+    paddingTop: 6,
     paddingBottom: 8,
   },
   wordmarkRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 14,
+    marginBottom: 10,
   },
   wordmark: {
     fontFamily: 'Inter_800ExtraBold',
@@ -387,7 +387,7 @@ const styles = StyleSheet.create({
   pillRow: {
     flexDirection: 'row',
     gap: 6,
-    marginTop: 18,
+    marginTop: 12,
     marginBottom: 18,
   },
   pill: {
