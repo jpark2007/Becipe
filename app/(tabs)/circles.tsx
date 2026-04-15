@@ -1,9 +1,10 @@
 import { ScrollView, View, Text, Pressable, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
 import { colors, radius, shadow } from '@/lib/theme';
 import { EditorialHeading } from '@/components/EditorialHeading';
 import { RitualCard } from '@/components/RitualCard';
-import { MemberRing } from '@/components/MemberRing';
+import { WoodenTable } from '@/components/WoodenTable';
 import { Plate } from '@/components/Plate';
 import { pollinationsUrl } from '@/lib/seed-images';
 
@@ -15,17 +16,16 @@ const MOCK_MEMBERS = [
 ];
 
 const MOCK_CANON = [
-  { title: 'Miso Salmon',        meta: 'unanimous · 4 tries', score: 8.7, seed: 101, prompt: 'charred miso salmon overhead' },
-  { title: 'Herb Roast Chicken', meta: 'consensus · 3 tries', score: 8.4, seed: 102, prompt: 'herb roast chicken overhead' },
+  { id: '00000000-0000-0000-0000-000000000101', title: 'Miso Salmon',        meta: 'unanimous · 4 tries', score: 8.7, seed: 101, prompt: 'charred miso salmon overhead' },
+  { id: '00000000-0000-0000-0000-000000000102', title: 'Herb Roast Chicken', meta: 'consensus · 3 tries', score: 8.4, seed: 102, prompt: 'herb roast chicken overhead' },
 ];
 
 export default function CirclesScreen() {
+  const router = useRouter();
+
   return (
     <SafeAreaView style={styles.safe}>
-      <ScrollView contentContainerStyle={{ paddingHorizontal: 22, paddingBottom: 60 }}>
-        <View style={styles.demoBanner}>
-          <Text style={styles.demoBannerText}>demo · circles backend coming next</Text>
-        </View>
+      <ScrollView contentContainerStyle={{ paddingHorizontal: 22, paddingBottom: 100 }}>
 
         <View style={styles.head}>
           <Pressable style={styles.iconBtn}><Text style={styles.iconBtnText}>←</Text></Pressable>
@@ -37,15 +37,20 @@ export default function CirclesScreen() {
         </EditorialHeading>
         <Text style={styles.meta}>4 members · 12 canonical · 87% palate overlap</Text>
 
-        <View style={{ marginVertical: 22 }}>
-          <RitualCard
-            theme="Sour &"
-            emphasis="Bright"
-            prompt="Cook something that wakes your palate up. Vinegar, citrus, ferments, briny things. Post by Sunday."
-          />
-        </View>
+        <Pressable onPress={() => router.push('/(tabs)/add')}>
+          <View style={{ marginVertical: 22 }}>
+            <RitualCard
+              theme="Sour &"
+              emphasis="Bright"
+              prompt="Cook something that wakes your palate up. Vinegar, citrus, ferments, briny things. Post by Sunday."
+            />
+          </View>
+        </Pressable>
 
-        <MemberRing members={MOCK_MEMBERS} />
+        <WoodenTable
+          members={MOCK_MEMBERS}
+          onMemberPress={() => router.push('/user/00000000-0000-0000-0000-000000000001' as any)}
+        />
 
         <View style={styles.sectionH}>
           <Text style={styles.sectionTitle}>Canonical</Text>
@@ -53,16 +58,18 @@ export default function CirclesScreen() {
         </View>
         <View style={{ gap: 14 }}>
           {MOCK_CANON.map((c, i) => (
-            <View key={i} style={styles.canonCard}>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.canonTitle}>{c.title}</Text>
-                <Text style={styles.canonMeta}>{c.meta}</Text>
-                <Text style={styles.canonScore}>{c.score}</Text>
+            <Pressable key={i} onPress={() => router.push(`/recipe/${c.id}` as any)}>
+              <View style={styles.canonCard}>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.canonTitle}>{c.title}</Text>
+                  <Text style={styles.canonMeta}>{c.meta}</Text>
+                  <Text style={styles.canonScore}>{c.score}</Text>
+                </View>
+                <View style={{ position: 'absolute', top: '50%', right: -16, marginTop: -55 }}>
+                  <Plate uri={pollinationsUrl(c.prompt, c.seed)} size={110} />
+                </View>
               </View>
-              <View style={{ position: 'absolute', top: '50%', right: -16, marginTop: -55 }}>
-                <Plate uri={pollinationsUrl(c.prompt, c.seed)} size={110} />
-              </View>
-            </View>
+            </Pressable>
           ))}
         </View>
       </ScrollView>
@@ -72,22 +79,6 @@ export default function CirclesScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.bone },
-  demoBanner: {
-    marginTop: 10,
-    marginBottom: 6,
-    backgroundColor: colors.ochreSoft,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: radius.pill,
-    alignSelf: 'flex-start',
-  },
-  demoBannerText: {
-    fontFamily: 'Inter_700Bold',
-    fontSize: 10,
-    color: colors.ochre,
-    letterSpacing: 1.0,
-    textTransform: 'uppercase',
-  },
   head: { flexDirection: 'row', justifyContent: 'space-between', paddingTop: 8, paddingBottom: 14 },
   iconBtn: {
     width: 40, height: 40, borderRadius: 20,
