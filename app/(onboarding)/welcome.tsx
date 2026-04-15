@@ -1,4 +1,5 @@
-import { View, Text, Pressable, StyleSheet, SafeAreaView } from 'react-native';
+import { View, Text, Pressable, StyleSheet } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { colors, radius, shadow } from '@/lib/theme';
 import { EditorialHeading } from '@/components/EditorialHeading';
@@ -44,7 +45,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.pill,
     paddingVertical: 17,
     alignItems: 'center',
-    marginBottom: 32,
+    marginBottom: 0,
     ...shadow.cta,
   },
   ctaText: {

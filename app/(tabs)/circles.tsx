@@ -1,4 +1,5 @@
-import { ScrollView, View, Text, Pressable, StyleSheet, SafeAreaView } from 'react-native';
+import { ScrollView, View, Text, Pressable, StyleSheet } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors, radius, shadow } from '@/lib/theme';
 import { EditorialHeading } from '@/components/EditorialHeading';
 import { RitualCard } from '@/components/RitualCard';
