@@ -1,4 +1,5 @@
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { colors } from '@/lib/theme';
 
 interface Props {
   value: number;
@@ -49,25 +50,26 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   label: {
-    fontFamily: 'DMMono_400Regular',
-    fontSize: 9,
-    color: '#A09590',
-    letterSpacing: 1.6,
+    fontFamily: 'Inter_700Bold',
+    fontSize: 10,
+    color: colors.muted,
+    letterSpacing: 1.2,
   },
   scoreRow: {
     flexDirection: 'row',
     alignItems: 'baseline',
   },
   scoreNumber: {
-    fontFamily: 'DMMono_500Medium',
+    fontFamily: 'Inter_800ExtraBold',
     fontSize: 36,
-    color: '#C4622D',
+    color: colors.ochre,
     lineHeight: 40,
+    letterSpacing: -1.2,
   },
   scoreSuffix: {
-    fontFamily: 'DMMono_400Regular',
-    fontSize: 16,
-    color: '#A09590',
+    fontFamily: 'Inter_500Medium',
+    fontSize: 14,
+    color: colors.muted,
   },
   barsRow: {
     flexDirection: 'row',
@@ -75,14 +77,14 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   bar: {
-    // Each bar takes ~4.5% of width; gap: 2 handles spacing
     flex: 1,
     height: 28,
+    borderRadius: 3,
   },
   barFilled: {
-    backgroundColor: '#C4622D',
+    backgroundColor: colors.ochre,
   },
   barEmpty: {
-    backgroundColor: '#D5CCC0',
+    backgroundColor: colors.border,
   },
 });
