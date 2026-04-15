@@ -1,12 +1,13 @@
 import { ScrollView, View, Text, Pressable, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { colors, radius, shadow } from '@/lib/theme';
 import { EditorialHeading } from '@/components/EditorialHeading';
 import { RitualCard } from '@/components/RitualCard';
 import { WoodenTable } from '@/components/WoodenTable';
 import { Plate } from '@/components/Plate';
 import { pollinationsUrl } from '@/lib/seed-images';
+import { getStubCircle } from '@/lib/circles-stub';
 
 const MOCK_MEMBERS = [
   { initial: 'J', name: 'julian',  twin: '92% twin',  color: colors.avJ },
@@ -20,32 +21,42 @@ const MOCK_CANON = [
   { id: '00000000-0000-0000-0000-000000000102', title: 'Herb Roast Chicken', meta: 'consensus · 3 tries', score: 8.4, seed: 102, prompt: 'herb roast chicken overhead' },
 ];
 
-export default function CirclesScreen() {
+export default function CircleScreen() {
   const router = useRouter();
+  const { id } = useLocalSearchParams<{ id: string }>();
+  const circle = id ? getStubCircle(id) : undefined;
+
+  const title = circle?.name ?? 'The Dinner Group';
+  const ritualName = circle?.ritual?.name ?? 'Sour & Bright';
+  const posted = circle?.ritual?.posted ?? 3;
+  const total = circle?.ritual?.total ?? 4;
+  const memberCount = circle?.memberCount ?? 4;
 
   return (
     <SafeAreaView style={styles.safe}>
       <ScrollView contentContainerStyle={{ paddingHorizontal: 22, paddingBottom: 100 }}>
 
         <View style={styles.head}>
-          <Pressable style={styles.iconBtn}><Text style={styles.iconBtnText}>←</Text></Pressable>
+          <Pressable style={styles.iconBtn} onPress={() => router.back()}>
+            <Text style={styles.iconBtnText}>←</Text>
+          </Pressable>
           <Pressable style={styles.iconBtn}><Text style={styles.iconBtnText}>⋯</Text></Pressable>
         </View>
 
         <EditorialHeading size={30} emphasis="Group" emphasisColor="ink">
-          {'The Dinner\n'}
+          {title + '\n'}
         </EditorialHeading>
-        <Text style={styles.meta}>4 members · 12 canonical · 87% palate overlap</Text>
+        <Text style={styles.meta}>
+          {memberCount} members · {posted}/{total} this ritual
+        </Text>
 
-        <Pressable onPress={() => router.push('/(tabs)/add')}>
-          <View style={{ marginVertical: 22 }}>
-            <RitualCard
-              theme="Sour &"
-              emphasis="Bright"
-              prompt="Cook something that wakes your palate up. Vinegar, citrus, ferments, briny things. Post by Sunday."
-            />
-          </View>
-        </Pressable>
+        <View style={{ marginVertical: 22 }}>
+          <RitualCard
+            theme={ritualName.split(' ')[0] + ' &'}
+            emphasis={ritualName.split(' ').slice(1).join(' ') || 'Bright'}
+            prompt="Cook something that wakes your palate up. Vinegar, citrus, ferments, briny things. Post by Sunday."
+          />
+        </View>
 
         <WoodenTable
           members={MOCK_MEMBERS}
@@ -54,7 +65,7 @@ export default function CirclesScreen() {
 
         <View style={styles.sectionH}>
           <Text style={styles.sectionTitle}>Canonical</Text>
-          <Text style={styles.count}>12 recipes</Text>
+          <Text style={styles.count}>{MOCK_CANON.length} recipes</Text>
         </View>
         <View style={{ gap: 14 }}>
           {MOCK_CANON.map((c, i) => (
@@ -101,7 +112,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.ochreSoft,
     paddingHorizontal: 10,
     paddingVertical: 4,
-    borderRadius: 999,
+    borderRadius: radius.pill,
   },
   canonCard: {
     backgroundColor: colors.card,

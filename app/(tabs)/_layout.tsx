@@ -1,27 +1,31 @@
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { Tabs, useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { colors } from '@/lib/theme';
 
-const TAB_ORDER = ['feed', 'explore', 'add', 'circles', 'profile'] as const;
+// 'add' stays in TAB_ORDER as a sentinel for the "+" visual slot — it is
+// NOT a real tab route anymore. Pressing it opens the add-sheet modal.
+const TAB_ORDER = ['feed', 'explore', 'add', 'kitchen', 'profile'] as const;
 const TAB_LABELS: Record<string, string> = {
   feed: 'Home',
   explore: 'Explore',
-  circles: 'Circles',
+  kitchen: 'Kitchen',
   profile: 'You',
 };
 const TAB_ICONS: Record<string, string> = {
   feed: '⊟',
   explore: '◎',
-  circles: '◯',
+  kitchen: '◧',
   profile: '◈',
 };
 
 function CustomTabBar({ state, navigation }: BottomTabBarProps) {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
 
   return (
-    <View style={styles.tabBar}>
+    <View style={[styles.tabBar, { paddingBottom: insets.bottom + 6 }]}>
       {TAB_ORDER.map((routeName) => {
         const route = state.routes.find((r) => r.name === routeName);
         const isFocused = route ? state.index === state.routes.indexOf(route) : false;
@@ -31,7 +35,7 @@ function CustomTabBar({ state, navigation }: BottomTabBarProps) {
             <Pressable
               key="add"
               style={styles.addBtn}
-              onPress={() => router.push('/(tabs)/add')}
+              onPress={() => router.push('/add-sheet' as any)}
             >
               <Text style={styles.addBtnText}>+</Text>
             </Pressable>
@@ -67,8 +71,7 @@ export default function TabLayout() {
     >
       <Tabs.Screen name="feed" options={{ title: 'Home' }} />
       <Tabs.Screen name="explore" options={{ title: 'Explore' }} />
-      <Tabs.Screen name="add" options={{ title: 'Add' }} />
-      <Tabs.Screen name="circles" options={{ title: 'Circles' }} />
+      <Tabs.Screen name="kitchen" options={{ title: 'Kitchen' }} />
       <Tabs.Screen name="profile" options={{ title: 'You' }} />
     </Tabs>
   );
@@ -80,7 +83,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-around',
     backgroundColor: colors.bone,
-    paddingBottom: 22,
     paddingTop: 12,
     borderTopColor: 'transparent',
   },
