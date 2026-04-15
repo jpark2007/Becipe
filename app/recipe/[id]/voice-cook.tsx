@@ -3,6 +3,7 @@ import { useState, useEffect, useRef } from 'react';
 import { View, Text, Pressable, StyleSheet, ImageBackground } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { colors } from '@/lib/theme';
@@ -142,7 +143,7 @@ export default function VoiceCookScreen() {
               <Text style={styles.vBtnText}>← back</Text>
             </Pressable>
             <Pressable style={styles.mic} onPress={handleMicPress}>
-              <Text style={{ fontSize: 22, fontFamily: 'Inter_700Bold', color: '#fff' }}>〜</Text>
+              <MaterialCommunityIcons name="waveform" size={28} color="#fff" />
             </Pressable>
             <Pressable
               style={styles.vBtn}

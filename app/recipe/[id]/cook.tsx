@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
 import { GestureDetector, Gesture } from 'react-native-gesture-handler';
 import Animated, { useSharedValue, useAnimatedStyle, withTiming, runOnJS } from 'react-native-reanimated';
@@ -250,7 +251,7 @@ export default function CookScreen() {
             style={styles.micBtn}
             onPress={() => router.push(`/recipe/${id}/voice-cook`)}
           >
-            <Text style={styles.micBtnText}>〜</Text>
+            <MaterialCommunityIcons name="waveform" size={22} color={colors.ink} />
           </Pressable>
         </View>
 
