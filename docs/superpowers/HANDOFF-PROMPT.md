@@ -9,7 +9,7 @@ You're picking up implementation work on the **Becipe** app (formerly Dishr — 
 ## Project basics
 
 - **Repo:** `/Users/drewkhalil/Documents/Becipe`
-- **Branch:** `ak-ui-v2` — local only. Do NOT push, do NOT merge to main, do NOT rebase.
+- **Branch:** `ak-ui-v2` — pushed to `origin`. **Draft PR #2 is open** at https://github.com/jpark2007/Becipe/pull/2 for Jonah's review. Do NOT merge the PR, do NOT push to `main`, do NOT force-push `ak-ui-v2`, do NOT rebase.
 - **Tech:** Expo SDK 55+ · expo-router (file-based routing) · TypeScript · Supabase (Postgres + Auth + Realtime + Storage + Edge Functions) · React Query v5 · Zustand · `react-native-safe-area-context`
 - **Design system:** tokens live in `lib/theme.ts` — sage/clay/ochre on near-white bone base. NEVER hardcode hex. Use `colors.*`, `radius.*`, `shadow.*`. Inter font family (400–900). Full docs in `CLAUDE.md` at the repo root — read it first.
 
@@ -17,7 +17,7 @@ You're picking up implementation work on the **Becipe** app (formerly Dishr — 
 
 1. **FREE TO HOST.** The only paid service allowed is the Apple Developer Program ($99/yr). No paid APIs, no paid AI, no paid STT, no paid image generation, no paid image hosting, no paid CDN. If a plan references a paid service, skip that feature and flag it in your report.
 2. **No AI / LLM calls of any kind.** No OpenAI, Anthropic, OpenRouter, Cohere, Google Gemini, or any hosted LLM. Apple on-device frameworks (Speech, Foundation Models) are OK if they're free and shipped with iOS. Everything else is forbidden until monetization lands.
-3. **Stay on `ak-ui-v2`.** Do not create new branches unless a plan explicitly tells you to. Do not push. Do not merge.
+3. **Stay on `ak-ui-v2`.** Do not create new branches unless a plan explicitly tells you to. Pushing to `origin/ak-ui-v2` is expected — but push **only at plan boundaries** (end of each plan batch), not after every single commit, so the draft PR diff stays readable for Jonah. NEVER force-push, NEVER merge the PR, NEVER push to `main`, NEVER amend published commits.
 4. **One commit per task bullet.** Conventional commit messages: `feat(scope): subject`, `fix(scope): subject`, etc. End every commit message with:
    ```
    Co-Authored-By: Claude Opus 4.6 (1M context) <noreply@anthropic.com>
@@ -33,8 +33,9 @@ Previous work on this branch:
 - **22 commits** (`aa1f0a91`..`c7102f51`) shipped the v2 redesign: 4-tab IA (Home/Explore/+/Kitchen/You), modal add sheet, mock circles, AsyncStorage fridge, palate-match Explore, drafts, etc.
 - **Plan 1 (UI polish round 2)** is **complete**. 8 commits landed: `a6e1c01c`..`737906ec` (plus unrelated docs commit `803a3454`). Verified in a separate pass.
 - **Migration 013** (`013_rename_palate_axes.sql`) has been applied in the Supabase dashboard. Palate axes are now `sweet / spicy / savory / sour / bitter` in both code and DB.
+- **Draft PR #2 is open** at https://github.com/jpark2007/Becipe/pull/2. Jonah (`@jpark2007`, co-founder) is reviewing. Keep it in sync by pushing at plan boundaries. Do NOT mark it ready for review, do NOT merge.
 
-Current HEAD at handoff: `737906ec` or later.
+Current HEAD at handoff: `ba4fc067` or later.
 
 ## The plans
 
@@ -107,67 +108,42 @@ Do NOT pick these up unless Drew explicitly asks. Recorded here so they don't ge
 
 ---
 
-# For Drew — sharing with Jonah without merging to main
+# For Drew — the PR is already open
 
-Below is for Drew (the human), not the agent. Instructions for showing this branch to Jonah (co-founder, `@jpark2007` on GitHub) for review without pushing to `main`.
+**Draft PR:** https://github.com/jpark2007/Becipe/pull/2
 
-## Why draft PRs are the right tool here
+Branch `ak-ui-v2` is pushed to `origin`. Jonah (`@jpark2007`) has been pinged. GitHub will not let the PR merge until someone clicks **Ready for review** — that's the safety rail.
 
-A **draft PR** is GitHub's explicit "review this, don't merge yet" state. GitHub will not let anyone merge a draft PR until someone manually marks it ready for review, so it's a safety rail against accidental merges. Jonah gets the full Files Changed diff, can leave inline comments, and can pull the branch locally if he wants to run it.
+## Keeping the PR in sync as new plans ship
 
-## Commands to run (once, from the repo root)
+When a plan finishes (Plan 2 / 5 / 3), push the new commits so Jonah sees the progress:
 
 ```bash
-# 1. Push the branch to origin (-u sets upstream tracking so later git push
-#    from this branch doesn't need args)
-git push -u origin ak-ui-v2
-
-# 2. Open a draft PR against main. --draft is the important flag.
-gh pr create --draft --base main --head ak-ui-v2 \
-  --title "v2 redesign — review only, do not merge yet" \
-  --body "Draft for Jonah's review. Do not merge — we may roll this back if we decide v2 isn't the direction.
-
-What's in this branch:
-- v2 editorial redesign (22 commits)
-- Plan 1 UI polish round 2 (8 commits)
-- Migration 013 (palate axis rename — already applied to the live Supabase DB)
-
-How to review:
-- Read the Files Changed tab on GitHub, or check out locally with: git fetch && git checkout ak-ui-v2
-- Leave inline comments on anything you want changed
-- Do NOT mark Ready for Review or merge — this stays draft until Drew says otherwise
-
-If we scrap it:
-- Close this PR without merging
-- Nothing has been merged to main, so there is nothing to revert"
+git push origin ak-ui-v2
 ```
 
-## Sharing with Jonah
+Push at **plan boundaries**, not after every single commit. Keeps the PR diff readable and doesn't spam Jonah. **Never force-push** — it invalidates inline comments he may have left.
 
-`gh pr create` prints the PR URL when it finishes. Send that URL to Jonah directly — no need to wait for GitHub notifications.
+## When you decide to ship it
 
-## If you decide to ship it
-
-Once Jonah approves and you want to actually merge:
-1. On GitHub, click **Ready for review** to promote the draft PR.
-2. Approve it.
+1. On the PR page, click **Ready for review**.
+2. Get Jonah's approval.
 3. Merge via the GitHub UI (squash or merge commit — your call). Do NOT merge locally with `git merge` into `main`.
 
-## If you decide to scrap it
+## When you decide to scrap it
 
 ```bash
-# Close the PR on GitHub (or: gh pr close <pr-number>)
-# Then delete the branches:
-git push origin --delete ak-ui-v2   # removes remote branch
+gh pr close 2
+git push origin --delete ak-ui-v2
 git checkout main
-git branch -D ak-ui-v2               # removes local branch
+git branch -D ak-ui-v2
 ```
 
-`main` is untouched throughout. There is nothing to revert.
+`main` is untouched throughout. Nothing to revert.
 
 ## Hard don'ts
 
-- **Don't** push to `main` directly.
-- **Don't** merge the PR while it's still draft (you can't anyway, that's the point).
-- **Don't** force-push `ak-ui-v2` after Jonah starts reviewing — it will invalidate his line comments and make them hard to follow.
-- **Don't** amend prior commits on the branch while the PR is open — same reason.
+- **Don't** merge the PR while it's still draft (you can't anyway — that's the point).
+- **Don't** force-push `ak-ui-v2`. Ever.
+- **Don't** amend published commits. Only add new commits on top.
+- **Don't** push to `main` directly under any circumstances.
