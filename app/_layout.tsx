@@ -36,8 +36,16 @@ function AuthGate() {
   const navigationState = useRootNavigationState();
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
       setSession(session);
+      if (session?.user) {
+        const { data } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', session.user.id)
+          .single();
+        setProfile(data);
+      }
       setAuthReady(); // Auth resolved — safe to render screens
     });
 
