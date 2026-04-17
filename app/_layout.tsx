@@ -1,6 +1,7 @@
 import '../global.css';
 import { useEffect } from 'react';
 import { View, ActivityIndicator } from 'react-native';
+import * as Linking from 'expo-linking';
 import { Stack, useRouter, useSegments, useRootNavigationState } from 'expo-router';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -44,6 +45,21 @@ function AuthGate() {
   const navigationState = useRootNavigationState();
 
   useEffect(() => {
+    function handleDeepLink(url: string) {
+      // Supabase sends access_token + refresh_token in the URL hash on implicit flow
+      const hash = url.split('#')[1];
+      if (!hash) return;
+      const params = new URLSearchParams(hash);
+      const accessToken = params.get('access_token');
+      const refreshToken = params.get('refresh_token');
+      if (accessToken && refreshToken) {
+        supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken });
+      }
+    }
+
+    Linking.getInitialURL().then((url) => { if (url) handleDeepLink(url); });
+    const linkSub = Linking.addEventListener('url', ({ url }) => handleDeepLink(url));
+
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       setSession(session);
       if (session?.user) {
@@ -76,7 +92,10 @@ function AuthGate() {
       }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      subscription.unsubscribe();
+      linkSub.remove();
+    };
   }, []);
 
   const hasPalate = profile?.palate_vector != null;
