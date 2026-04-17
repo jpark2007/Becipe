@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "Dishr",
-    "slug": "dishr",
+    "name": "becipe",
+    "slug": "becipe",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "scheme": "dishr",
+    "scheme": "becipe",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "splash": {
@@ -51,7 +51,7 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "Allow Dishr to access your photos to add pictures to recipes."
+          "photosPermission": "Allow becipe to access your photos to add pictures to recipes."
         }
       ]
     ],

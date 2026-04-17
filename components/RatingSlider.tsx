@@ -1,5 +1,5 @@
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { COLORS, FONTS } from '@/lib/theme';
+import { colors } from '@/lib/theme';
 
 interface Props {
   value: number;
@@ -50,26 +50,26 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   label: {
-    fontFamily: FONTS.mono,
+    fontFamily: 'Inter_700Bold',
     fontSize: 10,
-    color: COLORS.onSurfaceVariant,
-    letterSpacing: 2,
-    textTransform: 'uppercase',
+    color: colors.muted,
+    letterSpacing: 1.2,
   },
   scoreRow: {
     flexDirection: 'row',
     alignItems: 'baseline',
   },
   scoreNumber: {
-    fontFamily: FONTS.headlineBold,
-    fontSize: 52,
-    color: COLORS.primary,
-    lineHeight: 56,
+    fontFamily: 'Inter_800ExtraBold',
+    fontSize: 36,
+    color: colors.ochre,
+    lineHeight: 40,
+    letterSpacing: -1.2,
   },
   scoreSuffix: {
-    fontFamily: FONTS.mono,
-    fontSize: 16,
-    color: COLORS.onSurfaceVariant,
+    fontFamily: 'Inter_500Medium',
+    fontSize: 14,
+    color: colors.muted,
   },
   barsRow: {
     flexDirection: 'row',
@@ -79,11 +79,12 @@ const styles = StyleSheet.create({
   bar: {
     flex: 1,
     height: 28,
+    borderRadius: 3,
   },
   barFilled: {
-    backgroundColor: COLORS.primaryContainer,
+    backgroundColor: colors.ochre,
   },
   barEmpty: {
-    backgroundColor: COLORS.outlineVariant,
+    backgroundColor: colors.border,
   },
 });

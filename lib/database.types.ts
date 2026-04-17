@@ -11,6 +11,7 @@ export interface Database {
           avatar_url: string | null;
           bio: string | null;
           created_at: string;
+          palate_vector: { salt: number; sweet: number; umami: number; spice: number; acid: number } | null;
         };
         Insert: Omit<Database['public']['Tables']['profiles']['Row'], 'created_at'>;
         Update: Partial<Database['public']['Tables']['profiles']['Insert']>;
@@ -38,6 +39,7 @@ export interface Database {
           tags: string[];
           is_public: boolean;
           created_at: string;
+          palate_vector: { salt: number; sweet: number; umami: number; spice: number; acid: number } | null;
         };
         Insert: Omit<Database['public']['Tables']['recipes']['Row'], 'id' | 'created_at'>;
         Update: Partial<Database['public']['Tables']['recipes']['Insert']>;

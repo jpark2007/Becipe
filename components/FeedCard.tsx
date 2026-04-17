@@ -1,181 +1,120 @@
-import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
+import React from 'react';
+import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
-import { formatDistanceToNow } from 'date-fns';
-import { COLORS, FONTS } from '@/lib/theme';
+import { Plate } from '@/components/Plate';
+import { MatchPill } from '@/components/MatchPill';
+import { colors, radius, shadow } from '@/lib/theme';
+import { matchScore, parsePalate } from '@/lib/palate';
+import { useAuthStore } from '@/store/auth';
+import { initialsFor, colorForUserId } from '@/lib/avatar';
 
-interface FeedCardProps {
-  item: {
+type FeedItem = {
+  id: string;
+  verb: string;
+  created_at: string;
+  actor: {
     id: string;
-    verb: string;
-    created_at: string;
-    actor: { id: string; display_name: string; username: string; avatar_url: string | null };
-    recipe: { id: string; title: string; cover_image_url: string | null; cuisine: string | null };
-    try?: { rating: number; note: string | null; photo_url: string | null } | null;
-  };
-}
+    username: string | null;
+    display_name: string | null;
+    avatar_url: string | null;
+  } | null;
+  recipe: {
+    id: string;
+    title: string;
+    cover_image_url: string | null;
+    palate_vector: any;
+  } | null;
+};
 
-export function FeedCard({ item }: FeedCardProps) {
+export function FeedCard({ item }: { item: FeedItem }) {
   const router = useRouter();
-  const verbLabel = item.verb === 'tried' ? 'tried' : item.verb === 'saved' ? 'saved' : 'shared';
-  const photoUri = item.try?.photo_url ?? item.recipe.cover_image_url ?? null;
-  const initial = item.actor.display_name[0]?.toUpperCase() ?? '?';
-  const timeAgo = formatDistanceToNow(new Date(item.created_at), { addSuffix: true });
+  const userPalate = useAuthStore(s => s.profile?.palate_vector ?? null);
+  if (!item.recipe || !item.actor) return null;
+
+  const actorName = item.actor.display_name || item.actor.username;
+  const avInitials = initialsFor(actorName);
+  const avColor = colorForUserId(item.actor.id);
+  const score = matchScore(parsePalate(userPalate), parsePalate(item.recipe.palate_vector));
+  const time = formatRelative(item.created_at);
+  const actorId = item.actor.id;
 
   return (
-    <View style={styles.card}>
-      {/* Creator row */}
-      <TouchableOpacity
-        style={styles.header}
-        onPress={() => router.push(`/user/${item.actor.id}`)}
-        activeOpacity={0.8}
+    <Pressable
+      style={styles.row}
+      onPress={() => router.push(`/recipe/${item.recipe!.id}`)}
+    >
+      <Pressable
+        style={[styles.av, { backgroundColor: avColor }]}
+        onPress={() => router.push(`/user/${actorId}` as any)}
       >
-        <View style={styles.avatarContainer}>
-          {item.actor.avatar_url ? (
-            <Image source={{ uri: item.actor.avatar_url }} style={styles.avatar} />
-          ) : (
-            <Text style={styles.avatarInitial}>{initial}</Text>
-          )}
-        </View>
-        <View style={styles.headerMeta}>
-          <Text style={styles.displayName}>{item.actor.display_name}</Text>
-          <Text style={styles.verbText}>
-            {verbLabel} a recipe · {timeAgo}
-          </Text>
-        </View>
-      </TouchableOpacity>
-
-      {/* Full-bleed image with rating badge */}
-      {photoUri && (
-        <TouchableOpacity
-          onPress={() => router.push(`/recipe/${item.recipe.id}`)}
-          activeOpacity={0.95}
+        <Text style={styles.avText}>{avInitials}</Text>
+      </Pressable>
+      <View style={styles.card}>
+        <Pressable
+          onPress={(e) => {
+            e.stopPropagation?.();
+            router.push(`/user/${actorId}` as any);
+          }}
         >
-          <View style={styles.imageWrapper}>
-            <Image source={{ uri: photoUri }} style={styles.photo} resizeMode="cover" />
-            {item.try?.rating != null && (
-              <View style={styles.ratingBadge}>
-                <Text style={styles.ratingBadgeText}>
-                  {item.try.rating.toFixed(1)}/10
-                </Text>
-              </View>
-            )}
-          </View>
-        </TouchableOpacity>
-      )}
-
-      {/* Footer */}
-      <TouchableOpacity
-        style={styles.footer}
-        onPress={() => router.push(`/recipe/${item.recipe.id}`)}
-        activeOpacity={0.8}
-      >
-        {item.recipe.cuisine && (
-          <Text style={styles.cuisineTag}>{item.recipe.cuisine.toUpperCase()}</Text>
-        )}
-        <Text style={styles.recipeTitle} numberOfLines={2}>
-          {item.recipe.title}
-        </Text>
-        {item.try?.note ? (
-          <Text style={styles.noteText} numberOfLines={3}>
-            {item.try.note}
+          <Text style={styles.byline} numberOfLines={1}>
+            {(actorName || 'someone').toLowerCase()} · {item.verb} · {time}
           </Text>
-        ) : null}
-        <Text style={styles.viewRecipe}>View recipe →</Text>
-      </TouchableOpacity>
-    </View>
+        </Pressable>
+        <Text style={styles.title} numberOfLines={2}>{item.recipe.title}</Text>
+        <View style={styles.tagsRow}>
+          {score != null && <MatchPill score={score} />}
+        </View>
+        <View style={styles.plateWrap}>
+          <Plate uri={item.recipe.cover_image_url} size={108} />
+        </View>
+      </View>
+    </Pressable>
   );
 }
 
+function formatRelative(iso: string): string {
+  const ms = Date.now() - new Date(iso).getTime();
+  const h = Math.floor(ms / 3600000);
+  if (h < 1) return 'just now';
+  if (h < 24) return `${h}h`;
+  const d = Math.floor(h / 24);
+  return `${d}d`;
+}
+
 const styles = StyleSheet.create({
+  row: { flexDirection: 'row', gap: 12, marginBottom: 24, alignItems: 'flex-start' },
+  av: {
+    width: 34, height: 34, borderRadius: 17,
+    alignItems: 'center', justifyContent: 'center',
+    marginTop: 8,
+    shadowColor: '#000', shadowOpacity: 0.12, shadowRadius: 3, shadowOffset: { width: 0, height: 1 },
+  },
+  avText: { fontFamily: 'Inter_700Bold', fontSize: 13, color: '#F5E9D3' },
   card: {
-    backgroundColor: COLORS.surfaceContainer,
-    borderRadius: 4,
-    overflow: 'hidden',
-    marginBottom: 16,
+    flex: 1,
+    backgroundColor: colors.card,
+    borderRadius: radius.xl,
+    paddingVertical: 16,
+    paddingLeft: 18,
+    paddingRight: 100,
+    minHeight: 130,
+    borderWidth: 1,
+    borderColor: colors.border,
+    position: 'relative',
+    ...shadow.card,
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 14,
+  byline: {
+    fontFamily: 'Inter_500Medium',
+    fontSize: 11, color: colors.muted, marginBottom: 6,
   },
-  avatarContainer: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: COLORS.primaryContainer,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 12,
-    overflow: 'hidden',
+  title: {
+    fontFamily: 'Inter_700Bold',
+    fontSize: 17, color: colors.ink, lineHeight: 20,
+    letterSpacing: -0.5, marginBottom: 10,
   },
-  avatar: { width: 36, height: 36, borderRadius: 18 },
-  avatarInitial: {
-    fontFamily: FONTS.bodyBold,
-    fontSize: 14,
-    color: COLORS.onPrimary,
-  },
-  headerMeta: { flex: 1 },
-  displayName: {
-    fontFamily: FONTS.bodySemiBold,
-    fontSize: 13,
-    color: COLORS.onSurface,
-  },
-  verbText: {
-    fontFamily: FONTS.body,
-    fontSize: 12,
-    color: COLORS.onSurfaceVariant,
-    marginTop: 2,
-  },
-  imageWrapper: { position: 'relative' },
-  photo: { width: '100%', height: 260 },
-  ratingBadge: {
+  tagsRow: { flexDirection: 'row', gap: 6, flexWrap: 'wrap' },
+  plateWrap: {
     position: 'absolute',
-    bottom: 12,
-    left: 12,
-    backgroundColor: 'rgba(251,249,244,0.92)',
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 100,
-  },
-  ratingBadgeText: {
-    fontFamily: FONTS.mono,
-    fontSize: 11,
-    color: COLORS.primary,
-  },
-  footer: {
-    paddingHorizontal: 16,
-    paddingTop: 14,
-    paddingBottom: 18,
-  },
-  cuisineTag: {
-    fontFamily: FONTS.mono,
-    fontSize: 9,
-    letterSpacing: 1.5,
-    color: COLORS.primary,
-    marginBottom: 6,
-  },
-  recipeTitle: {
-    fontFamily: FONTS.headlineBold,
-    fontSize: 24,
-    color: COLORS.onSurface,
-    lineHeight: 30,
-    marginBottom: 8,
-  },
-  noteText: {
-    fontFamily: FONTS.body,
-    fontSize: 13,
-    color: COLORS.onSurfaceVariant,
-    lineHeight: 20,
-    fontStyle: 'italic',
-    marginBottom: 10,
-  },
-  viewRecipe: {
-    fontFamily: FONTS.mono,
-    fontSize: 10,
-    letterSpacing: 0.5,
-    color: COLORS.primary,
-    textTransform: 'uppercase',
-    marginTop: 4,
+    top: -18, right: -14,
   },
 });

@@ -1,26 +1,13 @@
 import { useState } from 'react';
 import {
-  View, Text, TextInput, TouchableOpacity,
-  KeyboardAvoidingView, Platform, ActivityIndicator, ScrollView,
+  View, Text, TextInput, Pressable,
+  KeyboardAvoidingView, Platform, ActivityIndicator, ScrollView, StyleSheet,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Link, useRouter } from 'expo-router';
 import { supabase } from '@/lib/supabase';
-import { COLORS, FONTS } from '@/lib/theme';
-
-function Field({ label, ...props }: any) {
-  return (
-    <View style={{ borderBottomWidth: 1, borderBottomColor: COLORS.outlineVariant, marginBottom: 24, paddingBottom: 12 }}>
-      <Text style={{ fontFamily: FONTS.mono, fontSize: 10, color: COLORS.onSurfaceVariant, letterSpacing: 2.5, marginBottom: 10 }}>
-        {label}
-      </Text>
-      <TextInput
-        style={{ fontFamily: FONTS.body, fontSize: 16, color: COLORS.onSurface }}
-        placeholderTextColor={COLORS.outlineVariant}
-        {...props}
-      />
-    </View>
-  );
-}
+import { colors, shadow } from '@/lib/theme';
+import { EditorialHeading } from '@/components/EditorialHeading';
 
 export default function SignupScreen() {
   const router = useRouter();
@@ -50,7 +37,8 @@ export default function SignupScreen() {
     if (error) { setErrorMsg(error.message); setLoading(false); return; }
 
     if (data.user) {
-      await supabase.from('profiles').upsert({
+      // Upsert profile in case trigger hasn't run yet or email confirm delayed it
+      await (supabase.from('profiles') as any).upsert({
         id: data.user.id,
         username: username.toLowerCase().trim(),
         display_name: displayName.trim(),
@@ -66,49 +54,116 @@ export default function SignupScreen() {
   }
 
   return (
-    <KeyboardAvoidingView style={{ flex: 1, backgroundColor: COLORS.surface }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <ScrollView contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 32, paddingTop: 80, paddingBottom: 48 }}>
+    <SafeAreaView style={styles.safe}>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
+          {/* Wordmark */}
+          <View style={styles.wordmarkRow}>
+            <Text style={styles.diamond}>◆</Text>
+            <Text style={styles.wordmark}>becipe</Text>
+          </View>
 
-        {/* Header */}
-        <View style={{ marginBottom: 48 }}>
-          <Text style={{ fontFamily: FONTS.mono, fontSize: 10, color: COLORS.onSurfaceVariant, letterSpacing: 4, marginBottom: 8 }}>
-            NEW ACCOUNT
-          </Text>
-          <Text style={{ fontFamily: FONTS.headlineBold, fontSize: 72, color: COLORS.onSurface, lineHeight: 72 }}>
-            Dishr
-          </Text>
-          <View style={{ height: 1, backgroundColor: COLORS.outlineVariant, marginTop: 20, width: '25%' }} />
-        </View>
+          <View style={{ height: 48 }} />
 
-        <Field label="YOUR NAME" placeholder="Julia Child" value={displayName} onChangeText={setDisplayName} />
-        <Field label="USERNAME" placeholder="@juliachild" value={username} onChangeText={setUsername} autoCapitalize="none" />
-        <Field label="EMAIL" placeholder="your@email.com" value={email} onChangeText={setEmail} autoCapitalize="none" keyboardType="email-address" />
-        <Field label="PASSWORD" placeholder="••••••••" value={password} onChangeText={setPassword} secureTextEntry />
+          <EditorialHeading size={36} emphasis="cooking" emphasisColor="sage">
+            {'Start\n'}
+          </EditorialHeading>
+          <Text style={styles.subtitle}>make something worth sharing</Text>
 
-        {errorMsg ? (
-          <Text style={{ fontFamily: FONTS.body, fontSize: 13, color: COLORS.error, marginBottom: 16, lineHeight: 20 }}>
-            {errorMsg}
-          </Text>
-        ) : null}
+          <TextInput
+            style={styles.input}
+            placeholder="username"
+            placeholderTextColor={colors.muted}
+            value={username}
+            onChangeText={setUsername}
+            autoCapitalize="none"
+          />
+          <TextInput
+            style={styles.input}
+            placeholder="display name"
+            placeholderTextColor={colors.muted}
+            value={displayName}
+            onChangeText={setDisplayName}
+          />
+          <TextInput
+            style={styles.input}
+            placeholder="email"
+            placeholderTextColor={colors.muted}
+            value={email}
+            onChangeText={setEmail}
+            autoCapitalize="none"
+            keyboardType="email-address"
+          />
+          <TextInput
+            style={styles.input}
+            placeholder="password"
+            placeholderTextColor={colors.muted}
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry
+          />
 
-        <TouchableOpacity
-          style={{ backgroundColor: COLORS.primary, paddingVertical: 17, alignItems: 'center', marginTop: 20, borderRadius: 2 }}
-          onPress={handleSignup}
-          disabled={loading}
-        >
-          {loading
-            ? <ActivityIndicator color={COLORS.onPrimary} />
-            : <Text style={{ fontFamily: FONTS.monoMedium, fontSize: 11, color: COLORS.onPrimary, letterSpacing: 3.5 }}>CREATE ACCOUNT</Text>
-          }
-        </TouchableOpacity>
+          {errorMsg ? <Text style={styles.errorText}>{errorMsg}</Text> : null}
 
-        <View style={{ flexDirection: 'row', justifyContent: 'center', marginTop: 32 }}>
-          <Text style={{ fontFamily: FONTS.mono, fontSize: 12, color: COLORS.onSurfaceVariant }}>Have an account? </Text>
-          <Link href="/(auth)/login">
-            <Text style={{ fontFamily: FONTS.mono, fontSize: 12, color: COLORS.primary }}>Sign in →</Text>
-          </Link>
-        </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+          <Pressable style={styles.cta} onPress={handleSignup} disabled={loading}>
+            {loading
+              ? <ActivityIndicator color="#fff" />
+              : <Text style={styles.ctaText}>create account →</Text>}
+          </Pressable>
+
+          <View style={styles.footer}>
+            <Text style={styles.footerText}>have an account? </Text>
+            <Link href="/(auth)/login">
+              <Text style={styles.footerLink}>log in</Text>
+            </Link>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  safe: { flex: 1, backgroundColor: colors.bone },
+  scroll: { flexGrow: 1, paddingHorizontal: 24, paddingBottom: 40 },
+  wordmarkRow: { flexDirection: 'row', alignItems: 'center', marginTop: 16, gap: 6 },
+  diamond: { fontFamily: 'Inter_800ExtraBold', fontSize: 14, color: colors.sage },
+  wordmark: { fontFamily: 'Inter_800ExtraBold', fontSize: 14, color: colors.ink, letterSpacing: -0.2 },
+  subtitle: {
+    fontFamily: 'Inter_500Medium',
+    fontSize: 14,
+    color: colors.muted,
+    marginTop: 12,
+    marginBottom: 28,
+  },
+  input: {
+    backgroundColor: colors.card,
+    borderRadius: 14,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: colors.border,
+    fontFamily: 'Inter_500Medium',
+    fontSize: 14,
+    color: colors.ink,
+    marginBottom: 12,
+  },
+  errorText: {
+    color: colors.clay,
+    fontFamily: 'Inter_500Medium',
+    fontSize: 12,
+    marginTop: 4,
+    marginBottom: 12,
+  },
+  cta: {
+    backgroundColor: colors.sage,
+    borderRadius: 999,
+    paddingVertical: 17,
+    alignItems: 'center',
+    marginTop: 12,
+    ...shadow.cta,
+  },
+  ctaText: { fontFamily: 'Inter_700Bold', fontSize: 14, color: '#fff' },
+  footer: { flexDirection: 'row', justifyContent: 'center', marginTop: 32, marginBottom: 16 },
+  footerText: { fontFamily: 'Inter_500Medium', fontSize: 13, color: colors.muted },
+  footerLink: { color: colors.clay, fontFamily: 'Inter_700Bold', fontSize: 13 },
+});

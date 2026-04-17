@@ -1,43 +1,43 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import {
   View,
   Text,
   FlatList,
   ActivityIndicator,
   RefreshControl,
-  TouchableOpacity,
-  Image,
+  Pressable,
+  ScrollView,
   StyleSheet,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useRouter } from 'expo-router';
 import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/store/auth';
 import { FeedCard } from '@/components/FeedCard';
-import { RecipeCard } from '@/components/RecipeCard';
-import { COLORS, FONTS } from '@/lib/theme';
-
-/* ── Types ── */
-type FeedTab = 'discover' | 'following';
+import { CircleCard } from '@/components/CircleCard';
+import { colors, radius } from '@/lib/theme';
+import { EditorialHeading } from '@/components/EditorialHeading';
+import { initialsFor, colorForUserId } from '@/lib/avatar';
+import { getStubCircles, sortCirclesByRitualEnding } from '@/lib/circles-stub';
 
 /* ── Data fetchers ── */
 
-async function fetchFeed(userId: string) {
+async function fetchFeed(_userId: string) {
   const { data, error } = await supabase
     .from('feed_items')
     .select(`
       id, verb, created_at, try_id,
       actor:profiles!actor_id(id, display_name, username, avatar_url),
-      recipe:recipes!recipe_id(id, title, cover_image_url, cuisine)
+      recipe:recipes!recipe_id(id, title, cover_image_url, cuisine, palate_vector)
     `)
     .order('created_at', { ascending: false })
     .limit(50);
 
   if (error) throw error;
 
-  // Fetch try data separately (no FK constraint on try_id)
   const items = data ?? [];
-  const tryIds = items.map(i => i.try_id).filter(Boolean) as string[];
+  const tryIds = items.map((i: any) => i.try_id).filter(Boolean) as string[];
   let triesMap: Record<string, any> = {};
   if (tryIds.length > 0) {
     const { data: tries } = await supabase
@@ -45,46 +45,23 @@ async function fetchFeed(userId: string) {
       .select('id, rating, note, photo_url')
       .in('id', tryIds);
     for (const t of tries ?? []) {
-      triesMap[t.id] = t;
+      triesMap[(t as any).id] = t;
     }
   }
 
-  return items.map(item => ({
+  return items.map((item: any) => ({
     ...item,
     try: item.try_id ? triesMap[item.try_id] ?? null : null,
   }));
 }
 
-async function fetchDiscover() {
-  const { data, error } = await supabase
-    .from('recipes')
-    .select('*, creator:profiles!created_by(id, display_name, username, avatar_url), tries:recipe_tries(rating)')
-    .eq('is_public', true)
-    .order('created_at', { ascending: false })
-    .limit(50);
-
-  if (error) throw error;
-
-  return (data ?? []).map((r: any) => {
-    const ratings = (r.tries ?? []).map((t: any) => t.rating).filter(Boolean);
-    return {
-      ...r,
-      avg_rating: ratings.length
-        ? ratings.reduce((a: number, b: number) => a + b, 0) / ratings.length
-        : null,
-      try_count: ratings.length,
-    };
-  });
-}
-
 async function fetchSuggestedUsers(userId: string) {
-  // Get IDs the current user already follows
   const { data: followingData } = await supabase
     .from('follows')
     .select('following_id')
     .eq('follower_id', userId);
 
-  const followingIds = (followingData ?? []).map(f => f.following_id);
+  const followingIds = (followingData ?? []).map((f: any) => f.following_id);
   const excludeIds = [userId, ...followingIds];
 
   const { data, error } = await supabase
@@ -100,24 +77,13 @@ async function fetchSuggestedUsers(userId: string) {
 /* ── Component ── */
 
 export default function FeedScreen() {
+  const router = useRouter();
   const { user } = useAuthStore();
   const router = useRouter();
   const queryClient = useQueryClient();
-  const [activeTab, setActiveTab] = useState<FeedTab>('discover');
 
-  /* ── Discover query ── */
-  const {
-    data: discoverData,
-    isLoading: discoverLoading,
-    refetch: refetchDiscover,
-    isRefetching: discoverRefetching,
-  } = useQuery({
-    queryKey: ['discover'],
-    queryFn: fetchDiscover,
-    enabled: activeTab === 'discover',
-  });
+  const circles = sortCirclesByRitualEnding(getStubCircles()).slice(0, 3);
 
-  /* ── Following feed query ── */
   const {
     data: feedData,
     isLoading: feedLoading,
@@ -126,20 +92,18 @@ export default function FeedScreen() {
   } = useQuery({
     queryKey: ['feed', user?.id],
     queryFn: () => fetchFeed(user!.id),
-    enabled: !!user && activeTab === 'following',
+    enabled: !!user,
   });
 
-  /* ── Suggested users (for empty following state) ── */
   const { data: suggestedUsers } = useQuery({
     queryKey: ['suggested-users', user?.id],
     queryFn: () => fetchSuggestedUsers(user!.id),
-    enabled: !!user && activeTab === 'following',
+    enabled: !!user,
   });
 
-  /* ── Follow mutation ── */
   const followMutation = useMutation({
     mutationFn: async (targetUserId: string) => {
-      await supabase.from('follows').insert({
+      await (supabase.from('follows') as any).insert({
         follower_id: user!.id,
         following_id: targetUserId,
       });
@@ -150,171 +114,123 @@ export default function FeedScreen() {
     },
   });
 
-  /* ── Realtime subscription for feed_items ── */
   useEffect(() => {
     if (!user?.id) return;
-
     const channel = supabase
       .channel('feed-realtime')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'feed_items' }, () => {
         queryClient.invalidateQueries({ queryKey: ['feed', user?.id] });
       })
       .subscribe();
-
     return () => { supabase.removeChannel(channel); };
   }, [user?.id]);
 
-  /* ── Derived state ── */
-  const isLoading = activeTab === 'discover' ? discoverLoading : feedLoading;
-  const isRefetching = activeTab === 'discover' ? discoverRefetching : feedRefetching;
-  const onRefresh = activeTab === 'discover' ? refetchDiscover : refetchFeed;
-
-  /* ── Tab header ── */
   const renderHeader = () => (
-    <View style={styles.headerContainer}>
-      <Text style={styles.title}>Dishr</Text>
-
-      {/* Tab toggle */}
-      <View style={styles.tabRow}>
-        <TouchableOpacity
-          style={styles.tabButton}
-          onPress={() => setActiveTab('discover')}
-          activeOpacity={0.7}
+    <View>
+      {/* Compact header */}
+      <View style={styles.headerRow}>
+        <Text style={styles.wordmark}>
+          <Text style={{ color: colors.sage }}>◆ </Text>becipe
+        </Text>
+        <Pressable
+          style={styles.searchIconBtn}
+          onPress={() => router.push('/people-search' as any)}
+          hitSlop={10}
         >
-          <Text style={[styles.tabLabel, activeTab === 'discover' && styles.tabLabelActive]}>
-            DISCOVER
-          </Text>
-          {activeTab === 'discover' && <View style={styles.tabUnderline} />}
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.tabButton}
-          onPress={() => setActiveTab('following')}
-          activeOpacity={0.7}
-        >
-          <Text style={[styles.tabLabel, activeTab === 'following' && styles.tabLabelActive]}>
-            FOLLOWING
-          </Text>
-          {activeTab === 'following' && <View style={styles.tabUnderline} />}
-        </TouchableOpacity>
+          <Text style={styles.searchIcon}>⌕</Text>
+        </Pressable>
       </View>
 
-      <View style={styles.headerDivider} />
+      {/* Circle row — hide if no circles */}
+      {circles.length > 0 && (
+        <>
+          <Text style={styles.sectionLabel}>your circles</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 18 }}>
+            {circles.map((c) => (
+              <CircleCard
+                key={c.id}
+                circle={c}
+                variant="card"
+                onPress={() => router.push(`/circle/${c.id}` as any)}
+              />
+            ))}
+          </ScrollView>
+        </>
+      )}
+
+      <EditorialHeading size={22} emphasis="cooking" emphasisColor="sage">
+        {'See what your friends\nare '}
+      </EditorialHeading>
+      <View style={{ height: 14 }} />
     </View>
   );
 
-  /* ── Suggested user card ── */
   const renderSuggestedUser = (profile: {
     id: string;
     display_name: string;
     username: string;
     avatar_url: string | null;
   }) => {
-    const initial = profile.display_name?.[0]?.toUpperCase() ?? '?';
     const isPending = followMutation.isPending && followMutation.variables === profile.id;
-
     return (
       <View key={profile.id} style={styles.suggestedUserRow}>
-        <TouchableOpacity
-          style={styles.suggestedUserLeft}
-          onPress={() => router.push(`/user/${profile.id}`)}
-          activeOpacity={0.8}
+        <Pressable
+          style={[styles.suggestedAvatar, { backgroundColor: colorForUserId(profile.id) }]}
+          onPress={() => router.push(`/user/${profile.id}` as any)}
         >
-          <View style={styles.suggestedAvatar}>
-            {profile.avatar_url ? (
-              <Image source={{ uri: profile.avatar_url }} style={styles.suggestedAvatarImage} />
-            ) : (
-              <Text style={styles.suggestedAvatarInitial}>{initial}</Text>
-            )}
-          </View>
-
-          <View style={styles.suggestedUserInfo}>
-            <Text style={styles.suggestedDisplayName} numberOfLines={1}>
-              {profile.display_name}
-            </Text>
-            <Text style={styles.suggestedUsername} numberOfLines={1}>
-              @{profile.username}
-            </Text>
-          </View>
-        </TouchableOpacity>
-
-        <TouchableOpacity
+          <Text style={styles.suggestedAvatarInitial}>{initialsFor(profile.display_name)}</Text>
+        </Pressable>
+        <Pressable
+          style={styles.suggestedUserInfo}
+          onPress={() => router.push(`/user/${profile.id}` as any)}
+        >
+          <Text style={styles.suggestedDisplayName} numberOfLines={1}>
+            {profile.display_name}
+          </Text>
+          <Text style={styles.suggestedUsername} numberOfLines={1}>
+            @{profile.username}
+          </Text>
+        </Pressable>
+        <Pressable
           style={styles.followButton}
           onPress={() => followMutation.mutate(profile.id)}
           disabled={isPending}
-          activeOpacity={0.75}
         >
-          <Text style={styles.followButtonText}>
-            {isPending ? '...' : 'Follow'}
-          </Text>
-        </TouchableOpacity>
+          <Text style={styles.followButtonText}>{isPending ? '...' : 'Follow'}</Text>
+        </Pressable>
       </View>
     );
   };
 
-  /* ── Empty states ── */
-  const renderDiscoverEmpty = () => (
-    <View style={styles.emptyContainer}>
-      <Text style={styles.emptyTitle}>Nothing yet</Text>
-      <Text style={styles.emptyBody}>No recipes yet — be the first to add one!</Text>
-    </View>
-  );
-
-  const renderFollowingEmpty = () => (
+  const renderEmpty = () => (
     <View style={styles.emptyContainer}>
       <Text style={styles.emptyTitle}>Nothing yet</Text>
       <Text style={styles.emptyBody}>
-        Follow friends or try a recipe to see activity here
+        Follow cooks or join a circle to see activity here
       </Text>
 
       {suggestedUsers && suggestedUsers.length > 0 && (
         <View style={styles.suggestedSection}>
           <Text style={styles.suggestedHeading}>SUGGESTED COOKS</Text>
-          {suggestedUsers.map(renderSuggestedUser)}
+          {(suggestedUsers as any[]).map(renderSuggestedUser)}
         </View>
       )}
     </View>
   );
 
-  /* ── Loading state ── */
-  if (isLoading) {
+  if (feedLoading) {
     return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator color={COLORS.primaryContainer} />
-      </View>
+      <SafeAreaView style={styles.screen}>
+        {renderHeader()}
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator color={colors.sage} />
+        </View>
+      </SafeAreaView>
     );
   }
 
-  /* ── Discover tab ── */
-  if (activeTab === 'discover') {
-    return (
-      <View style={styles.screen}>
-        <FlatList
-          data={discoverData as any[]}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item }) => (
-            <View style={styles.cardPadding}>
-              <RecipeCard recipe={item} showCreator />
-            </View>
-          )}
-          contentContainerStyle={styles.listContent}
-          refreshControl={
-            <RefreshControl
-              refreshing={isRefetching}
-              onRefresh={onRefresh}
-              tintColor={COLORS.primaryContainer}
-            />
-          }
-          ListHeaderComponent={renderHeader}
-          ListEmptyComponent={renderDiscoverEmpty}
-        />
-      </View>
-    );
-  }
-
-  /* ── Following tab ── */
   return (
-    <View style={styles.screen}>
+    <SafeAreaView style={styles.screen}>
       <FlatList
         data={feedData as any[]}
         keyExtractor={(item) => item.id}
@@ -322,111 +238,84 @@ export default function FeedScreen() {
         contentContainerStyle={styles.listContent}
         refreshControl={
           <RefreshControl
-            refreshing={isRefetching}
-            onRefresh={onRefresh}
-            tintColor={COLORS.primaryContainer}
+            refreshing={feedRefetching}
+            onRefresh={refetchFeed}
+            tintColor={colors.sage}
           />
         }
         ListHeaderComponent={renderHeader}
-        ListEmptyComponent={renderFollowingEmpty}
+        ListEmptyComponent={renderEmpty}
       />
-    </View>
+    </SafeAreaView>
   );
 }
 
-/* ── Styles ── */
 const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: COLORS.surface,
+  screen: { flex: 1, backgroundColor: colors.bone },
+  loadingContainer: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  listContent: { paddingHorizontal: 22, paddingBottom: 100 },
+
+  headerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingTop: 6,
+    paddingBottom: 14,
   },
-  loadingContainer: {
-    flex: 1,
-    backgroundColor: COLORS.surface,
+  wordmark: {
+    fontFamily: 'Inter_800ExtraBold',
+    fontSize: 22,
+    color: colors.ink,
+    letterSpacing: -0.7,
+  },
+  searchIconBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: colors.border,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  listContent: {
-    padding: 16,
-    paddingTop: 8,
-  },
-  cardPadding: {
-    marginBottom: 0,
+  searchIcon: {
+    fontFamily: 'Inter_700Bold',
+    fontSize: 18,
+    color: colors.ink,
   },
 
-  /* Header */
-  headerContainer: {
-    marginBottom: 20,
-    paddingTop: 8,
-  },
-  title: {
-    fontFamily: FONTS.headlineBold,
-    fontSize: 40,
-    color: COLORS.onSurface,
-    letterSpacing: -0.5,
-  },
-  tabRow: {
-    flexDirection: 'row',
-    gap: 28,
-    marginTop: 16,
-  },
-  tabButton: {
-    paddingBottom: 10,
-    position: 'relative',
-  },
-  tabLabel: {
-    fontFamily: FONTS.bodyBold,
-    fontSize: 13,
-    letterSpacing: 0.3,
-    color: COLORS.onSurface + '66',
-  },
-  tabLabelActive: {
-    color: COLORS.onSurface,
-  },
-  tabUnderline: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: 2,
-    backgroundColor: COLORS.primaryContainer,
-  },
-  headerDivider: {
-    height: 1,
-    backgroundColor: COLORS.outlineVariant + '33',
-    marginTop: 0,
+  sectionLabel: {
+    fontFamily: 'Inter_700Bold',
+    fontSize: 11,
+    color: colors.muted,
+    letterSpacing: 1.0,
+    textTransform: 'uppercase',
+    marginTop: 4,
+    marginBottom: 10,
   },
 
-  /* Empty states */
-  emptyContainer: {
-    alignItems: 'center',
-    paddingVertical: 64,
-  },
+  emptyContainer: { alignItems: 'center', paddingVertical: 64 },
   emptyTitle: {
-    fontFamily: FONTS.headlineBold,
-    fontSize: 32,
-    color: COLORS.onSurfaceVariant,
+    fontFamily: 'Inter_700Bold',
+    fontSize: 22,
+    color: colors.ink,
     marginBottom: 12,
+    letterSpacing: -0.6,
   },
   emptyBody: {
-    fontFamily: FONTS.body,
+    fontFamily: 'Inter_500Medium',
     fontSize: 14,
-    color: COLORS.onSurfaceVariant,
+    color: colors.muted,
     textAlign: 'center',
     paddingHorizontal: 40,
     lineHeight: 22,
   },
 
-  /* Suggested users */
-  suggestedSection: {
-    marginTop: 36,
-    width: '100%',
-    paddingHorizontal: 8,
-  },
+  suggestedSection: { marginTop: 36, width: '100%', paddingHorizontal: 8 },
   suggestedHeading: {
-    fontFamily: FONTS.mono,
+    fontFamily: 'Inter_600SemiBold',
     fontSize: 10,
-    color: COLORS.onSurfaceVariant,
+    color: colors.muted,
     letterSpacing: 2,
     marginBottom: 16,
     textAlign: 'center',
@@ -435,7 +324,10 @@ const styles = StyleSheet.create({
   suggestedUserRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.surfaceContainerLow,
+    backgroundColor: colors.card,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
     paddingHorizontal: 14,
     paddingVertical: 12,
     marginBottom: 8,
@@ -450,48 +342,38 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: COLORS.primaryContainer,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 12,
-    overflow: 'hidden',
-  },
-  suggestedAvatarImage: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
   },
   suggestedAvatarInitial: {
-    fontFamily: FONTS.bodyBold,
-    fontSize: 16,
-    color: COLORS.onPrimary,
+    fontFamily: 'Inter_800ExtraBold',
+    fontSize: 14,
+    color: '#F5E9D3',
   },
-  suggestedUserInfo: {
-    flex: 1,
-    marginRight: 12,
-  },
+  suggestedUserInfo: { flex: 1, marginRight: 12 },
   suggestedDisplayName: {
-    fontFamily: FONTS.bodySemiBold,
+    fontFamily: 'Inter_700Bold',
     fontSize: 13,
-    color: COLORS.onSurface,
+    color: colors.ink,
   },
   suggestedUsername: {
-    fontFamily: FONTS.mono,
+    fontFamily: 'Inter_500Medium',
     fontSize: 11,
-    color: COLORS.onSurfaceVariant,
+    color: colors.muted,
     marginTop: 2,
   },
   followButton: {
     paddingHorizontal: 16,
     paddingVertical: 8,
-    backgroundColor: COLORS.primary,
-    borderRadius: 2,
+    backgroundColor: colors.sage,
+    borderRadius: radius.pill,
   },
   followButtonText: {
-    fontFamily: FONTS.mono,
+    fontFamily: 'Inter_600SemiBold',
     fontSize: 11,
-    letterSpacing: 1,
-    color: COLORS.onPrimary,
+    letterSpacing: 0.5,
+    color: '#F5E9D3',
     textTransform: 'uppercase',
   },
 });

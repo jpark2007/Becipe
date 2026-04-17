@@ -1,116 +1,218 @@
-import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, Image, TouchableOpacity, Pressable, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import type { Recipe } from '@/lib/database.types';
-import { COLORS, FONTS } from '@/lib/theme';
+import { colors, radius, shadow } from '@/lib/theme';
+import { Plate } from '@/components/Plate';
 
 interface Props {
   recipe: Recipe & {
     avg_rating?: number;
     try_count?: number;
-    creator?: { id: string; display_name: string; username: string; avatar_url: string | null };
+    creator?: { id?: string; display_name: string; username: string; avatar_url: string | null };
   };
+  variant?: 'plate' | 'flat';
   showCreator?: boolean;
 }
 
 const DIFFICULTY_COLOR: Record<string, string> = {
-  easy: '#6A9E6A',
-  medium: '#C4A44A',
-  hard: COLORS.primaryContainer,
+  easy: colors.sage,
+  medium: colors.ochre,
+  hard: colors.clay,
 };
 
-export function RecipeCard({ recipe, showCreator }: Props) {
+export function RecipeCard({ recipe, variant = 'plate', showCreator }: Props) {
   const router = useRouter();
   const totalTime =
     recipe.prep_time_min !== null && recipe.cook_time_min !== null
       ? (recipe.prep_time_min ?? 0) + (recipe.cook_time_min ?? 0)
       : null;
 
-  const initial = recipe.creator?.display_name?.[0]?.toUpperCase() ?? '?';
-
-  return (
-    <View style={styles.card}>
-      {/* Creator row — tappable, navigates to user profile */}
-      {showCreator && recipe.creator && (
-        <TouchableOpacity
-          style={styles.creatorHeader}
-          onPress={() => router.push(`/user/${recipe.creator!.id}`)}
-          activeOpacity={0.8}
-        >
-          <View style={styles.avatarContainer}>
-            {recipe.creator.avatar_url ? (
-              <Image source={{ uri: recipe.creator.avatar_url }} style={styles.avatar} />
-            ) : (
-              <Text style={styles.avatarInitial}>{initial}</Text>
-            )}
-          </View>
-          <View style={styles.creatorMeta}>
-            <Text style={styles.creatorName}>{recipe.creator.display_name}</Text>
-            <Text style={styles.creatorHandle}>@{recipe.creator.username}</Text>
-          </View>
-        </TouchableOpacity>
-      )}
-
-      {/* Image + recipe content — tappable, navigates to recipe */}
+  if (variant === 'plate') {
+    return (
       <TouchableOpacity
+        style={styles.plateCard}
         onPress={() => router.push(`/recipe/${recipe.id}`)}
-        activeOpacity={0.9}
+        activeOpacity={0.85}
       >
-        {recipe.cover_image_url ? (
-          <View style={styles.imageContainer}>
-            <Image
-              source={{ uri: recipe.cover_image_url }}
-              style={styles.image}
-              resizeMode="cover"
-            />
-            {recipe.avg_rating != null && (
-              <View style={styles.ratingBadge}>
-                <Text style={styles.ratingBadgeText}>{recipe.avg_rating.toFixed(1)}/10</Text>
-              </View>
-            )}
-            {recipe.cuisine && (
-              <View style={styles.cuisineTagOverlay}>
-                <Text style={styles.cuisineTagText}>{recipe.cuisine.toUpperCase()}</Text>
-              </View>
-            )}
-          </View>
-        ) : (
-          <View style={styles.noImageContainer}>
-            {recipe.cuisine && (
-              <Text style={styles.cuisineTagNoImage}>{recipe.cuisine.toUpperCase()}</Text>
-            )}
-          </View>
-        )}
-
-        {/* Title & meta — below image */}
-        <View style={styles.footer}>
-          <Text style={styles.recipeTitle} numberOfLines={2}>{recipe.title}</Text>
-          <View style={styles.metaRow}>
-            {recipe.avg_rating != null && !recipe.cover_image_url && (
-              <Text style={styles.rating}>{recipe.avg_rating.toFixed(1)}/10</Text>
-            )}
+        <Text style={styles.plateTitle} numberOfLines={2}>
+          {recipe.title}
+        </Text>
+        <View style={styles.plateMetaRow}>
+          {showCreator && recipe.creator && (
+            <Pressable
+              onPress={(e) => {
+                e.stopPropagation?.();
+                if (recipe.creator?.id) router.push(`/user/${recipe.creator.id}` as any);
+              }}
+            >
+              <Text style={styles.plateMeta} numberOfLines={1}>
+                by {recipe.creator.display_name}
+              </Text>
+            </Pressable>
+          )}
+          {recipe.cuisine && (
+            <Text style={styles.plateMeta}>{recipe.cuisine}</Text>
+          )}
+          {recipe.avg_rating != null && (
+            <Text style={styles.plateRating}>{recipe.avg_rating.toFixed(1)}</Text>
+          )}
+        </View>
+        {(totalTime !== null || recipe.difficulty) && (
+          <View style={styles.plateSubRow}>
             {totalTime !== null && (
-              <Text style={styles.metaMuted}>{totalTime} min</Text>
+              <Text style={styles.plateMeta}>{totalTime} min</Text>
             )}
             {recipe.difficulty && (
-              <Text style={[styles.metaMuted, { color: DIFFICULTY_COLOR[recipe.difficulty] ?? COLORS.onSurfaceVariant }]}>
+              <Text
+                style={[
+                  styles.plateMeta,
+                  { color: DIFFICULTY_COLOR[recipe.difficulty] ?? colors.muted },
+                ]}
+              >
                 {recipe.difficulty}
               </Text>
             )}
           </View>
+        )}
+        <View style={styles.plateFloat}>
+          <Plate uri={recipe.cover_image_url} size={100} />
         </View>
       </TouchableOpacity>
+    );
+  }
 
-      {/* Hairline bottom border */}
+  // flat variant (legacy layout preserved)
+  return (
+    <TouchableOpacity
+      style={styles.card}
+      onPress={() => router.push(`/recipe/${recipe.id}`)}
+      activeOpacity={0.85}
+    >
+      {recipe.cover_image_url ? (
+        <View style={styles.imageContainer}>
+          <Image
+            source={{ uri: recipe.cover_image_url }}
+            style={styles.image}
+            resizeMode="cover"
+          />
+          <View style={styles.scrim} />
+          {recipe.cuisine && (
+            <View style={styles.cuisineTagOverlay}>
+              <Text style={styles.cuisineTagText}>{recipe.cuisine.toUpperCase()}</Text>
+            </View>
+          )}
+          <View style={styles.titleOverlayContainer}>
+            <Text style={styles.titleOverlay} numberOfLines={2}>
+              {recipe.title}
+            </Text>
+          </View>
+        </View>
+      ) : (
+        <View style={styles.noImageContainer}>
+          {recipe.cuisine && (
+            <Text style={styles.cuisineTagNoImage}>{recipe.cuisine.toUpperCase()}</Text>
+          )}
+          <Text style={styles.titleNoImage} numberOfLines={2}>
+            {recipe.title}
+          </Text>
+        </View>
+      )}
+
+      <View style={styles.metaRow}>
+        {recipe.avg_rating != null && (
+          <Text style={styles.rating}>{recipe.avg_rating.toFixed(1)}/10</Text>
+        )}
+        {totalTime !== null && (
+          <Text style={styles.metaMuted}>{totalTime} min</Text>
+        )}
+        {recipe.difficulty && (
+          <Text
+            style={[
+              styles.metaMuted,
+              { color: DIFFICULTY_COLOR[recipe.difficulty] ?? colors.muted },
+            ]}
+          >
+            {recipe.difficulty}
+          </Text>
+        )}
+      </View>
+
+      {showCreator && recipe.creator && (
+        <Pressable
+          style={styles.creatorRow}
+          onPress={(e) => {
+            e.stopPropagation?.();
+            if (recipe.creator?.id) router.push(`/user/${recipe.creator.id}` as any);
+          }}
+        >
+          <Text style={styles.creatorText}>by {recipe.creator.display_name}</Text>
+        </Pressable>
+      )}
+
       <View style={styles.hairline} />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  // ── plate variant ──
+  plateCard: {
+    backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 22,
+    paddingVertical: 16,
+    paddingLeft: 18,
+    paddingRight: 100,
+    marginBottom: 14,
+    minHeight: 100,
+    position: 'relative',
+    ...shadow.card,
+  },
+  plateTitle: {
+    fontFamily: 'Inter_700Bold',
+    fontSize: 17,
+    color: colors.ink,
+    lineHeight: 20,
+    letterSpacing: -0.4,
+    marginBottom: 6,
+  },
+  plateMetaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    flexWrap: 'wrap',
+  },
+  plateSubRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginTop: 4,
+    flexWrap: 'wrap',
+  },
+  plateMeta: {
+    fontFamily: 'Inter_500Medium',
+    fontSize: 11,
+    color: colors.muted,
+  },
+  plateRating: {
+    fontFamily: 'Inter_700Bold',
+    fontSize: 12,
+    color: colors.ochre,
+  },
+  plateFloat: {
+    position: 'absolute',
+    top: '50%',
+    right: -14,
+    marginTop: -50,
+  },
+
+  // ── flat (legacy) variant ──
   card: {
-    backgroundColor: COLORS.surfaceContainerLow,
+    backgroundColor: colors.card,
+    borderWidth: 0,
+    marginBottom: 12,
     overflow: 'hidden',
-    marginBottom: 24,
   },
 
   /* Creator header */
@@ -182,39 +284,45 @@ const styles = StyleSheet.create({
     paddingVertical: 3,
   },
   cuisineTagText: {
-    fontFamily: FONTS.mono,
+    fontFamily: 'Inter_500Medium',
     fontSize: 9,
-    color: COLORS.onSurfaceVariant,
-    letterSpacing: 1.4,
+    color: colors.muted,
+    letterSpacing: 1.2,
+  },
+  titleOverlayContainer: {
+    position: 'absolute',
+    bottom: 10,
+    left: 12,
+    right: 12,
+  },
+  titleOverlay: {
+    fontFamily: 'Inter_700Bold',
+    fontSize: 22,
+    color: colors.card,
+    lineHeight: 26,
+    letterSpacing: -0.4,
   },
 
   /* No-image variant */
   noImageContainer: {
-    backgroundColor: COLORS.surfaceContainer,
-    paddingHorizontal: 16,
+    backgroundColor: colors.card,
+    paddingHorizontal: 14,
     paddingTop: 16,
     paddingBottom: 4,
   },
   cuisineTagNoImage: {
-    fontFamily: FONTS.mono,
+    fontFamily: 'Inter_500Medium',
     fontSize: 9,
-    color: COLORS.onSurfaceVariant,
-    letterSpacing: 1.4,
-    marginBottom: 4,
+    color: colors.muted,
+    letterSpacing: 1.2,
+    marginBottom: 6,
   },
-
-  /* Footer — title & meta below image */
-  footer: {
-    paddingHorizontal: 16,
-    paddingTop: 14,
-    paddingBottom: 16,
-  },
-  recipeTitle: {
-    fontFamily: FONTS.headlineBold,
-    fontSize: 26,
-    color: COLORS.onSurface,
-    lineHeight: 31,
-    marginBottom: 8,
+  titleNoImage: {
+    fontFamily: 'Inter_700Bold',
+    fontSize: 20,
+    color: colors.ink,
+    lineHeight: 24,
+    letterSpacing: -0.4,
   },
   metaRow: {
     flexDirection: 'row',
@@ -222,18 +330,27 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   rating: {
-    fontFamily: FONTS.monoMedium,
+    fontFamily: 'Inter_700Bold',
     fontSize: 12,
-    color: COLORS.primaryContainer,
+    color: colors.ochre,
   },
   metaMuted: {
-    fontFamily: FONTS.mono,
+    fontFamily: 'Inter_500Medium',
     fontSize: 11,
-    color: COLORS.onSurfaceVariant,
+    color: colors.muted,
+  },
+  creatorRow: {
+    paddingHorizontal: 14,
+    paddingBottom: 10,
+  },
+  creatorText: {
+    fontFamily: 'Inter_500Medium',
+    fontSize: 12,
+    color: colors.muted,
   },
 
   hairline: {
     height: StyleSheet.hairlineWidth,
-    backgroundColor: COLORS.outlineVariant,
+    backgroundColor: colors.border,
   },
 });
