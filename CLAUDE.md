@@ -11,7 +11,7 @@ A social recipe sharing and discovery mobile app. Users create/import recipes, f
 
 - **Frontend:** Expo (React Native) + TypeScript + Expo Router (file-based routing)
 - **Styling:** NativeWind (Tailwind for RN) — warm parchment editorial design
-- **Fonts:** Cormorant Garamond (display), DM Mono (UI), Lora (body)
+- **Fonts:** Inter (display + body) — primary. Cormorant Garamond / DM Mono / Lora are loaded for legacy screens but new code should use Inter only.
 - **Backend:** Supabase (PostgreSQL + Auth + Realtime + Edge Functions + Storage)
 - **State:** Zustand (auth store) + TanStack React Query v5 (server data)
 - **Key libs:** react-native-reanimated, expo-image-picker, expo-share-intent, expo-keep-awake
@@ -63,15 +63,28 @@ Realtime enabled on: feed_items, recipe_tries, comments.
 
 ## Design System
 
+v2 editorial palette — sage / clay / ochre on a near-white bone base.
+
 | Token | Value | Usage |
 |-------|-------|-------|
-| cream | #F8F4EE | Background |
-| charcoal | #1C1712 | Primary text |
-| terra | #C4622D | Accent/CTA |
-| terra-light | #E4956A | Hover states |
-| muted | #A09590 | Secondary text |
-| border | #D5CCC0 | Borders |
-| card | #EEE8DF | Card surface |
+| bg | #F4F4F0 | Page background |
+| bone | #FCFCFA | Phone shell / screen background |
+| card | #FFFFFF | Card surface |
+| border | #ECECE6 | Borders |
+| borderSoft | #F5F5F0 | Subtle dividers |
+| ink | #0B0B0C | Primary text |
+| inkSoft | #3A3A40 | Secondary text |
+| muted | #8A8A93 | Tertiary text |
+| sage | #4A6B3E | Palate match / brand primary |
+| sageDeep | #36502C | Sage pressed / deep |
+| sageSoft | #EDF1E6 | Sage tint / chip bg |
+| clay | #C24A28 | Ritual / community / warm CTAs |
+| clayDeep | #962E13 | Clay pressed / deep |
+| claySoft | #FBE7DF | Clay tint / chip bg |
+| ochre | #C7902A | Ratings / tries / counts |
+| ochreSoft | #F8EED5 | Ochre tint / chip bg |
+
+**Tokens live in `lib/theme.ts`. Never hardcode hex values.**
 
 ## Code Conventions
 
@@ -80,6 +93,7 @@ Realtime enabled on: feed_items, recipe_tries, comments.
 - React Query for all server data fetching with query key invalidation
 - Supabase client imported from `@/lib/supabase`
 - Edge functions in `supabase/functions/` (Deno runtime)
+- **Onboarding:** Onboarding flow lives at `app/(onboarding)/welcome.tsx` → `palate-quiz.tsx`. New users (no `profiles.palate_vector`) are routed there automatically by the auth gate in `app/_layout.tsx`. Existing users were backfilled with a neutral palate vector by migration `006_palate_vector.sql` so they skip onboarding.
 
 ## Current Status
 

@@ -1,78 +1,64 @@
 // lib/theme.ts
-// Central design token system — Dishr v2
-// Generated from Stitch design, Material Design 3 color scheme
+export const colors = {
+  // surfaces
+  bg:        '#F4F4F0',  // page background
+  bone:      '#FCFCFA',  // phone shell / screen background
+  card:      '#FFFFFF',  // cards
+  border:    '#ECECE6',
+  borderSoft:'#F5F5F0',
 
-export const COLORS = {
-  // Backgrounds & surfaces
-  surface: '#fbf9f4',
-  surfaceContainer: '#f0eee9',
-  surfaceContainerLow: '#f5f3ee',
-  surfaceContainerHigh: '#eae8e3',
-  surfaceContainerHighest: '#e4e2dd',
-  surfaceContainerLowest: '#ffffff',
-  surfaceDim: '#dbdad5',
-  surfaceBright: '#fbf9f4',
-  background: '#fbf9f4',
+  // text
+  ink:       '#0B0B0C',
+  inkSoft:   '#3A3A40',
+  muted:     '#8A8A93',
 
-  // Text
-  onSurface: '#1b1c19',
-  onSurfaceVariant: '#55433a',
-  onBackground: '#1b1c19',
+  // sage — palate match / brand primary
+  sage:      '#4A6B3E',
+  sageDeep:  '#36502C',
+  sageSoft:  '#EDF1E6',
 
-  // Primary — burnt orange / terra
-  primary: '#994413',
-  primaryContainer: '#b85c2a',
-  primaryFixed: '#ffdbcc',
-  primaryFixedDim: '#ffb693',
-  onPrimary: '#ffffff',
-  onPrimaryContainer: '#fffeff',
-  onPrimaryFixed: '#351000',
-  inversePrimary: '#ffb693',
-  surfaceTint: '#9a4614',
+  // clay — ritual / community / warm CTAs
+  clay:      '#C24A28',
+  clayDeep:  '#962E13',
+  claySoft:  '#FBE7DF',
 
-  // Secondary
-  secondary: '#635e51',
-  secondaryContainer: '#e7dfcf',
-  secondaryFixed: '#eae2d2',
-  secondaryFixedDim: '#cdc6b6',
-  onSecondary: '#ffffff',
-  onSecondaryContainer: '#676255',
-  onSecondaryFixed: '#1f1b12',
-  onSecondaryFixedVariant: '#4b463b',
+  // ochre — ratings / tries / counts
+  ochre:     '#C7902A',
+  ochreSoft: '#F8EED5',
 
-  // Tertiary
-  tertiary: '#5e5d5c',
-  onTertiary: '#ffffff',
-
-  // Borders
-  outline: '#887269',
-  outlineVariant: '#dcc1b6',
-
-  // Inverse
-  inverseSurface: '#30312e',
-  inverseOnSurface: '#f2f1ec',
-
-  // Error
-  error: '#ba1a1a',
-  errorContainer: '#ffdad6',
-  onError: '#ffffff',
-  onErrorContainer: '#93000a',
+  // avatar palette
+  avJ:       '#3E2F20', // brown
+  avE:       '#8B3A1F', // clay
+  avS:       '#4A6B3E', // sage
+  avM:       '#8A6320', // ochre
+  avD:       '#3A5468', // slate
 } as const;
 
-export const FONTS = {
-  // Newsreader — editorial headline/display
-  headline: 'Newsreader_400Regular',
-  headlineBold: 'Newsreader_700Bold',
-  headlineItalic: 'Newsreader_400Regular_Italic',
-  headlineSemiBold: 'Newsreader_600SemiBold',
+export const type = {
+  family: 'Inter_500Medium',         // body default
+  familyBold: 'Inter_700Bold',
+  familyHeavy: 'Inter_900Black',
+  // sizes (px)
+  display:   38,
+  h1:        30,
+  h2:        24,
+  h3:        18,
+  body:      14,
+  bodySm:    12,
+  caption:   11,
+  micro:     10,
+} as const;
 
-  // Inter — body text and UI labels
-  body: 'Inter_400Regular',
-  bodyMedium: 'Inter_500Medium',
-  bodySemiBold: 'Inter_600SemiBold',
-  bodyBold: 'Inter_700Bold',
+export const space = {
+  0: 0, 1: 4, 2: 8, 3: 12, 4: 16, 5: 20, 6: 24, 7: 32, 8: 40, 9: 48, 10: 64,
+} as const;
 
-  // DM Mono — metadata, ratings, timestamps, tags
-  mono: 'DMMono_400Regular',
-  monoMedium: 'DMMono_500Medium',
+export const radius = {
+  sm: 10, md: 14, lg: 18, xl: 22, xxl: 28, pill: 999, circle: 9999,
+} as const;
+
+export const shadow = {
+  card:  { shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 14, shadowOffset: { width: 0, height: 4 }, elevation: 2 },
+  plate: { shadowColor: '#000', shadowOpacity: 0.30, shadowRadius: 18, shadowOffset: { width: 0, height: 14 }, elevation: 8 },
+  cta:   { shadowColor: '#000', shadowOpacity: 0.18, shadowRadius: 12, shadowOffset: { width: 0, height: 6 }, elevation: 4 },
 } as const;

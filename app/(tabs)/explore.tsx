@@ -1,668 +1,184 @@
-import { useState } from 'react';
+// Explore — palate-match grid. One surface, one job.
 import {
   View,
   Text,
-  TextInput,
   FlatList,
-  ScrollView,
-  TouchableOpacity,
   ActivityIndicator,
-  Image,
+  Pressable,
+  StyleSheet,
 } from 'react-native';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/store/auth';
 import { RecipeCard } from '@/components/RecipeCard';
-import { COLORS, FONTS } from '@/lib/theme';
-import {
-  CUISINES,
-  type Cuisine,
-  type SortOption,
-  getSmartFilters,
-  getSmartSortLabel,
-  isWeekend,
-} from '@/lib/smart-sort';
+import { EditorialHeading } from '@/components/EditorialHeading';
+import { colors, radius } from '@/lib/theme';
+import { parsePalate, matchScore } from '@/lib/palate';
 
-const SORT_OPTIONS: { key: SortOption; label: string }[] = [
-  { key: 'smart', label: isWeekend() ? 'Weekend' : 'For Tonight' },
-  { key: 'new', label: 'New' },
-  { key: 'top_rated', label: 'Top Rated' },
-  { key: 'most_tried', label: 'Most Tried' },
-];
-
-async function fetchRecipes(sort: SortOption, cuisine: Cuisine, search: string) {
-  let query = supabase
+async function fetchPublicRecipes() {
+  const { data, error } = await supabase
     .from('recipes')
-    .select(`
-      *,
-      creator:profiles!created_by(display_name, username, avatar_url),
-      tries:recipe_tries(rating)
-    `)
-    .eq('is_public', true);
-
-  if (cuisine !== 'All') {
-    query = query.eq('cuisine', cuisine);
-  }
-
-  if (search.trim()) {
-    query = query.ilike('title', `%${search.trim()}%`);
-  }
-
-  if (sort === 'smart') {
-    const filters = getSmartFilters();
-    if (filters.difficulty) {
-      query = query.in('difficulty', filters.difficulty);
-    }
-    if (filters.maxTotalMinutes) {
-      query = query.lte('prep_time_min', filters.maxTotalMinutes);
-    }
-  }
-
-  query = query.order('created_at', { ascending: false }).limit(40);
-
-  const { data, error } = await query;
+    .select('*, creator:profiles!created_by(id, display_name, username, avatar_url), tries:recipe_tries(rating)')
+    .eq('is_public', true)
+    .order('created_at', { ascending: false })
+    .limit(100);
   if (error) throw error;
-
-  const enriched = (data ?? []).map((r: any) => {
+  return (data ?? []).map((r: any) => {
     const ratings = (r.tries ?? []).map((t: any) => t.rating).filter(Boolean);
     return {
       ...r,
-      avg_rating: ratings.length ? ratings.reduce((a: number, b: number) => a + b, 0) / ratings.length : null,
+      avg_rating: ratings.length
+        ? ratings.reduce((a: number, b: number) => a + b, 0) / ratings.length
+        : null,
       try_count: ratings.length,
     };
   });
-
-  if (sort === 'top_rated') return enriched.sort((a, b) => (b.avg_rating ?? 0) - (a.avg_rating ?? 0));
-  if (sort === 'most_tried') return enriched.sort((a, b) => b.try_count - a.try_count);
-  return enriched;
 }
-
-async function fetchProfiles(search: string, excludeUserId?: string) {
-  let query = supabase
-    .from('profiles')
-    .select('id, display_name, username, avatar_url, created_at');
-
-  if (excludeUserId) {
-    query = query.neq('id', excludeUserId);
-  }
-
-  if (search.trim()) {
-    const term = `%${search.trim()}%`;
-    query = query.or(`username.ilike.${term},display_name.ilike.${term}`);
-  } else {
-    query = query.order('created_at', { ascending: false });
-  }
-
-  query = query.limit(50);
-
-  const { data, error } = await query;
-  if (error) throw error;
-  return data ?? [];
-}
-
-async function fetchFollowing(userId: string) {
-  const { data, error } = await supabase
-    .from('follows')
-    .select('following_id')
-    .eq('follower_id', userId);
-  if (error) throw error;
-  return new Set((data ?? []).map((f: any) => f.following_id));
-}
-
-async function fetchByIngredients(ingredients: string[]) {
-  if (!ingredients.length) return [];
-
-  const { data, error } = await supabase.rpc('search_by_ingredients', {
-    ingredient_list: ingredients.map(i => i.toLowerCase().trim()),
-  });
-
-  if (error) {
-    const { data: flat } = await supabase
-      .from('recipe_ingredients_flat')
-      .select('recipe_id, ingredient_name')
-      .in('ingredient_name', ingredients.map(i => i.toLowerCase().trim()));
-
-    const counts: Record<string, number> = {};
-    for (const row of flat ?? []) {
-      counts[row.recipe_id] = (counts[row.recipe_id] ?? 0) + 1;
-    }
-    const sortedIds = Object.entries(counts)
-      .sort(([, a], [, b]) => b - a)
-      .slice(0, 20)
-      .map(([id]) => id);
-
-    const { data: recipes } = await supabase
-      .from('recipes')
-      .select('*, tries:recipe_tries(rating)')
-      .in('id', sortedIds)
-      .eq('is_public', true);
-
-    return (recipes ?? []).map((r: any) => ({
-      ...r,
-      match_count: counts[r.id] ?? 0,
-      total_ingredients: (r.ingredients ?? []).length,
-    }));
-  }
-
-  return data ?? [];
-}
-
-type ExploreTab = 'browse' | 'fridge' | 'people';
 
 export default function ExploreScreen() {
   const router = useRouter();
-  const queryClient = useQueryClient();
-  const user = useAuthStore((s) => s.user);
-
-  const [sort, setSort] = useState<SortOption>('smart');
-  const [cuisine, setCuisine] = useState<Cuisine>('All');
-  const [searchText, setSearchText] = useState('');
-  const [mode, setMode] = useState<ExploreTab>('browse');
-  const [fridgeInput, setFridgeInput] = useState('');
-  const [fridgeIngredients, setFridgeIngredients] = useState<string[]>([]);
-  const [peopleSearch, setPeopleSearch] = useState('');
+  const storedPalate = useAuthStore((s) => s.profile?.palate_vector);
+  const userPalate = parsePalate(storedPalate);
 
   const { data: recipes, isLoading } = useQuery({
-    queryKey: ['explore', sort, cuisine, searchText],
-    queryFn: () => fetchRecipes(sort, cuisine, searchText),
-    enabled: mode === 'browse',
+    queryKey: ['explore-palate'],
+    queryFn: fetchPublicRecipes,
   });
 
-  const { data: fridgeResults, isLoading: fridgeLoading } = useQuery({
-    queryKey: ['fridge', fridgeIngredients],
-    queryFn: () => fetchByIngredients(fridgeIngredients),
-    enabled: mode === 'fridge' && fridgeIngredients.length > 0,
-  });
+  const ranked = (recipes ?? [])
+    .map((r: any) => {
+      const score = matchScore(userPalate, parsePalate(r.palate_vector));
+      return { ...r, match_score: score };
+    })
+    .sort((a: any, b: any) => (b.match_score ?? -1) - (a.match_score ?? -1))
+    .slice(0, 50);
 
-  const { data: profiles, isLoading: peopleLoading } = useQuery({
-    queryKey: ['people', peopleSearch],
-    queryFn: () => fetchProfiles(peopleSearch, user?.id),
-    enabled: mode === 'people',
-  });
-
-  const { data: followingSet } = useQuery({
-    queryKey: ['following', user?.id],
-    queryFn: () => fetchFollowing(user!.id),
-    enabled: mode === 'people' && !!user?.id,
-  });
-
-  const followMutation = useMutation({
-    mutationFn: async (targetId: string) => {
-      const { error } = await supabase.from('follows').insert({
-        follower_id: user!.id,
-        following_id: targetId,
-      });
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['following', user?.id] });
-      queryClient.invalidateQueries({ queryKey: ['people'] });
-    },
-  });
-
-  const unfollowMutation = useMutation({
-    mutationFn: async (targetId: string) => {
-      const { error } = await supabase
-        .from('follows')
-        .delete()
-        .eq('follower_id', user!.id)
-        .eq('following_id', targetId);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['following', user?.id] });
-      queryClient.invalidateQueries({ queryKey: ['people'] });
-    },
-  });
-
-  function addFridgeIngredient() {
-    const val = fridgeInput.trim().toLowerCase();
-    if (val && !fridgeIngredients.includes(val)) {
-      setFridgeIngredients(prev => [...prev, val]);
-    }
-    setFridgeInput('');
+  if (isLoading) {
+    return (
+      <SafeAreaView style={styles.safe}>
+        <View style={styles.center}>
+          <ActivityIndicator color={colors.sage} />
+        </View>
+      </SafeAreaView>
+    );
   }
 
-  const smartLabel = getSmartSortLabel();
+  if (!userPalate) {
+    return (
+      <SafeAreaView style={styles.safe}>
+        <View style={styles.center}>
+          <Text style={styles.emptyTitle}>Finish your palate quiz</Text>
+          <Text style={styles.emptyBody}>
+            We'll rank recipes based on how well they match your taste.
+          </Text>
+          <Pressable
+            style={styles.cta}
+            onPress={() => router.push('/(onboarding)/palate-quiz' as any)}
+          >
+            <Text style={styles.ctaText}>Take the quiz →</Text>
+          </Pressable>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
-    <View style={{ flex: 1, backgroundColor: COLORS.surface }}>
-      {/* Mode toggle */}
-      <View style={{
-        flexDirection: 'row',
-        backgroundColor: COLORS.surfaceContainer,
-        borderBottomWidth: 1,
-        borderBottomColor: COLORS.outlineVariant + '33',
-        paddingHorizontal: 24,
-        paddingTop: 16,
-        paddingBottom: 0,
-        gap: 32,
-      }}>
-        {(['browse', 'fridge', 'people'] as ExploreTab[]).map((tab) => (
-          <TouchableOpacity
-            key={tab}
-            onPress={() => setMode(tab)}
-            style={{ paddingBottom: 12 }}
-          >
-            <Text style={{
-              fontFamily: FONTS.mono,
-              fontSize: 12,
-              letterSpacing: 1.5,
-              textTransform: 'uppercase',
-              color: mode === tab ? COLORS.onSurface : COLORS.onSurfaceVariant,
-            }}>
-              {tab === 'fridge' ? 'My Fridge' : tab.charAt(0).toUpperCase() + tab.slice(1)}
-            </Text>
-            {mode === tab && (
-              <View style={{
-                position: 'absolute',
-                bottom: 0,
-                left: 0,
-                right: 0,
-                height: 2,
-                backgroundColor: COLORS.primaryContainer,
-              }} />
-            )}
-          </TouchableOpacity>
-        ))}
-      </View>
-
-      {mode === 'people' ? (
-        <FlatList
-          data={(profiles as any[]) ?? []}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={{ padding: 16 }}
-          ListHeaderComponent={
-            <View>
-              <TextInput
-                style={{
-                  borderBottomWidth: 1,
-                  borderBottomColor: COLORS.outlineVariant,
-                  paddingHorizontal: 0,
-                  paddingVertical: 10,
-                  color: COLORS.onSurface,
-                  fontFamily: FONTS.body,
-                  fontSize: 15,
-                  marginBottom: 20,
-                  backgroundColor: 'transparent',
-                }}
-                placeholder="Search by name or username..."
-                placeholderTextColor={COLORS.outlineVariant}
-                value={peopleSearch}
-                onChangeText={setPeopleSearch}
-              />
-              {!peopleSearch.trim() && (
-                <Text style={{
-                  fontFamily: FONTS.monoMedium,
-                  fontSize: 11,
-                  letterSpacing: 1.5,
-                  textTransform: 'uppercase',
-                  color: COLORS.onSurfaceVariant,
-                  marginBottom: 12,
-                }}>
-                  Suggested cooks
-                </Text>
-              )}
-            </View>
-          }
-          renderItem={({ item }) => {
-            const isFollowing = followingSet?.has(item.id) ?? false;
-            const isSelf = user?.id === item.id;
-            const initial = (item.display_name?.[0] || item.username?.[0] || '?').toUpperCase();
-
-            return (
-              <TouchableOpacity
-                onPress={() => router.push(`/user/${item.id}`)}
-                style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  paddingVertical: 10,
-                  borderBottomWidth: 1,
-                  borderBottomColor: COLORS.outlineVariant + '33',
-                }}
-              >
-                {item.avatar_url ? (
-                  <Image
-                    source={{ uri: item.avatar_url }}
-                    style={{ width: 40, height: 40, borderRadius: 4, backgroundColor: COLORS.surfaceContainer }}
-                  />
-                ) : (
-                  <View style={{
-                    width: 40,
-                    height: 40,
-                    borderRadius: 4,
-                    backgroundColor: COLORS.primaryContainer,
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}>
-                    <Text style={{
-                      fontFamily: FONTS.monoMedium,
-                      fontSize: 16,
-                      color: COLORS.onPrimary,
-                    }}>
-                      {initial}
-                    </Text>
-                  </View>
-                )}
-
-                <View style={{ flex: 1, marginLeft: 12 }}>
-                  <Text style={{
-                    fontFamily: FONTS.bodySemiBold,
-                    fontSize: 13,
-                    color: COLORS.onSurface,
-                  }}>
-                    {item.display_name || item.username}
-                  </Text>
-                  {item.username && (
-                    <Text style={{
-                      fontFamily: FONTS.mono,
-                      fontSize: 11,
-                      color: COLORS.onSurfaceVariant,
-                      marginTop: 2,
-                    }}>
-                      @{item.username}
-                    </Text>
-                  )}
-                </View>
-
-                {!isSelf && (
-                  <TouchableOpacity
-                    onPress={() => {
-                      if (isFollowing) {
-                        unfollowMutation.mutate(item.id);
-                      } else {
-                        followMutation.mutate(item.id);
-                      }
-                    }}
-                    style={{
-                      paddingHorizontal: 14,
-                      paddingVertical: 6,
-                      borderWidth: 1,
-                      borderColor: COLORS.primary,
-                      backgroundColor: isFollowing ? 'transparent' : COLORS.primary,
-                      borderRadius: 2,
-                    }}
-                  >
-                    <Text style={{
-                      fontFamily: FONTS.monoMedium,
-                      fontSize: 10,
-                      letterSpacing: 1,
-                      textTransform: 'uppercase',
-                      color: isFollowing ? COLORS.primary : COLORS.onPrimary,
-                    }}>
-                      {isFollowing ? 'Following' : 'Follow'}
-                    </Text>
-                  </TouchableOpacity>
-                )}
-              </TouchableOpacity>
-            );
-          }}
-          ListEmptyComponent={
-            peopleLoading ? (
-              <ActivityIndicator color={COLORS.primaryContainer} style={{ marginTop: 32 }} />
-            ) : (
-              <Text style={{
-                color: COLORS.onSurfaceVariant,
-                textAlign: 'center',
-                marginTop: 32,
-                fontFamily: FONTS.mono,
-                fontSize: 12,
-                letterSpacing: 1,
-              }}>
-                No users found
-              </Text>
-            )
-          }
-        />
-      ) : mode === 'browse' ? (
-        <FlatList
-          data={recipes as any[]}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item }) => <RecipeCard recipe={item} showCreator />}
-          contentContainerStyle={{ padding: 16 }}
-          ListHeaderComponent={
-            <View>
-              {/* Search */}
-              <TextInput
-                style={{
-                  borderBottomWidth: 1,
-                  borderBottomColor: COLORS.outlineVariant,
-                  paddingHorizontal: 0,
-                  paddingVertical: 8,
-                  color: COLORS.onSurface,
-                  fontFamily: FONTS.mono,
-                  fontSize: 12,
-                  letterSpacing: 2,
-                  marginBottom: 20,
-                  backgroundColor: 'transparent',
-                  textTransform: 'uppercase',
-                }}
-                placeholder="SEARCH RECIPES"
-                placeholderTextColor={COLORS.outlineVariant}
-                value={searchText}
-                onChangeText={setSearchText}
-              />
-
-              {/* Sort chips */}
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 16 }}>
-                <View style={{ flexDirection: 'row', gap: 24, paddingRight: 16 }}>
-                  {SORT_OPTIONS.map((opt) => (
-                    <TouchableOpacity
-                      key={opt.key}
-                      onPress={() => setSort(opt.key)}
-                      style={{ paddingBottom: 8 }}
-                    >
-                      <Text style={{
-                        fontFamily: FONTS.bodyMedium,
-                        fontSize: 13,
-                        color: sort === opt.key ? COLORS.onSurface : COLORS.onSurface + '66',
-                      }}>
-                        {opt.key === 'smart' ? smartLabel : opt.label}
-                      </Text>
-                      {sort === opt.key && (
-                        <View style={{
-                          position: 'absolute',
-                          bottom: 0,
-                          left: 0,
-                          right: 0,
-                          height: 2,
-                          backgroundColor: COLORS.primaryContainer,
-                        }} />
-                      )}
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              </ScrollView>
-
-              {/* Cuisine chips */}
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 20 }}>
-                <View style={{ flexDirection: 'row', gap: 8, paddingRight: 16 }}>
-                  {CUISINES.map((c) => (
-                    <TouchableOpacity
-                      key={c}
-                      onPress={() => setCuisine(c)}
-                      style={{
-                        paddingHorizontal: 16,
-                        paddingVertical: 8,
-                        borderRadius: 100,
-                        backgroundColor: cuisine === c ? COLORS.primary : COLORS.secondaryContainer,
-                      }}
-                    >
-                      <Text style={{
-                        fontFamily: FONTS.bodyMedium,
-                        fontSize: 13,
-                        color: cuisine === c ? COLORS.onPrimary : COLORS.onSurface,
-                      }}>
-                        {c}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              </ScrollView>
-            </View>
-          }
-          ListEmptyComponent={
-            isLoading ? (
-              <ActivityIndicator color={COLORS.primaryContainer} style={{ marginTop: 32 }} />
-            ) : (
-              <Text style={{
-                color: COLORS.onSurfaceVariant,
-                textAlign: 'center',
-                marginTop: 32,
-                fontFamily: FONTS.mono,
-                fontSize: 12,
-                letterSpacing: 1,
-              }}>
-                No recipes found
-              </Text>
-            )
-          }
-        />
-      ) : (
-        <FlatList
-          data={(fridgeResults as any[]) ?? []}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item }) => (
-            <View>
-              {item.match_count !== undefined && (
-                <Text style={{
-                  color: COLORS.primary,
-                  fontFamily: FONTS.mono,
-                  fontSize: 11,
-                  letterSpacing: 0.8,
-                  paddingHorizontal: 16,
-                  paddingTop: 8,
-                }}>
-                  {item.match_count} of {item.total_ingredients} ingredients matched
-                </Text>
-              )}
-              <RecipeCard recipe={item} showCreator />
-            </View>
-          )}
-          contentContainerStyle={{ padding: 16 }}
-          ListHeaderComponent={
-            <View>
-              <Text style={{
-                fontFamily: FONTS.headlineBold,
-                fontSize: 26,
-                color: COLORS.onSurface,
-                marginBottom: 6,
-              }}>
-                What's in my fridge?
-              </Text>
-              <Text style={{
-                fontFamily: FONTS.body,
-                fontSize: 14,
-                color: COLORS.onSurfaceVariant,
-                lineHeight: 21,
-                marginBottom: 20,
-              }}>
-                Add ingredients you have and we'll find matching recipes
-              </Text>
-
-              {/* Ingredient input */}
-              <View style={{ flexDirection: 'row', gap: 12, marginBottom: 16, alignItems: 'flex-end' }}>
-                <TextInput
-                  style={{
-                    flex: 1,
-                    borderBottomWidth: 1,
-                    borderBottomColor: COLORS.outlineVariant,
-                    paddingVertical: 10,
-                    color: COLORS.onSurface,
-                    fontFamily: FONTS.body,
-                    fontSize: 15,
-                    backgroundColor: 'transparent',
-                  }}
-                  placeholder="Add ingredient..."
-                  placeholderTextColor={COLORS.outlineVariant}
-                  value={fridgeInput}
-                  onChangeText={setFridgeInput}
-                  onSubmitEditing={addFridgeIngredient}
-                  returnKeyType="done"
-                />
-                <TouchableOpacity
-                  style={{
-                    paddingHorizontal: 16,
-                    paddingVertical: 10,
-                    borderWidth: 1,
-                    borderColor: COLORS.primary,
-                    borderRadius: 2,
-                  }}
-                  onPress={addFridgeIngredient}
-                >
-                  <Text style={{
-                    fontFamily: FONTS.mono,
-                    fontSize: 11,
-                    letterSpacing: 1.2,
-                    textTransform: 'uppercase',
-                    color: COLORS.primary,
-                  }}>
-                    Add
-                  </Text>
-                </TouchableOpacity>
+    <SafeAreaView style={styles.safe}>
+      <FlatList
+        data={ranked}
+        keyExtractor={(item) => item.id}
+        renderItem={({ item }) => (
+          <View style={styles.cardWrap}>
+            {item.match_score != null && (
+              <View style={styles.matchPill}>
+                <Text style={styles.matchPillText}>{item.match_score}% match</Text>
               </View>
-
-              {/* Ingredient chips */}
-              {fridgeIngredients.length > 0 && (
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 20 }}>
-                  <View style={{ flexDirection: 'row', gap: 8, paddingRight: 16 }}>
-                    {fridgeIngredients.map((ing) => (
-                      <TouchableOpacity
-                        key={ing}
-                        style={{
-                          flexDirection: 'row',
-                          alignItems: 'center',
-                          backgroundColor: COLORS.surfaceContainerLow,
-                          borderWidth: 1,
-                          borderColor: COLORS.outlineVariant,
-                          paddingHorizontal: 12,
-                          paddingVertical: 6,
-                          borderRadius: 100,
-                          gap: 6,
-                        }}
-                        onPress={() => setFridgeIngredients(prev => prev.filter(i => i !== ing))}
-                      >
-                        <Text style={{
-                          fontFamily: FONTS.mono,
-                          fontSize: 11,
-                          letterSpacing: 0.8,
-                          color: COLORS.onSurface,
-                        }}>
-                          {ing}
-                        </Text>
-                        <Text style={{
-                          fontFamily: FONTS.mono,
-                          fontSize: 13,
-                          color: COLORS.onSurfaceVariant,
-                        }}>
-                          ×
-                        </Text>
-                      </TouchableOpacity>
-                    ))}
-                  </View>
-                </ScrollView>
-              )}
-
-              {fridgeLoading && <ActivityIndicator color={COLORS.primaryContainer} style={{ marginBottom: 16 }} />}
-            </View>
-          }
-          ListEmptyComponent={
-            fridgeIngredients.length === 0 ? null : (
-              <Text style={{
-                color: COLORS.onSurfaceVariant,
-                textAlign: 'center',
-                marginTop: 16,
-                fontFamily: FONTS.mono,
-                fontSize: 12,
-                letterSpacing: 1,
-              }}>
-                No recipes found with those ingredients
-              </Text>
-            )
-          }
-        />
-      )}
-    </View>
+            )}
+            <RecipeCard recipe={item} showCreator />
+          </View>
+        )}
+        contentContainerStyle={{ paddingHorizontal: 22, paddingBottom: 100 }}
+        ListHeaderComponent={
+          <View style={{ paddingTop: 6, paddingBottom: 14 }}>
+            <EditorialHeading size={26} emphasis="palate" emphasisColor="sage">
+              {'For your\n'}
+            </EditorialHeading>
+            <Text style={styles.subtitle}>
+              recipes ranked by how well they match your taste
+            </Text>
+          </View>
+        }
+        ListEmptyComponent={
+          <Text style={styles.empty}>No public recipes yet — try adding one.</Text>
+        }
+      />
+    </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  safe: { flex: 1, backgroundColor: colors.bone },
+  center: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32 },
+  subtitle: {
+    fontFamily: 'Inter_500Medium',
+    fontSize: 13,
+    color: colors.muted,
+    marginTop: 6,
+    marginBottom: 6,
+  },
+  cardWrap: {
+    marginBottom: 14,
+    position: 'relative',
+  },
+  matchPill: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    zIndex: 2,
+    backgroundColor: colors.ochreSoft,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: radius.pill,
+  },
+  matchPillText: {
+    fontFamily: 'Inter_700Bold',
+    fontSize: 10,
+    color: colors.ochre,
+    letterSpacing: 0.3,
+  },
+  empty: {
+    fontFamily: 'Inter_500Medium',
+    fontSize: 13,
+    color: colors.muted,
+    textAlign: 'center',
+    marginTop: 48,
+  },
+  emptyTitle: {
+    fontFamily: 'Inter_800ExtraBold',
+    fontSize: 22,
+    color: colors.ink,
+    marginBottom: 10,
+    letterSpacing: -0.4,
+  },
+  emptyBody: {
+    fontFamily: 'Inter_500Medium',
+    fontSize: 13,
+    color: colors.muted,
+    textAlign: 'center',
+    marginBottom: 24,
+    lineHeight: 20,
+  },
+  cta: {
+    backgroundColor: colors.sage,
+    paddingHorizontal: 22,
+    paddingVertical: 14,
+    borderRadius: radius.pill,
+  },
+  ctaText: {
+    fontFamily: 'Inter_700Bold',
+    fontSize: 13,
+    color: '#fff',
+  },
+});

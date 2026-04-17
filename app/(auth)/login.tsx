@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import {
-  View, Text, TextInput, TouchableOpacity,
-  KeyboardAvoidingView, Platform, ActivityIndicator,
+  View, Text, TextInput, Pressable,
+  KeyboardAvoidingView, Platform, ActivityIndicator, StyleSheet,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Link, useRouter } from 'expo-router';
 import { supabase } from '@/lib/supabase';
-import { COLORS, FONTS } from '@/lib/theme';
+import { colors, shadow } from '@/lib/theme';
+import { EditorialHeading } from '@/components/EditorialHeading';
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -28,83 +30,111 @@ export default function LoginScreen() {
   }
 
   return (
-    <KeyboardAvoidingView
-      style={{ flex: 1, backgroundColor: COLORS.surface }}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-    >
-      <View style={{ flex: 1, justifyContent: 'space-between', paddingHorizontal: 32, paddingTop: 96, paddingBottom: 52 }}>
-
-        {/* Wordmark */}
-        <View>
-          <Text style={{ fontFamily: FONTS.headlineBold, fontSize: 72, color: COLORS.onSurface, lineHeight: 72 }}>
-            Dishr
-          </Text>
-          <Text style={{ fontFamily: FONTS.mono, fontSize: 10, color: COLORS.onSurfaceVariant, letterSpacing: 4, marginTop: 10 }}>
-            COOK · SHARE · DISCOVER
-          </Text>
-          <View style={{ height: 1, backgroundColor: COLORS.outlineVariant, marginTop: 28, width: '35%' }} />
-        </View>
-
-        {/* Form */}
-        <View>
-          <View style={{ borderBottomWidth: 1, borderBottomColor: COLORS.outlineVariant, marginBottom: 28, paddingBottom: 12 }}>
-            <Text style={{ fontFamily: FONTS.mono, fontSize: 10, color: COLORS.onSurfaceVariant, letterSpacing: 2.5, marginBottom: 10 }}>
-              EMAIL
-            </Text>
-            <TextInput
-              style={{ fontFamily: FONTS.body, fontSize: 16, color: COLORS.onSurface }}
-              placeholderTextColor={COLORS.outlineVariant}
-              placeholder="your@email.com"
-              value={email}
-              onChangeText={setEmail}
-              autoCapitalize="none"
-              keyboardType="email-address"
-              autoComplete="email"
-            />
+    <SafeAreaView style={styles.safe}>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
+        <View style={styles.wrap}>
+          {/* Wordmark */}
+          <View style={styles.wordmarkRow}>
+            <Text style={styles.diamond}>◆</Text>
+            <Text style={styles.wordmark}>becipe</Text>
           </View>
 
-          <View style={{ borderBottomWidth: 1, borderBottomColor: COLORS.outlineVariant, marginBottom: 44, paddingBottom: 12 }}>
-            <Text style={{ fontFamily: FONTS.mono, fontSize: 10, color: COLORS.onSurfaceVariant, letterSpacing: 2.5, marginBottom: 10 }}>
-              PASSWORD
-            </Text>
-            <TextInput
-              style={{ fontFamily: FONTS.body, fontSize: 16, color: COLORS.onSurface }}
-              placeholderTextColor={COLORS.outlineVariant}
-              placeholder="••••••••"
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry
-              autoComplete="password"
-            />
-          </View>
+          <View style={{ flex: 1 }} />
 
-          {errorMsg ? (
-            <Text style={{ fontFamily: FONTS.body, fontSize: 13, color: COLORS.error, marginBottom: 16, lineHeight: 20 }}>
-              {errorMsg}
-            </Text>
-          ) : null}
+          {/* Heading */}
+          <EditorialHeading size={36} emphasis="back" emphasisColor="sage">
+            {'Welcome\n'}
+          </EditorialHeading>
+          <Text style={styles.subtitle}>good to see you</Text>
 
-          <TouchableOpacity
-            style={{ backgroundColor: COLORS.primary, paddingVertical: 17, alignItems: 'center', borderRadius: 2 }}
-            onPress={handleLogin}
-            disabled={loading}
-          >
+          {/* Form */}
+          <TextInput
+            style={styles.input}
+            placeholder="email"
+            placeholderTextColor={colors.muted}
+            value={email}
+            onChangeText={setEmail}
+            autoCapitalize="none"
+            keyboardType="email-address"
+            autoComplete="email"
+          />
+          <TextInput
+            style={styles.input}
+            placeholder="password"
+            placeholderTextColor={colors.muted}
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry
+            autoComplete="password"
+          />
+
+          {errorMsg ? <Text style={styles.errorText}>{errorMsg}</Text> : null}
+
+          <Pressable style={styles.cta} onPress={handleLogin} disabled={loading}>
             {loading
-              ? <ActivityIndicator color={COLORS.onPrimary} />
-              : <Text style={{ fontFamily: FONTS.monoMedium, fontSize: 11, color: COLORS.onPrimary, letterSpacing: 3.5 }}>SIGN IN</Text>
-            }
-          </TouchableOpacity>
-        </View>
+              ? <ActivityIndicator color="#fff" />
+              : <Text style={styles.ctaText}>log in →</Text>}
+          </Pressable>
 
-        {/* Footer */}
-        <View style={{ flexDirection: 'row', justifyContent: 'center' }}>
-          <Text style={{ fontFamily: FONTS.mono, fontSize: 12, color: COLORS.onSurfaceVariant }}>No account? </Text>
-          <Link href="/(auth)/signup">
-            <Text style={{ fontFamily: FONTS.mono, fontSize: 12, color: COLORS.primary }}>Create one →</Text>
-          </Link>
-        </View>
+          <View style={{ flex: 1 }} />
 
-      </View>
-    </KeyboardAvoidingView>
+          {/* Footer */}
+          <View style={styles.footer}>
+            <Text style={styles.footerText}>no account? </Text>
+            <Link href="/(auth)/signup">
+              <Text style={styles.footerLink}>sign up</Text>
+            </Link>
+          </View>
+        </View>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  safe: { flex: 1, backgroundColor: colors.bone },
+  wrap: { flex: 1, paddingHorizontal: 24 },
+  wordmarkRow: { flexDirection: 'row', alignItems: 'center', marginTop: 16, gap: 6 },
+  diamond: { fontFamily: 'Inter_800ExtraBold', fontSize: 14, color: colors.sage },
+  wordmark: { fontFamily: 'Inter_800ExtraBold', fontSize: 14, color: colors.ink, letterSpacing: -0.2 },
+  subtitle: {
+    fontFamily: 'Inter_500Medium',
+    fontSize: 14,
+    color: colors.muted,
+    marginTop: 12,
+    marginBottom: 28,
+  },
+  input: {
+    backgroundColor: colors.card,
+    borderRadius: 14,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: colors.border,
+    fontFamily: 'Inter_500Medium',
+    fontSize: 14,
+    color: colors.ink,
+    marginBottom: 12,
+  },
+  errorText: {
+    color: colors.clay,
+    fontFamily: 'Inter_500Medium',
+    fontSize: 12,
+    marginTop: 4,
+    marginBottom: 12,
+  },
+  cta: {
+    backgroundColor: colors.sage,
+    borderRadius: 999,
+    paddingVertical: 17,
+    alignItems: 'center',
+    marginTop: 12,
+    ...shadow.cta,
+  },
+  ctaText: { fontFamily: 'Inter_700Bold', fontSize: 14, color: '#fff' },
+  footer: { flexDirection: 'row', justifyContent: 'center', marginBottom: 32 },
+  footerText: { fontFamily: 'Inter_500Medium', fontSize: 13, color: colors.muted },
+  footerLink: { color: colors.clay, fontFamily: 'Inter_700Bold', fontSize: 13 },
+});
