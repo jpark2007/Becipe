@@ -4,7 +4,7 @@ import {
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { supabase } from '@/lib/supabase';
-import { COLORS, FONTS } from '@/lib/theme';
+import { colors } from '@/lib/theme';
 
 export default function VerifyEmailScreen() {
   const router = useRouter();
@@ -45,64 +45,64 @@ export default function VerifyEmailScreen() {
   }
 
   return (
-    <View style={{ flex: 1, backgroundColor: COLORS.surface, paddingHorizontal: 32, justifyContent: 'center' }}>
+    <View style={{ flex: 1, backgroundColor: colors.bone, paddingHorizontal: 32, justifyContent: 'center' }}>
 
       {/* Icon */}
-      <Text style={{ fontFamily: FONTS.mono, fontSize: 32, color: COLORS.primary, marginBottom: 40 }}>
+      <Text style={{ fontFamily: 'Inter_700Bold', fontSize: 32, color: colors.sage, marginBottom: 40 }}>
         ✉
       </Text>
 
       {/* Heading */}
-      <Text style={{ fontFamily: FONTS.mono, fontSize: 10, color: COLORS.onSurfaceVariant, letterSpacing: 3, marginBottom: 12 }}>
+      <Text style={{ fontFamily: 'Inter_600SemiBold', fontSize: 10, color: colors.muted, letterSpacing: 3, marginBottom: 12 }}>
         ALMOST THERE
       </Text>
-      <Text style={{ fontFamily: FONTS.headlineBold, fontSize: 42, color: COLORS.onSurface, lineHeight: 46, marginBottom: 16 }}>
+      <Text style={{ fontFamily: 'Inter_700Bold', fontSize: 36, color: colors.ink, lineHeight: 42, marginBottom: 16 }}>
         Check your email
       </Text>
-      <View style={{ height: 1, backgroundColor: COLORS.outlineVariant, width: '30%', marginBottom: 32 }} />
+      <View style={{ height: 1, backgroundColor: colors.border, width: '30%', marginBottom: 32 }} />
 
       {/* Body */}
-      <Text style={{ fontFamily: FONTS.body, fontSize: 16, color: COLORS.onSurfaceVariant, lineHeight: 26, marginBottom: 8 }}>
+      <Text style={{ fontFamily: 'Inter_500Medium', fontSize: 16, color: colors.muted, lineHeight: 26, marginBottom: 8 }}>
         We sent a confirmation link to
       </Text>
-      <Text style={{ fontFamily: FONTS.monoMedium, fontSize: 14, color: COLORS.onSurface, marginBottom: 32 }}>
+      <Text style={{ fontFamily: 'Inter_700Bold', fontSize: 14, color: colors.ink, marginBottom: 32 }}>
         {email}
       </Text>
-      <Text style={{ fontFamily: FONTS.body, fontSize: 15, color: COLORS.onSurfaceVariant, lineHeight: 24, marginBottom: 48 }}>
+      <Text style={{ fontFamily: 'Inter_500Medium', fontSize: 15, color: colors.muted, lineHeight: 24, marginBottom: 48 }}>
         Click the link in that email, then come back here and tap Continue.
       </Text>
 
       {/* Continue CTA */}
       <TouchableOpacity
-        style={{ backgroundColor: COLORS.primary, paddingVertical: 17, alignItems: 'center', marginBottom: 16, borderRadius: 2 }}
+        style={{ backgroundColor: colors.sage, paddingVertical: 17, alignItems: 'center', marginBottom: 16, borderRadius: 999 }}
         onPress={handleContinue}
         disabled={checking}
       >
         {checking
-          ? <ActivityIndicator color={COLORS.onPrimary} />
-          : <Text style={{ fontFamily: FONTS.monoMedium, fontSize: 11, color: COLORS.onPrimary, letterSpacing: 3.5 }}>
-              CONTINUE TO DISHR
+          ? <ActivityIndicator color="#fff" />
+          : <Text style={{ fontFamily: 'Inter_700Bold', fontSize: 14, color: '#fff' }}>
+              Continue to Becipe
             </Text>
         }
       </TouchableOpacity>
 
       {/* Resend */}
       <TouchableOpacity
-        style={{ paddingVertical: 14, alignItems: 'center', borderWidth: 1, borderColor: COLORS.outlineVariant, marginBottom: 32, borderRadius: 2 }}
+        style={{ paddingVertical: 14, alignItems: 'center', borderWidth: 1, borderColor: colors.border, marginBottom: 32, borderRadius: 999 }}
         onPress={handleResend}
         disabled={resending}
       >
         {resending
-          ? <ActivityIndicator color={COLORS.onSurfaceVariant} size="small" />
-          : <Text style={{ fontFamily: FONTS.mono, fontSize: 11, color: resent ? COLORS.primary : COLORS.onSurfaceVariant, letterSpacing: 2 }}>
-              {resent ? 'EMAIL SENT' : 'RESEND EMAIL'}
+          ? <ActivityIndicator color={colors.muted} size="small" />
+          : <Text style={{ fontFamily: 'Inter_600SemiBold', fontSize: 13, color: resent ? colors.sage : colors.muted }}>
+              {resent ? 'Email sent' : 'Resend email'}
             </Text>
         }
       </TouchableOpacity>
 
       {/* Back to login */}
       <TouchableOpacity onPress={() => router.replace('/(auth)/login')}>
-        <Text style={{ fontFamily: FONTS.mono, fontSize: 12, color: COLORS.onSurfaceVariant, textAlign: 'center' }}>
+        <Text style={{ fontFamily: 'Inter_500Medium', fontSize: 13, color: colors.muted, textAlign: 'center' }}>
           ← Back to sign in
         </Text>
       </TouchableOpacity>

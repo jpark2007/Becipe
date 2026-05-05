@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
-import { COLORS, FONTS } from '@/lib/theme';
+import { colors } from '@/lib/theme';
 
 interface Props {
   children: React.ReactNode;
@@ -28,19 +28,19 @@ export class ErrorBoundary extends React.Component<Props, State> {
   render() {
     if (this.state.hasError) {
       return (
-        <View style={{ flex: 1, backgroundColor: COLORS.surface, alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+        <View style={{ flex: 1, backgroundColor: colors.bone, alignItems: 'center', justifyContent: 'center', padding: 24 }}>
           <Text style={{
-            fontFamily: FONTS.headlineBold,
-            fontSize: 28,
-            color: COLORS.onSurface,
+            fontFamily: 'Inter_700Bold',
+            fontSize: 22,
+            color: colors.ink,
             marginBottom: 12,
           }}>
             Something went wrong
           </Text>
           <Text style={{
-            fontFamily: FONTS.body,
+            fontFamily: 'Inter_500Medium',
             fontSize: 14,
-            color: COLORS.onSurfaceVariant,
+            color: colors.muted,
             textAlign: 'center',
             lineHeight: 22,
             marginBottom: 24,
@@ -49,19 +49,17 @@ export class ErrorBoundary extends React.Component<Props, State> {
           </Text>
           <TouchableOpacity
             style={{
-              backgroundColor: COLORS.primary,
+              backgroundColor: colors.sage,
               paddingHorizontal: 32,
               paddingVertical: 14,
-              borderRadius: 2,
+              borderRadius: 999,
             }}
             onPress={() => this.setState({ hasError: false, error: null })}
           >
             <Text style={{
-              fontFamily: FONTS.mono,
-              fontSize: 12,
-              letterSpacing: 2,
-              textTransform: 'uppercase',
-              color: COLORS.onPrimary,
+              fontFamily: 'Inter_600SemiBold',
+              fontSize: 13,
+              color: '#fff',
             }}>
               Try Again
             </Text>

@@ -1,5 +1,5 @@
 import { View, Text, StyleSheet } from 'react-native';
-import { COLORS, FONTS } from '@/lib/theme';
+import { colors } from '@/lib/theme';
 
 interface Props {
   rating: number;
@@ -40,16 +40,16 @@ const styles = StyleSheet.create({
     alignItems: 'baseline',
   },
   ratingNumber: {
-    fontFamily: FONTS.monoMedium,
-    color: COLORS.primaryContainer,
+    fontFamily: 'Inter_700Bold',
+    color: colors.ochre,
   },
   suffix: {
-    fontFamily: FONTS.mono,
-    color: COLORS.onSurfaceVariant,
+    fontFamily: 'Inter_500Medium',
+    color: colors.muted,
     marginLeft: 1,
   },
   countText: {
-    fontFamily: FONTS.mono,
-    color: COLORS.onSurfaceVariant,
+    fontFamily: 'Inter_500Medium',
+    color: colors.muted,
   },
 });

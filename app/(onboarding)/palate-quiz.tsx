@@ -16,19 +16,37 @@ const LABELS: Record<keyof PalateVector, string> = {
 export default function PalateQuiz() {
   const router = useRouter();
   const profile = useAuthStore(s => s.profile);
+  const session = useAuthStore(s => s.session);
   const setProfile = useAuthStore(s => s.setProfile);
   const [vector, setVector] = useState<PalateVector>(emptyPalate());
   const [saving, setSaving] = useState(false);
 
   async function handleSave() {
-    if (!profile) return;
+    const userId = profile?.id ?? session?.user?.id;
+    if (!userId) {
+      Alert.alert('Not signed in', 'Please sign in and try again.');
+      return;
+    }
     setSaving(true);
-    const { data, error } = await (supabase
+    const email = session?.user?.email ?? '';
+    const fallbackUsername = email.split('@')[0] || userId.slice(0, 8);
+
+    // First try a plain update (profile row already exists via trigger)
+    let { data, error } = await (supabase
       .from('profiles') as any)
       .update({ palate_vector: vector })
-      .eq('id', profile.id)
+      .eq('id', userId)
       .select()
       .single();
+
+    // If no row was found (trigger missed), insert it now
+    if (error?.code === 'PGRST116') {
+      ({ data, error } = await (supabase
+        .from('profiles') as any)
+        .insert({ id: userId, username: fallbackUsername, display_name: fallbackUsername, palate_vector: vector })
+        .select()
+        .single());
+    }
     setSaving(false);
     if (error) {
       Alert.alert('Could not save', error.message);

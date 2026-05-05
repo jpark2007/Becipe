@@ -1,7 +1,6 @@
 import React from 'react';
-import { View, Text, Pressable, StyleSheet } from 'react-native';
+import { View, Text, Pressable, Image, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Plate } from '@/components/Plate';
 import { MatchPill } from '@/components/MatchPill';
 import { colors, radius, shadow } from '@/lib/theme';
 import { matchScore, parsePalate } from '@/lib/palate';
@@ -26,6 +25,18 @@ type FeedItem = {
   } | null;
 };
 
+const NO_PHOTO_PALETTES = [
+  { bg: ['#EDF1E6', '#dce6d3'], label: colors.sage },
+  { bg: ['#FBE7DF', '#f5d0c3'], label: colors.clay },
+  { bg: ['#F8EED5', '#f0dfa8'], label: colors.ochre },
+];
+
+function hashId(id: string): number {
+  let h = 0;
+  for (let i = 0; i < id.length; i++) h = id.charCodeAt(i) + ((h << 5) - h);
+  return Math.abs(h);
+}
+
 export function FeedCard({ item }: { item: FeedItem }) {
   const router = useRouter();
   const userPalate = useAuthStore(s => s.profile?.palate_vector ?? null);
@@ -36,37 +47,59 @@ export function FeedCard({ item }: { item: FeedItem }) {
   const avColor = colorForUserId(item.actor.id);
   const score = matchScore(parsePalate(userPalate), parsePalate(item.recipe.palate_vector));
   const time = formatRelative(item.created_at);
-  const actorId = item.actor.id;
+  const hasPhoto = !!item.recipe.cover_image_url;
+  const palette = NO_PHOTO_PALETTES[hashId(item.recipe.id) % NO_PHOTO_PALETTES.length];
 
   return (
     <Pressable
-      style={styles.row}
+      style={styles.card}
       onPress={() => router.push(`/recipe/${item.recipe!.id}`)}
     >
-      <Pressable
-        style={[styles.av, { backgroundColor: avColor }]}
-        onPress={() => router.push(`/user/${actorId}` as any)}
-      >
-        <Text style={styles.avText}>{avInitials}</Text>
-      </Pressable>
-      <View style={styles.card}>
+      {/* Header */}
+      <View style={styles.header}>
         <Pressable
-          onPress={(e) => {
-            e.stopPropagation?.();
-            router.push(`/user/${actorId}` as any);
-          }}
+          style={[styles.av, { backgroundColor: avColor }]}
+          onPress={() => router.push(`/user/${item.actor!.id}` as any)}
         >
-          <Text style={styles.byline} numberOfLines={1}>
-            {(actorName || 'someone').toLowerCase()} · {item.verb} · {time}
-          </Text>
+          <Text style={styles.avText}>{avInitials}</Text>
         </Pressable>
-        <Text style={styles.title} numberOfLines={2}>{item.recipe.title}</Text>
-        <View style={styles.tagsRow}>
-          {score != null && <MatchPill score={score} />}
+        <Pressable
+          style={styles.headerMeta}
+          onPress={() => router.push(`/user/${item.actor!.id}` as any)}
+        >
+          <Text style={styles.username} numberOfLines={1}>
+            {(actorName || 'someone').toLowerCase()}
+          </Text>
+          <Text style={styles.metaLine}>{item.verb} · {time}</Text>
+        </Pressable>
+      </View>
+
+      {/* Photo */}
+      {hasPhoto ? (
+        <Image
+          source={{ uri: item.recipe.cover_image_url! }}
+          style={styles.photo}
+          resizeMode="cover"
+        />
+      ) : (
+        <View style={[styles.photo, styles.photoPlaceholder, {
+          backgroundColor: palette.bg[0],
+        }]}>
+          <Text style={styles.placeholderTitle} numberOfLines={3}>
+            {item.recipe.title}
+          </Text>
+          <Text style={[styles.placeholderLabel, { color: palette.label }]}>
+            no photo yet
+          </Text>
         </View>
-        <View style={styles.plateWrap}>
-          <Plate uri={item.recipe.cover_image_url} size={108} />
-        </View>
+      )}
+
+      {/* Footer */}
+      <View style={styles.footer}>
+        {hasPhoto && (
+          <Text style={styles.title} numberOfLines={2}>{item.recipe.title}</Text>
+        )}
+        {score != null && <MatchPill score={score} />}
       </View>
     </Pressable>
   );
@@ -77,44 +110,80 @@ function formatRelative(iso: string): string {
   const h = Math.floor(ms / 3600000);
   if (h < 1) return 'just now';
   if (h < 24) return `${h}h`;
-  const d = Math.floor(h / 24);
-  return `${d}d`;
+  return `${Math.floor(h / 24)}d`;
 }
 
 const styles = StyleSheet.create({
-  row: { flexDirection: 'row', gap: 12, marginBottom: 24, alignItems: 'flex-start' },
-  av: {
-    width: 34, height: 34, borderRadius: 17,
-    alignItems: 'center', justifyContent: 'center',
-    marginTop: 8,
-    shadowColor: '#000', shadowOpacity: 0.12, shadowRadius: 3, shadowOffset: { width: 0, height: 1 },
-  },
-  avText: { fontFamily: 'Inter_700Bold', fontSize: 13, color: '#F5E9D3' },
   card: {
-    flex: 1,
     backgroundColor: colors.card,
     borderRadius: radius.xl,
-    paddingVertical: 16,
-    paddingLeft: 18,
-    paddingRight: 100,
-    minHeight: 130,
     borderWidth: 1,
     borderColor: colors.border,
-    position: 'relative',
+    marginBottom: 18,
+    overflow: 'hidden',
     ...shadow.card,
   },
-  byline: {
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 11,
+  },
+  av: {
+    width: 32, height: 32, borderRadius: 16,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  avText: { fontFamily: 'Inter_800ExtraBold', fontSize: 11, color: '#F5E9D3' },
+  headerMeta: { flex: 1, minWidth: 0 },
+  username: {
+    fontFamily: 'Inter_700Bold',
+    fontSize: 13,
+    color: colors.ink,
+    letterSpacing: -0.2,
+  },
+  metaLine: {
     fontFamily: 'Inter_500Medium',
-    fontSize: 11, color: colors.muted, marginBottom: 6,
+    fontSize: 11,
+    color: colors.muted,
+    marginTop: 1,
+  },
+  photo: {
+    width: '100%',
+    aspectRatio: 1,
+  },
+  photoPlaceholder: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+    paddingHorizontal: 32,
+  },
+  placeholderTitle: {
+    fontFamily: 'Inter_800ExtraBold',
+    fontSize: 28,
+    color: colors.ink,
+    textAlign: 'center',
+    letterSpacing: -0.8,
+    lineHeight: 32,
+    opacity: 0.55,
+  },
+  placeholderLabel: {
+    fontFamily: 'Inter_600SemiBold',
+    fontSize: 10,
+    letterSpacing: 1.5,
+    textTransform: 'uppercase',
+  },
+  footer: {
+    paddingHorizontal: 14,
+    paddingTop: 11,
+    paddingBottom: 14,
+    gap: 7,
   },
   title: {
-    fontFamily: 'Inter_700Bold',
-    fontSize: 17, color: colors.ink, lineHeight: 20,
-    letterSpacing: -0.5, marginBottom: 10,
-  },
-  tagsRow: { flexDirection: 'row', gap: 6, flexWrap: 'wrap' },
-  plateWrap: {
-    position: 'absolute',
-    top: -18, right: -14,
+    fontFamily: 'Inter_800ExtraBold',
+    fontSize: 16,
+    color: colors.ink,
+    letterSpacing: -0.4,
+    lineHeight: 20,
   },
 });

@@ -79,7 +79,6 @@ async function fetchSuggestedUsers(userId: string) {
 export default function FeedScreen() {
   const router = useRouter();
   const { user } = useAuthStore();
-  const router = useRouter();
   const queryClient = useQueryClient();
 
   const circles = sortCirclesByRitualEnding(getStubCircles()).slice(0, 3);
@@ -253,7 +252,7 @@ export default function FeedScreen() {
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.bone },
   loadingContainer: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  listContent: { paddingHorizontal: 22, paddingBottom: 100 },
+  listContent: { paddingHorizontal: 16, paddingBottom: 100 },
 
   headerRow: {
     flexDirection: 'row',

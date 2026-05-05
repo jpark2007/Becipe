@@ -1,7 +1,7 @@
 import { View, Text, Image, TouchableOpacity, Pressable, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import type { Recipe } from '@/lib/database.types';
-import { colors, radius, shadow } from '@/lib/theme';
+import { colors, radius, shadow, type as typeScale } from '@/lib/theme';
 import { Plate } from '@/components/Plate';
 
 interface Props {
@@ -150,7 +150,7 @@ export function RecipeCard({ recipe, variant = 'plate', showCreator }: Props) {
       )}
 
       <View style={styles.hairline} />
-    </View>
+    </TouchableOpacity>
   );
 }
 
@@ -226,7 +226,7 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: COLORS.primaryContainer,
+    backgroundColor: colors.sageSoft,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 10,
@@ -234,20 +234,20 @@ const styles = StyleSheet.create({
   },
   avatar: { width: 32, height: 32, borderRadius: 16 },
   avatarInitial: {
-    fontFamily: FONTS.bodyBold,
+    fontFamily: typeScale.familyBold,
     fontSize: 13,
-    color: COLORS.onPrimary,
+    color: colors.sage,
   },
   creatorMeta: { flex: 1 },
   creatorName: {
-    fontFamily: FONTS.bodySemiBold,
+    fontFamily: typeScale.family,
     fontSize: 13,
-    color: COLORS.onSurface,
+    color: colors.ink,
   },
   creatorHandle: {
-    fontFamily: FONTS.mono,
+    fontFamily: 'DMMono_400Regular',
     fontSize: 10,
-    color: COLORS.onSurfaceVariant,
+    color: colors.muted,
     marginTop: 1,
   },
 
@@ -271,9 +271,9 @@ const styles = StyleSheet.create({
     borderRadius: 100,
   },
   ratingBadgeText: {
-    fontFamily: FONTS.mono,
+    fontFamily: 'DMMono_400Regular',
     fontSize: 11,
-    color: COLORS.primary,
+    color: colors.sage,
   },
   cuisineTagOverlay: {
     position: 'absolute',

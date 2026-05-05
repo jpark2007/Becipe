@@ -8,16 +8,12 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { StatusBar } from 'expo-status-bar';
 import { useFonts } from 'expo-font';
 import {
-  Newsreader_400Regular,
-  Newsreader_400Regular_Italic,
-  Newsreader_600SemiBold,
-  Newsreader_700Bold,
-} from '@expo-google-fonts/newsreader';
-import {
   Inter_400Regular,
   Inter_500Medium,
   Inter_600SemiBold,
   Inter_700Bold,
+  Inter_800ExtraBold,
+  Inter_900Black,
 } from '@expo-google-fonts/inter';
 import {
   DMMono_400Regular,
@@ -26,13 +22,6 @@ import {
 import {
   Lora_400Regular,
 } from '@expo-google-fonts/lora';
-import {
-  Inter_500Medium,
-  Inter_600SemiBold,
-  Inter_700Bold,
-  Inter_800ExtraBold,
-  Inter_900Black,
-} from '@expo-google-fonts/inter';
 import { queryClient } from '@/lib/query-client';
 import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/store/auth';
@@ -118,22 +107,15 @@ function AuthGate() {
 
 export default function RootLayout() {
   const [fontsLoaded] = useFonts({
-    Newsreader_400Regular,
-    Newsreader_400Regular_Italic,
-    Newsreader_600SemiBold,
-    Newsreader_700Bold,
     Inter_400Regular,
-    Inter_500Medium,
-    Inter_600SemiBold,
-    Inter_700Bold,
-    DMMono_400Regular,
-    DMMono_500Medium,
-    Lora_400Regular,
     Inter_500Medium,
     Inter_600SemiBold,
     Inter_700Bold,
     Inter_800ExtraBold,
     Inter_900Black,
+    DMMono_400Regular,
+    DMMono_500Medium,
+    Lora_400Regular,
   });
 
   const isAuthReady = useAuthStore((s) => s.isAuthReady);
