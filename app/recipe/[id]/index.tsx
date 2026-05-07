@@ -62,7 +62,7 @@ export default function RecipeDetailScreen() {
 
   const saveMutation = useMutation({
     mutationFn: async () => {
-      const { error } = await (supabase.from('saved_recipes') as any).insert({
+      const { error } = await supabase.from('saved_recipes').insert({
         user_id: user!.id,
         recipe_id: id,
       });
@@ -71,6 +71,9 @@ export default function RecipeDetailScreen() {
     onSuccess: () => {
       setIsSaved(true);
       Alert.alert('Added to your queue', 'Find it in Kitchen › Cooking soon.');
+    },
+    onError: () => {
+      Alert.alert('Could not save', 'Something went wrong. Please try again.');
     },
   });
 

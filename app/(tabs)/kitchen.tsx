@@ -21,12 +21,12 @@ import { colors, radius } from '@/lib/theme';
 async function fetchQueue(userId: string) {
   const { data, error } = await supabase
     .from('saved_recipes')
-    .select('id, recipe:recipes(*)')
+    .select('recipe_id, recipe:recipes(*)')
     .eq('user_id', userId)
     .order('saved_at', { ascending: false });
   if (error) throw error;
   return (data ?? [])
-    .map((row: any) => ({ savedId: row.id, recipe: row.recipe }))
+    .map((row: any) => ({ savedId: row.recipe_id, recipe: row.recipe }))
     .filter((row: any) => !!row.recipe);
 }
 
@@ -62,7 +62,8 @@ export default function KitchenScreen() {
       const { error } = await supabase
         .from('saved_recipes')
         .delete()
-        .eq('id', savedId);
+        .eq('user_id', user!.id)
+        .eq('recipe_id', savedId);
       if (error) throw error;
     },
     onSuccess: () => {

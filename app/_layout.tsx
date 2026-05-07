@@ -153,6 +153,7 @@ export default function RootLayout() {
               options={{
                 headerShown: true,
                 title: '',
+                headerBackTitle: 'Back',
                 headerStyle: { backgroundColor: '#fbf9f4' },
                 headerTintColor: '#1b1c19',
               }}

@@ -90,14 +90,11 @@ export default function ExploreScreen() {
         data={ranked}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
-          <View style={styles.cardWrap}>
-            {item.match_score != null && (
-              <View style={styles.matchPill}>
-                <Text style={styles.matchPillText}>{item.match_score}% match</Text>
-              </View>
-            )}
-            <RecipeCard recipe={item} showCreator />
-          </View>
+          <RecipeCard
+            recipe={item}
+            showCreator
+            matchScore={item.match_score}
+          />
         )}
         contentContainerStyle={{ paddingHorizontal: 22, paddingBottom: 100 }}
         ListHeaderComponent={
@@ -127,26 +124,6 @@ const styles = StyleSheet.create({
     color: colors.muted,
     marginTop: 6,
     marginBottom: 6,
-  },
-  cardWrap: {
-    marginBottom: 14,
-    position: 'relative',
-  },
-  matchPill: {
-    position: 'absolute',
-    top: 10,
-    right: 10,
-    zIndex: 2,
-    backgroundColor: colors.ochreSoft,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: radius.pill,
-  },
-  matchPillText: {
-    fontFamily: 'Inter_700Bold',
-    fontSize: 10,
-    color: colors.ochre,
-    letterSpacing: 0.3,
   },
   empty: {
     fontFamily: 'Inter_500Medium',

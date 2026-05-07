@@ -2,7 +2,6 @@ import { View, Text, Image, TouchableOpacity, Pressable, StyleSheet } from 'reac
 import { useRouter } from 'expo-router';
 import type { Recipe } from '@/lib/database.types';
 import { colors, radius, shadow, type as typeScale } from '@/lib/theme';
-import { Plate } from '@/components/Plate';
 
 interface Props {
   recipe: Recipe & {
@@ -12,6 +11,7 @@ interface Props {
   };
   variant?: 'plate' | 'flat';
   showCreator?: boolean;
+  matchScore?: number | null;
 }
 
 const DIFFICULTY_COLOR: Record<string, string> = {
@@ -20,7 +20,7 @@ const DIFFICULTY_COLOR: Record<string, string> = {
   hard: colors.clay,
 };
 
-export function RecipeCard({ recipe, variant = 'plate', showCreator }: Props) {
+export function RecipeCard({ recipe, variant = 'plate', showCreator, matchScore }: Props) {
   const router = useRouter();
   const totalTime =
     recipe.prep_time_min !== null && recipe.cook_time_min !== null
@@ -34,49 +34,62 @@ export function RecipeCard({ recipe, variant = 'plate', showCreator }: Props) {
         onPress={() => router.push(`/recipe/${recipe.id}`)}
         activeOpacity={0.85}
       >
-        <Text style={styles.plateTitle} numberOfLines={2}>
-          {recipe.title}
-        </Text>
-        <View style={styles.plateMetaRow}>
-          {showCreator && recipe.creator && (
-            <Pressable
-              onPress={(e) => {
-                e.stopPropagation?.();
-                if (recipe.creator?.id) router.push(`/user/${recipe.creator.id}` as any);
-              }}
-            >
-              <Text style={styles.plateMeta} numberOfLines={1}>
-                by {recipe.creator.display_name}
-              </Text>
-            </Pressable>
+        <View style={styles.plateBody}>
+          {matchScore != null && (
+            <Text style={styles.plateMatchLabel}>{matchScore}% match</Text>
           )}
-          {recipe.cuisine && (
-            <Text style={styles.plateMeta}>{recipe.cuisine}</Text>
-          )}
-          {recipe.avg_rating != null && (
-            <Text style={styles.plateRating}>{recipe.avg_rating.toFixed(1)}</Text>
-          )}
-        </View>
-        {(totalTime !== null || recipe.difficulty) && (
-          <View style={styles.plateSubRow}>
-            {totalTime !== null && (
-              <Text style={styles.plateMeta}>{totalTime} min</Text>
-            )}
-            {recipe.difficulty && (
-              <Text
-                style={[
-                  styles.plateMeta,
-                  { color: DIFFICULTY_COLOR[recipe.difficulty] ?? colors.muted },
-                ]}
+          <Text style={styles.plateTitle} numberOfLines={2}>
+            {recipe.title}
+          </Text>
+          <View style={styles.plateMetaRow}>
+            {showCreator && recipe.creator && (
+              <Pressable
+                onPress={(e) => {
+                  e.stopPropagation?.();
+                  if (recipe.creator?.id) router.push(`/user/${recipe.creator.id}` as any);
+                }}
               >
-                {recipe.difficulty}
-              </Text>
+                <Text style={styles.plateMeta} numberOfLines={1}>
+                  by {recipe.creator.display_name}
+                </Text>
+              </Pressable>
+            )}
+            {recipe.cuisine && (
+              <Text style={styles.plateMeta}>{recipe.cuisine}</Text>
+            )}
+            {recipe.avg_rating != null && (
+              <Text style={styles.plateRating}>{recipe.avg_rating.toFixed(1)}</Text>
             )}
           </View>
-        )}
-        <View style={styles.plateFloat}>
-          <Plate uri={recipe.cover_image_url} size={100} />
+          {(totalTime !== null || recipe.difficulty) && (
+            <View style={styles.plateSubRow}>
+              {totalTime !== null && (
+                <Text style={styles.plateMeta}>{totalTime} min</Text>
+              )}
+              {recipe.difficulty && (
+                <Text
+                  style={[
+                    styles.plateMeta,
+                    { color: DIFFICULTY_COLOR[recipe.difficulty] ?? colors.muted },
+                  ]}
+                >
+                  {recipe.difficulty}
+                </Text>
+              )}
+            </View>
+          )}
         </View>
+        {recipe.cover_image_url ? (
+          <Image
+            source={{ uri: recipe.cover_image_url }}
+            style={styles.plateThumbnail}
+            resizeMode="cover"
+          />
+        ) : (
+          <View style={[styles.plateThumbnail, styles.plateThumbnailFallback]}>
+            <Text style={styles.plateFallbackGlyph}>◆</Text>
+          </View>
+        )}
       </TouchableOpacity>
     );
   }
@@ -160,33 +173,43 @@ const styles = StyleSheet.create({
     backgroundColor: colors.card,
     borderWidth: 1,
     borderColor: colors.border,
-    borderRadius: 22,
-    paddingVertical: 16,
-    paddingLeft: 18,
-    paddingRight: 100,
-    marginBottom: 14,
-    minHeight: 100,
-    position: 'relative',
+    borderRadius: 16,
+    padding: 14,
+    marginBottom: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
     ...shadow.card,
+  },
+  plateBody: {
+    flex: 1,
+  },
+  plateMatchLabel: {
+    fontFamily: 'Inter_600SemiBold',
+    fontSize: 10,
+    color: colors.ochre,
+    letterSpacing: 0.4,
+    textTransform: 'uppercase',
+    marginBottom: 3,
   },
   plateTitle: {
     fontFamily: 'Inter_700Bold',
-    fontSize: 17,
+    fontSize: 16,
     color: colors.ink,
     lineHeight: 20,
-    letterSpacing: -0.4,
+    letterSpacing: -0.3,
     marginBottom: 6,
   },
   plateMetaRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: 8,
     flexWrap: 'wrap',
   },
   plateSubRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: 8,
     marginTop: 4,
     flexWrap: 'wrap',
   },
@@ -200,11 +223,21 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: colors.ochre,
   },
-  plateFloat: {
-    position: 'absolute',
-    top: '50%',
-    right: -14,
-    marginTop: -50,
+  plateThumbnail: {
+    width: 76,
+    height: 76,
+    borderRadius: 10,
+    flexShrink: 0,
+  },
+  plateThumbnailFallback: {
+    backgroundColor: colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  plateFallbackGlyph: {
+    color: colors.muted,
+    fontSize: 18,
+    opacity: 0.5,
   },
 
   // ── flat (legacy) variant ──

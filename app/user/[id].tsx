@@ -77,6 +77,7 @@ export default function UserProfileScreen() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['user-profile', id] });
+      queryClient.invalidateQueries({ queryKey: ['profile', user!.id] });
       queryClient.invalidateQueries({ queryKey: ['feed'] });
     },
   });
