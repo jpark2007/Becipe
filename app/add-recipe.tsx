@@ -39,9 +39,10 @@ function isSocialUrl(url: string): boolean {
 export default function AddRecipeScreen() {
   const router = useRouter();
   const { user } = useAuthStore();
-  const { importUrl: paramImportUrl } = useLocalSearchParams<{ importUrl?: string }>();
+  const { importUrl: paramImportUrl, importCaption: paramCaption } = useLocalSearchParams<{ importUrl?: string; importCaption?: string }>();
 
   const [importUrl, setImportUrl] = useState('');
+  const [importCaption, setImportCaption] = useState('');
   const [importing, setImporting] = useState(false);
   const [importError, setImportError] = useState('');
   const [saving, setSaving] = useState(false);
@@ -71,6 +72,11 @@ export default function AddRecipeScreen() {
   useEffect(() => {
     if (paramImportUrl) {
       setImportUrl(paramImportUrl);
+      if (paramCaption) setImportCaption(paramCaption);
+      // Auto-import when coming from share intent with a URL
+      if (paramImportUrl.startsWith('http')) {
+        setTimeout(() => handleImport(paramImportUrl, paramCaption ?? ''), 300);
+      }
     }
   }, [paramImportUrl]);
 
@@ -91,9 +97,10 @@ export default function AddRecipeScreen() {
     if (data.image) setScrapedImageUrl(data.image);
   }
 
-  async function handleImport() {
-    const targetUrl = importUrl.trim();
-    if (!targetUrl) return;
+  async function handleImport(urlOverride?: string, captionOverride?: string) {
+    const targetUrl = (urlOverride ?? importUrl).trim();
+    const caption = (captionOverride ?? importCaption).trim();
+    if (!targetUrl && !caption) return;
 
     setImporting(true);
     setImportError('');
@@ -102,6 +109,9 @@ export default function AddRecipeScreen() {
       const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL ?? '';
       const supabaseKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? '';
       const fnUrl = `${supabaseUrl}/functions/v1/${fnName}`;
+
+      const body: Record<string, string> = { url: targetUrl };
+      if (caption) body.caption = caption;
 
       const controller = new AbortController();
       const timer = setTimeout(() => controller.abort(), 30000);
@@ -113,7 +123,7 @@ export default function AddRecipeScreen() {
             'Authorization': `Bearer ${supabaseKey}`,
             'apikey': supabaseKey,
           },
-          body: JSON.stringify({ url: targetUrl }),
+          body: JSON.stringify(body),
           signal: controller.signal,
         });
         clearTimeout(timer);

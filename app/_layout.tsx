@@ -125,9 +125,23 @@ export default function RootLayout() {
   const shareRouter = useRouter();
 
   useEffect(() => {
-    const url = shareIntent?.webUrl || shareIntent?.text;
-    if (hasShareIntent && url) {
-      shareRouter.replace({ pathname: '/add-recipe', params: { importUrl: url } } as any);
+    if (!hasShareIntent) return;
+    const sharedText = shareIntent?.text ?? '';
+    const sharedUrl = shareIntent?.webUrl ?? '';
+
+    // Instagram shares: webUrl has the post link, text has the caption
+    // TikTok shares: text often has "url + caption" combined
+    // Extract URL from text if webUrl is empty
+    const urlMatch = sharedText.match(/https?:\/\/[^\s]+/);
+    const url = sharedUrl || urlMatch?.[0] || '';
+    // Caption is the text minus the URL
+    const caption = sharedText.replace(/https?:\/\/[^\s]+/g, '').trim();
+
+    if (url || caption) {
+      shareRouter.replace({
+        pathname: '/add-recipe',
+        params: { importUrl: url, importCaption: caption },
+      } as any);
       resetShareIntent();
     }
   }, [hasShareIntent, shareIntent]);
