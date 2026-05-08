@@ -11,10 +11,12 @@ import {
   ScrollView,
   ActivityIndicator,
   Alert,
+  Image,
   KeyboardAvoidingView,
   Platform,
   StyleSheet,
 } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -59,6 +61,8 @@ export default function AddRecipeScreen() {
   const [sourceType, setSourceType] = useState<'manual' | 'url' | 'tiktok' | 'instagram' | 'facebook' | 'x' | 'youtube'>('manual');
   const [publish, setPublish] = useState(false);
   const [activeIngIdx, setActiveIngIdx] = useState<number | null>(null);
+  const [coverUri, setCoverUri] = useState<string | null>(null);
+  const [scrapedImageUrl, setScrapedImageUrl] = useState<string | null>(null);
 
   function applyParsedData(data: any, targetUrl: string) {
     setTitle(data.title ?? '');
@@ -74,6 +78,7 @@ export default function AddRecipeScreen() {
     setSourceName(data.source_name ?? '');
     setSourceCredit(data.source_credit ?? '');
     setSourceType(data.source_type ?? 'url');
+    if (data.image) setScrapedImageUrl(data.image);
   }
 
   async function handleImport() {
@@ -123,6 +128,18 @@ export default function AddRecipeScreen() {
     }
   }
 
+  async function pickCoverImage() {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      quality: 0.8,
+      aspect: [16, 9],
+      allowsEditing: true,
+    });
+    if (!result.canceled) {
+      setCoverUri(result.assets[0].uri);
+    }
+  }
+
   function validate(): string | null {
     const cleanTitle = title.trim();
     if (!cleanTitle) return 'Please give your recipe a title.';
@@ -136,6 +153,10 @@ export default function AddRecipeScreen() {
   }
 
   async function handleSave() {
+    if (!coverUri && !scrapedImageUrl) {
+      Alert.alert('Photo required', 'Add a cover photo for your recipe');
+      return;
+    }
     const err = validate();
     if (err) {
       setImportError(err);
@@ -146,6 +167,21 @@ export default function AddRecipeScreen() {
     setImportError('');
 
     try {
+      let finalCoverUrl: string | null = scrapedImageUrl || null;
+      if (coverUri) {
+        const ext = coverUri.split('.').pop() || 'jpg';
+        const fileName = `covers/${user.id}/${Date.now()}.${ext}`;
+        const response = await fetch(coverUri);
+        const blob = await response.blob();
+        const { error: uploadErr } = await supabase.storage
+          .from('recipe-photos')
+          .upload(fileName, blob, { contentType: `image/${ext}` });
+        if (!uploadErr) {
+          const { data: urlData } = supabase.storage.from('recipe-photos').getPublicUrl(fileName);
+          finalCoverUrl = urlData.publicUrl;
+        }
+      }
+
       const payload: any = {
         created_by: user.id,
         title: title.trim().slice(0, 200),
@@ -174,6 +210,7 @@ export default function AddRecipeScreen() {
         source_type: sourceType,
         is_public: publish,
         tags: cuisine ? [cuisine.toLowerCase()] : [],
+        cover_image_url: finalCoverUrl,
       };
 
       const { error } = await (supabase.from('recipes') as any).insert(payload);
@@ -281,6 +318,29 @@ export default function AddRecipeScreen() {
               onChangeText={setDescription}
               multiline
             />
+          </View>
+
+          {/* Cover photo */}
+          <View style={styles.fieldCard}>
+            <Text style={styles.fieldLabel}>cover photo *</Text>
+            {coverUri ? (
+              <Pressable onPress={pickCoverImage}>
+                <Image source={{ uri: coverUri }} style={{ width: '100%', height: 180, borderRadius: 10 }} />
+                <Text style={[styles.fieldLabel, { marginTop: 8, color: colors.sage }]}>tap to change</Text>
+              </Pressable>
+            ) : scrapedImageUrl ? (
+              <Pressable onPress={pickCoverImage}>
+                <Image source={{ uri: scrapedImageUrl }} style={{ width: '100%', height: 180, borderRadius: 10 }} />
+                <Text style={[styles.fieldLabel, { marginTop: 8, color: colors.sage }]}>tap to change</Text>
+              </Pressable>
+            ) : (
+              <Pressable
+                style={{ backgroundColor: colors.border, borderRadius: 10, height: 120, alignItems: 'center', justifyContent: 'center' }}
+                onPress={pickCoverImage}
+              >
+                <Text style={{ fontFamily: 'Inter_600SemiBold', fontSize: 14, color: colors.muted }}>add cover photo</Text>
+              </Pressable>
+            )}
           </View>
 
           {/* Meta row */}
