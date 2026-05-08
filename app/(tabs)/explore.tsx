@@ -3,6 +3,8 @@ import {
   View,
   Text,
   FlatList,
+  ScrollView,
+  Image,
   ActivityIndicator,
   Pressable,
   StyleSheet,
@@ -14,7 +16,7 @@ import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/store/auth';
 import { RecipeCard } from '@/components/RecipeCard';
 import { EditorialHeading } from '@/components/EditorialHeading';
-import { colors, radius } from '@/lib/theme';
+import { colors, radius, shadow } from '@/lib/theme';
 import { parsePalate, matchScore } from '@/lib/palate';
 import { InboxIcon } from '@/components/InboxIcon';
 
@@ -38,6 +40,61 @@ async function fetchPublicRecipes() {
   });
 }
 
+function CarouselSection({
+  title,
+  data,
+  onPress,
+}: {
+  title: string;
+  data: any[];
+  onPress: (id: string) => void;
+}) {
+  if (!data?.length) return null;
+  return (
+    <View style={styles.carouselSection}>
+      <Text style={styles.carouselTitle}>{title}</Text>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={{ paddingHorizontal: 16, gap: 12 }}
+      >
+        {data.map((recipe) => (
+          <Pressable
+            key={recipe.id}
+            style={styles.carouselCard}
+            onPress={() => onPress(recipe.id)}
+          >
+            {recipe.cover_image_url ? (
+              <Image
+                source={{ uri: recipe.cover_image_url }}
+                style={styles.carouselImage}
+              />
+            ) : (
+              <View style={[styles.carouselImage, styles.carouselFallback]}>
+                <Text style={styles.carouselFallbackText}>
+                  {recipe.cuisine ?? '🍽'}
+                </Text>
+              </View>
+            )}
+            <View style={styles.carouselInfo}>
+              <Text style={styles.carouselName} numberOfLines={2}>
+                {recipe.title}
+              </Text>
+              {recipe.match_score != null && (
+                <View style={styles.matchBadge}>
+                  <Text style={styles.matchBadgeText}>
+                    {Math.round(recipe.match_score)}% match
+                  </Text>
+                </View>
+              )}
+            </View>
+          </Pressable>
+        ))}
+      </ScrollView>
+    </View>
+  );
+}
+
 export default function ExploreScreen() {
   const router = useRouter();
   const storedPalate = useAuthStore((s) => s.profile?.palate_vector);
@@ -55,6 +112,25 @@ export default function ExploreScreen() {
     })
     .sort((a: any, b: any) => (b.match_score ?? -1) - (a.match_score ?? -1))
     .slice(0, 50);
+
+  // Carousel data derived from ranked list
+  const bestForPalate = ranked.slice(0, 8);
+  const quickEasy = ranked
+    .filter((r: any) => {
+      const time = r.total_time_min || r.cook_time_min || 999;
+      return time <= 30;
+    })
+    .slice(0, 10);
+  const trending = [...ranked]
+    .sort((a: any, b: any) => (b.try_count ?? 0) - (a.try_count ?? 0))
+    .slice(0, 10);
+  const cuisineGroups = new Map<string, any[]>();
+  for (const r of ranked) {
+    if (!r.cuisine) continue;
+    const arr = cuisineGroups.get(r.cuisine) || [];
+    arr.push(r);
+    cuisineGroups.set(r.cuisine, arr);
+  }
 
   if (isLoading) {
     return (
@@ -99,18 +175,44 @@ export default function ExploreScreen() {
         )}
         contentContainerStyle={{ paddingHorizontal: 22, paddingBottom: 100 }}
         ListHeaderComponent={
-          <View style={{ paddingTop: 6, paddingBottom: 14 }}>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-              <View style={{ flex: 1 }}>
-                <EditorialHeading size={26} emphasis="palate" emphasisColor="sage">
-                  {'For your\n'}
-                </EditorialHeading>
+          <View style={{ marginHorizontal: -22 }}>
+            <View style={{ paddingTop: 6, paddingBottom: 14, paddingHorizontal: 22 }}>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                <View style={{ flex: 1 }}>
+                  <EditorialHeading size={26} emphasis="palate" emphasisColor="sage">
+                    {'For your\n'}
+                  </EditorialHeading>
+                </View>
+                <InboxIcon />
               </View>
-              <InboxIcon />
+              <Text style={styles.subtitle}>
+                recipes ranked by how well they match your taste
+              </Text>
             </View>
-            <Text style={styles.subtitle}>
-              recipes ranked by how well they match your taste
-            </Text>
+            <CarouselSection
+              title="Best for your palate"
+              data={bestForPalate}
+              onPress={(id) => router.push(`/recipe/${id}` as any)}
+            />
+            <CarouselSection
+              title="Quick & easy"
+              data={quickEasy}
+              onPress={(id) => router.push(`/recipe/${id}` as any)}
+            />
+            <CarouselSection
+              title="Trending"
+              data={trending}
+              onPress={(id) => router.push(`/recipe/${id}` as any)}
+            />
+            {Array.from(cuisineGroups.entries()).map(([cuisine, recipes]) => (
+              <CarouselSection
+                key={cuisine}
+                title={cuisine}
+                data={recipes.slice(0, 8)}
+                onPress={(id) => router.push(`/recipe/${id}` as any)}
+              />
+            ))}
+            <Text style={styles.allRecipesLabel}>All recipes</Text>
           </View>
         }
         ListEmptyComponent={
@@ -163,5 +265,70 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter_700Bold',
     fontSize: 13,
     color: '#fff',
+  },
+  allRecipesLabel: {
+    fontFamily: 'Inter_700Bold',
+    fontSize: 17,
+    color: colors.ink,
+    paddingHorizontal: 22,
+    marginTop: 8,
+    marginBottom: 12,
+    letterSpacing: -0.3,
+  },
+  // Carousel styles
+  carouselSection: {
+    marginBottom: 20,
+  },
+  carouselTitle: {
+    fontFamily: 'Inter_700Bold',
+    fontSize: 17,
+    color: colors.ink,
+    paddingHorizontal: 16,
+    marginBottom: 10,
+    letterSpacing: -0.3,
+  },
+  carouselCard: {
+    width: 150,
+    backgroundColor: colors.card,
+    borderRadius: radius.md,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: colors.border,
+    ...shadow.card,
+  },
+  carouselImage: {
+    width: 150,
+    height: 110,
+  },
+  carouselFallback: {
+    backgroundColor: colors.sageSoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  carouselFallbackText: {
+    fontSize: 24,
+  },
+  carouselInfo: {
+    padding: 10,
+  },
+  carouselName: {
+    fontFamily: 'Inter_600SemiBold',
+    fontSize: 13,
+    color: colors.ink,
+    lineHeight: 17,
+    letterSpacing: -0.2,
+  },
+  matchBadge: {
+    backgroundColor: colors.sageSoft,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: radius.sm,
+    alignSelf: 'flex-start',
+    marginTop: 6,
+  },
+  matchBadgeText: {
+    fontFamily: 'Inter_600SemiBold',
+    fontSize: 10,
+    color: colors.sage,
   },
 });
