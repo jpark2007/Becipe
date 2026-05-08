@@ -313,7 +313,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 12,
     marginBottom: 8,
-    borderRadius: 4,
   },
   suggestedUserLeft: {
     flex: 1,

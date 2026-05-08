@@ -107,6 +107,29 @@ export interface Database {
         Insert: Database['public']['Tables']['recipe_ingredients_flat']['Row'];
         Update: never;
       };
+      recipe_shares: {
+        Row: {
+          id: string;
+          sender_id: string;
+          recipient_id: string;
+          recipe_id: string;
+          note: string | null;
+          read_at: string | null;
+          created_at: string;
+        };
+        Insert: Omit<Database['public']['Tables']['recipe_shares']['Row'], 'id' | 'created_at'>;
+        Update: Partial<Pick<Database['public']['Tables']['recipe_shares']['Row'], 'read_at'>>;
+      };
+      share_reactions: {
+        Row: {
+          share_id: string;
+          user_id: string;
+          emoji: string;
+          created_at: string;
+        };
+        Insert: Omit<Database['public']['Tables']['share_reactions']['Row'], 'created_at'>;
+        Update: never;
+      };
     };
     Views: {};
     Functions: {};
