@@ -3,6 +3,7 @@
 // app/(tabs)/add.tsx. Single surface: paste-link input at top, then
 // manual fields, draft/publish toggle, save button.
 import { useState } from 'react';
+import { usePhotoTips, PhotoTipsModal } from '@/components/PhotoTips';
 import {
   View,
   Text,
@@ -63,6 +64,8 @@ export default function AddRecipeScreen() {
   const [activeIngIdx, setActiveIngIdx] = useState<number | null>(null);
   const [coverUri, setCoverUri] = useState<string | null>(null);
   const [scrapedImageUrl, setScrapedImageUrl] = useState<string | null>(null);
+  const [tipsVisible, setTipsVisible] = useState(false);
+  const { shouldShow: showTips, dismiss: dismissTips } = usePhotoTips();
 
   function applyParsedData(data: any, targetUrl: string) {
     setTitle(data.title ?? '');
@@ -138,6 +141,20 @@ export default function AddRecipeScreen() {
     if (!result.canceled) {
       setCoverUri(result.assets[0].uri);
     }
+  }
+
+  function handlePickWithTips() {
+    if (showTips) {
+      setTipsVisible(true);
+      return;
+    }
+    pickCoverImage();
+  }
+
+  function onTipsDismissed() {
+    setTipsVisible(false);
+    dismissTips();
+    pickCoverImage();
   }
 
   function validate(): string | null {
@@ -324,19 +341,19 @@ export default function AddRecipeScreen() {
           <View style={styles.fieldCard}>
             <Text style={styles.fieldLabel}>cover photo *</Text>
             {coverUri ? (
-              <Pressable onPress={pickCoverImage}>
+              <Pressable onPress={handlePickWithTips}>
                 <Image source={{ uri: coverUri }} style={{ width: '100%', height: 180, borderRadius: 10 }} />
                 <Text style={[styles.fieldLabel, { marginTop: 8, color: colors.sage }]}>tap to change</Text>
               </Pressable>
             ) : scrapedImageUrl ? (
-              <Pressable onPress={pickCoverImage}>
+              <Pressable onPress={handlePickWithTips}>
                 <Image source={{ uri: scrapedImageUrl }} style={{ width: '100%', height: 180, borderRadius: 10 }} />
                 <Text style={[styles.fieldLabel, { marginTop: 8, color: colors.sage }]}>tap to change</Text>
               </Pressable>
             ) : (
               <Pressable
                 style={{ backgroundColor: colors.border, borderRadius: 10, height: 120, alignItems: 'center', justifyContent: 'center' }}
-                onPress={pickCoverImage}
+                onPress={handlePickWithTips}
               >
                 <Text style={{ fontFamily: 'Inter_600SemiBold', fontSize: 14, color: colors.muted }}>add cover photo</Text>
               </Pressable>
@@ -614,6 +631,7 @@ export default function AddRecipeScreen() {
           </Pressable>
         </ScrollView>
       </KeyboardAvoidingView>
+      <PhotoTipsModal visible={tipsVisible} onDismiss={onTipsDismissed} />
     </SafeAreaView>
   );
 }

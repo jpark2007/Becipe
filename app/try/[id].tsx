@@ -11,6 +11,7 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
+import { usePhotoTips, PhotoTipsModal } from '@/components/PhotoTips';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
@@ -35,6 +36,8 @@ export default function TryScreen() {
   const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [activeTags, setActiveTags] = useState<string[]>([]);
+  const [tipsVisible, setTipsVisible] = useState(false);
+  const { shouldShow: showTips, dismiss: dismissTips } = usePhotoTips();
 
   async function pickPhoto() {
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -46,6 +49,20 @@ export default function TryScreen() {
     if (!result.canceled) {
       setPhotoUri(result.assets[0].uri);
     }
+  }
+
+  function handlePickWithTips() {
+    if (showTips) {
+      setTipsVisible(true);
+      return;
+    }
+    pickPhoto();
+  }
+
+  function onTipsDismissed() {
+    setTipsVisible(false);
+    dismissTips();
+    pickPhoto();
   }
 
   function toggleTag(tag: string) {
@@ -153,7 +170,7 @@ export default function TryScreen() {
             <Text style={styles.capBig}>
               {photoUri ? 'looks great' : 'required'}
             </Text>
-            <Pressable style={styles.changeBtn} onPress={pickPhoto}>
+            <Pressable style={styles.changeBtn} onPress={handlePickWithTips}>
               <Text style={styles.changeBtnText}>
                 {photoUri ? '📷 change' : '📷 add photo'}
               </Text>
@@ -214,6 +231,7 @@ export default function TryScreen() {
           </Pressable>
         </ScrollView>
       </KeyboardAvoidingView>
+      <PhotoTipsModal visible={tipsVisible} onDismiss={onTipsDismissed} />
     </SafeAreaView>
   );
 }
