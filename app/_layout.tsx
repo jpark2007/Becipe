@@ -170,6 +170,8 @@ export default function RootLayout() {
               options={{ presentation: 'modal', headerShown: false }}
             />
             <Stack.Screen name="friends" options={{ headerShown: false }} />
+            <Stack.Screen name="inbox" options={{ headerShown: false }} />
+            <Stack.Screen name="inbox/[userId]" options={{ headerShown: false }} />
             <Stack.Screen
               name="people-search"
               options={{ presentation: 'formSheet', headerShown: false }}
