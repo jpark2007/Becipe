@@ -54,6 +54,14 @@ export default function TryScreen() {
     );
   }
 
+  function handleSubmit() {
+    if (!photoUri) {
+      Alert.alert('Photo required', 'Add a photo of what you made');
+      return;
+    }
+    mutation.mutate();
+  }
+
   const mutation = useMutation({
     mutationFn: async () => {
       let photoUrl: string | null = null;
@@ -122,8 +130,8 @@ export default function TryScreen() {
             </Pressable>
             <Text style={styles.titleSm}>log a try</Text>
             <Pressable
-              onPress={() => mutation.mutate()}
-              disabled={submitting}
+              onPress={handleSubmit}
+              disabled={submitting || !photoUri}
               hitSlop={8}
             >
               {submitting ? (
@@ -143,7 +151,7 @@ export default function TryScreen() {
           <View style={styles.photoCard}>
             <Text style={styles.cap}>YOUR PHOTO</Text>
             <Text style={styles.capBig}>
-              {photoUri ? 'looks great' : 'add one'}
+              {photoUri ? 'looks great' : 'required'}
             </Text>
             <Pressable style={styles.changeBtn} onPress={pickPhoto}>
               <Text style={styles.changeBtnText}>
@@ -194,9 +202,9 @@ export default function TryScreen() {
           </View>
 
           <Pressable
-            style={[styles.shareBtn, submitting && { opacity: 0.6 }]}
-            onPress={() => mutation.mutate()}
-            disabled={submitting}
+            style={[styles.shareBtn, (submitting || !photoUri) && { opacity: 0.4 }]}
+            onPress={handleSubmit}
+            disabled={submitting || !photoUri}
           >
             {submitting ? (
               <ActivityIndicator color="#fff" />
