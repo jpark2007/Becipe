@@ -79,7 +79,7 @@ async function extractRecipeWithLLM(caption: string, platform: string): Promise<
   prep_time_min: number | null;
   cook_time_min: number | null;
 }> {
-  const apiKey = Deno.env.get('OPENROUTER_API_KEY');
+  const apiKey = Deno.env.get('OPEN_ROUTER_KEY');
   if (!apiKey) {
     throw new Error('OPENROUTER_API_KEY not configured');
   }
