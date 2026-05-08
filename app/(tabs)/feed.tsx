@@ -18,6 +18,7 @@ import { FeedCard } from '@/components/FeedCard';
 import { colors, radius } from '@/lib/theme';
 import { EditorialHeading } from '@/components/EditorialHeading';
 import { initialsFor, colorForUserId } from '@/lib/avatar';
+import { InboxIcon } from '@/components/InboxIcon';
 
 /* ── Data fetchers ── */
 
@@ -127,13 +128,16 @@ export default function FeedScreen() {
         <Text style={styles.wordmark}>
           <Text style={{ color: colors.sage }}>◆ </Text>becipe
         </Text>
-        <Pressable
-          style={styles.searchIconBtn}
-          onPress={() => router.push('/people-search' as any)}
-          hitSlop={10}
-        >
-          <Text style={styles.searchIcon}>⌕</Text>
-        </Pressable>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+          <InboxIcon />
+          <Pressable
+            style={styles.searchIconBtn}
+            onPress={() => router.push('/people-search' as any)}
+            hitSlop={10}
+          >
+            <Text style={styles.searchIcon}>⌕</Text>
+          </Pressable>
+        </View>
       </View>
 
       <EditorialHeading size={22} emphasis="cooking" emphasisColor="sage">

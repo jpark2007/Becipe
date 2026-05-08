@@ -17,6 +17,7 @@ import { useAuthStore } from '@/store/auth';
 import { RecipeCard } from '@/components/RecipeCard';
 import { EditorialHeading } from '@/components/EditorialHeading';
 import { colors, radius } from '@/lib/theme';
+import { InboxIcon } from '@/components/InboxIcon';
 
 async function fetchQueue(userId: string) {
   const { data, error } = await supabase
@@ -74,9 +75,14 @@ export default function KitchenScreen() {
   return (
     <SafeAreaView style={styles.safe}>
       <ScrollView contentContainerStyle={{ paddingHorizontal: 22, paddingBottom: 120, paddingTop: 6 }}>
-        <EditorialHeading size={30} emphasis="Kitchen" emphasisColor="sage">
-          {'Your\n'}
-        </EditorialHeading>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+          <View style={{ flex: 1 }}>
+            <EditorialHeading size={30} emphasis="Kitchen" emphasisColor="sage">
+              {'Your\n'}
+            </EditorialHeading>
+          </View>
+          <InboxIcon />
+        </View>
 
         {/* Queue section */}
         <View style={styles.sectionHead}>

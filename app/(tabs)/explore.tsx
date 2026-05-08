@@ -16,6 +16,7 @@ import { RecipeCard } from '@/components/RecipeCard';
 import { EditorialHeading } from '@/components/EditorialHeading';
 import { colors, radius } from '@/lib/theme';
 import { parsePalate, matchScore } from '@/lib/palate';
+import { InboxIcon } from '@/components/InboxIcon';
 
 async function fetchPublicRecipes() {
   const { data, error } = await supabase
@@ -99,9 +100,14 @@ export default function ExploreScreen() {
         contentContainerStyle={{ paddingHorizontal: 22, paddingBottom: 100 }}
         ListHeaderComponent={
           <View style={{ paddingTop: 6, paddingBottom: 14 }}>
-            <EditorialHeading size={26} emphasis="palate" emphasisColor="sage">
-              {'For your\n'}
-            </EditorialHeading>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+              <View style={{ flex: 1 }}>
+                <EditorialHeading size={26} emphasis="palate" emphasisColor="sage">
+                  {'For your\n'}
+                </EditorialHeading>
+              </View>
+              <InboxIcon />
+            </View>
             <Text style={styles.subtitle}>
               recipes ranked by how well they match your taste
             </Text>

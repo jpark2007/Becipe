@@ -18,6 +18,7 @@ import { useAuthStore } from '@/store/auth';
 import { colors, radius, shadow } from '@/lib/theme';
 import { parsePalate, PALATE_AXES } from '@/lib/palate';
 import { initialsFor, colorForUserId } from '@/lib/avatar';
+import { InboxIcon } from '@/components/InboxIcon';
 
 async function fetchProfile(userId: string) {
   const [profileRes, followersRes, followingRes, triesRes] = await Promise.all([
@@ -89,9 +90,12 @@ export default function ProfileScreen() {
             <Text style={styles.displayName} numberOfLines={1}>{displayName}</Text>
             {username ? <Text style={styles.handle}>@{username}</Text> : null}
           </View>
-          <Pressable style={styles.editBtn} onPress={() => {}}>
-            <Text style={styles.editBtnText}>edit</Text>
-          </Pressable>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+            <InboxIcon />
+            <Pressable style={styles.editBtn} onPress={() => {}}>
+              <Text style={styles.editBtnText}>edit</Text>
+            </Pressable>
+          </View>
         </View>
 
         {/* Stats row */}
