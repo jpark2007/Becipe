@@ -121,15 +121,16 @@ export default function RootLayout() {
 
   const isAuthReady = useAuthStore((s) => s.isAuthReady);
 
-  const { shareIntent, resetShareIntent } = useShareIntent();
+  const { hasShareIntent, shareIntent, resetShareIntent } = useShareIntent({ debug: true });
   const shareRouter = useRouter();
 
   useEffect(() => {
-    if (shareIntent?.text) {
-      shareRouter.push({ pathname: '/add-recipe', params: { importUrl: shareIntent.text } } as any);
+    const url = shareIntent?.webUrl || shareIntent?.text;
+    if (hasShareIntent && url) {
+      shareRouter.replace({ pathname: '/add-recipe', params: { importUrl: url } } as any);
       resetShareIntent();
     }
-  }, [shareIntent]);
+  }, [hasShareIntent, shareIntent]);
 
   // Expo Router requires <Stack> to always be rendered (it defines the route tree).
   // We show a loading overlay on top until auth resolves, then AuthGate navigates.
