@@ -2,6 +2,7 @@ import '../global.css';
 import { useEffect } from 'react';
 import { View, ActivityIndicator } from 'react-native';
 import * as Linking from 'expo-linking';
+import { useShareIntent } from 'expo-share-intent';
 import { Stack, useRouter, useSegments, useRootNavigationState } from 'expo-router';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -119,6 +120,16 @@ export default function RootLayout() {
   });
 
   const isAuthReady = useAuthStore((s) => s.isAuthReady);
+
+  const { shareIntent, resetShareIntent } = useShareIntent();
+  const shareRouter = useRouter();
+
+  useEffect(() => {
+    if (shareIntent?.text) {
+      shareRouter.push({ pathname: '/add-recipe', params: { importUrl: shareIntent.text } } as any);
+      resetShareIntent();
+    }
+  }, [shareIntent]);
 
   // Expo Router requires <Stack> to always be rendered (it defines the route tree).
   // We show a loading overlay on top until auth resolves, then AuthGate navigates.

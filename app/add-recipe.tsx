@@ -2,7 +2,7 @@
 // Full add-recipe form. Lifted and simplified from the deleted
 // app/(tabs)/add.tsx. Single surface: paste-link input at top, then
 // manual fields, draft/publish toggle, save button.
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { usePhotoTips, PhotoTipsModal } from '@/components/PhotoTips';
 import {
   View,
@@ -19,7 +19,7 @@ import {
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/store/auth';
@@ -39,6 +39,7 @@ function isSocialUrl(url: string): boolean {
 export default function AddRecipeScreen() {
   const router = useRouter();
   const { user } = useAuthStore();
+  const { importUrl: paramImportUrl } = useLocalSearchParams<{ importUrl?: string }>();
 
   const [importUrl, setImportUrl] = useState('');
   const [importing, setImporting] = useState(false);
@@ -66,6 +67,12 @@ export default function AddRecipeScreen() {
   const [scrapedImageUrl, setScrapedImageUrl] = useState<string | null>(null);
   const [tipsVisible, setTipsVisible] = useState(false);
   const { shouldShow: showTips, dismiss: dismissTips } = usePhotoTips();
+
+  useEffect(() => {
+    if (paramImportUrl) {
+      setImportUrl(paramImportUrl);
+    }
+  }, [paramImportUrl]);
 
   function applyParsedData(data: any, targetUrl: string) {
     setTitle(data.title ?? '');
