@@ -45,6 +45,7 @@ export default function AddRecipeScreen() {
   const [importCaption, setImportCaption] = useState('');
   const [importing, setImporting] = useState(false);
   const [importError, setImportError] = useState('');
+  const fromShareIntent = !!paramCaption;
   const [saving, setSaving] = useState(false);
 
   // Recipe fields
@@ -187,8 +188,8 @@ export default function AddRecipeScreen() {
   }
 
   async function handleSave() {
-    if (!coverUri && !scrapedImageUrl) {
-      Alert.alert('Photo required', 'Add a cover photo for your recipe');
+    if (publish && !coverUri && !scrapedImageUrl) {
+      Alert.alert('Photo required', 'Add a cover photo to publish. Save as draft for now.');
       return;
     }
     const err = validate();
@@ -290,34 +291,37 @@ export default function AddRecipeScreen() {
           <EditorialHeading size={26} emphasis="recipe" emphasisColor="clay">
             {'Add a\n'}
           </EditorialHeading>
-          <Text style={styles.subtitle}>paste a link or fill it in manually</Text>
+          <Text style={styles.subtitle}>
+            {fromShareIntent ? 'imported from share — edit below' : 'paste a link or fill it in manually'}
+          </Text>
 
-          {/* Paste a link */}
-          <View style={styles.fieldCard}>
-            <Text style={styles.fieldLabel}>paste a link</Text>
-            <TextInput
-              style={styles.inputInline}
-              placeholder="Paste a TikTok or recipe URL"
-              placeholderTextColor={colors.muted}
-              value={importUrl}
-              onChangeText={setImportUrl}
-              autoCapitalize="none"
-              keyboardType="url"
-            />
-            {importUrl.trim().length > 0 && (
-              <Pressable
-                style={[styles.importBtn, importing && styles.btnDisabled]}
-                onPress={handleImport}
-                disabled={importing}
-              >
-                {importing ? (
-                  <ActivityIndicator color="#fff" size="small" />
-                ) : (
-                  <Text style={styles.importBtnText}>Import →</Text>
-                )}
-              </Pressable>
-            )}
-          </View>
+          {!fromShareIntent && (
+            <View style={styles.fieldCard}>
+              <Text style={styles.fieldLabel}>paste a link</Text>
+              <TextInput
+                style={styles.inputInline}
+                placeholder="Paste a TikTok or recipe URL"
+                placeholderTextColor={colors.muted}
+                value={importUrl}
+                onChangeText={setImportUrl}
+                autoCapitalize="none"
+                keyboardType="url"
+              />
+              {importUrl.trim().length > 0 && (
+                <Pressable
+                  style={[styles.importBtn, importing && styles.btnDisabled]}
+                  onPress={handleImport}
+                  disabled={importing}
+                >
+                  {importing ? (
+                    <ActivityIndicator color="#fff" size="small" />
+                  ) : (
+                    <Text style={styles.importBtnText}>Import →</Text>
+                  )}
+                </Pressable>
+              )}
+            </View>
+          )}
 
           {sourceCredit ? (
             <View style={styles.creditCard}>
@@ -624,6 +628,11 @@ export default function AddRecipeScreen() {
                   ? 'Visible to everyone on Explore'
                   : 'Save privately as a draft'}
               </Text>
+              {!coverUri && !scrapedImageUrl && (
+                <Text style={[styles.publishSub, { color: colors.clay, marginTop: 2 }]}>
+                  cover photo required to publish
+                </Text>
+              )}
             </View>
             <View style={[styles.toggle, publish && styles.toggleOn]}>
               <View style={[styles.knob, publish && styles.knobOn]} />
