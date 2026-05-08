@@ -113,30 +113,31 @@ export default function ThreadScreen() {
 
         {item.note && <Text style={styles.note}>{item.note}</Text>}
 
-        <View style={styles.reactionRow}>
-          {EMOJI_KEYS.map((key) => {
-            const count = item.reactions?.filter((r) => r.emoji === key).length ?? 0;
-            const isSelected = myReaction?.emoji === key;
-            return (
-              <Pressable
-                key={key}
-                style={[styles.reactionBtn, isSelected && styles.reactionSelected]}
-                onPress={() => reactMutation.mutate({ shareId: item.id, emoji: key })}
-              >
-                <Text style={styles.reactionEmoji}>{EMOJI_MAP[key]}</Text>
-                {count > 0 && <Text style={styles.reactionCount}>{count}</Text>}
-              </Pressable>
-            );
-          })}
-        </View>
-
         {!isMine && (
-          <Pressable
-            style={styles.tryBtn}
-            onPress={() => router.push(`/try/${item.recipe.id}` as any)}
-          >
-            <Text style={styles.tryBtnText}>I tried this →</Text>
-          </Pressable>
+          <>
+            <View style={styles.reactionRow}>
+              {EMOJI_KEYS.map((key) => {
+                const count = item.reactions?.filter((r) => r.emoji === key).length ?? 0;
+                const isSelected = myReaction?.emoji === key;
+                return (
+                  <Pressable
+                    key={key}
+                    style={[styles.reactionBtn, isSelected && styles.reactionSelected]}
+                    onPress={() => reactMutation.mutate({ shareId: item.id, emoji: key })}
+                  >
+                    <Text style={styles.reactionEmoji}>{EMOJI_MAP[key]}</Text>
+                    {count > 0 && <Text style={styles.reactionCount}>{count}</Text>}
+                  </Pressable>
+                );
+              })}
+            </View>
+            <Pressable
+              style={styles.tryBtn}
+              onPress={() => router.push(`/try/${item.recipe.id}` as any)}
+            >
+              <Text style={styles.tryBtnText}>I tried this →</Text>
+            </Pressable>
+          </>
         )}
       </View>
     );
