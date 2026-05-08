@@ -101,14 +101,22 @@ export default function RecipeDetailScreen() {
           <Pressable style={styles.iconBtn} onPress={() => router.back()}>
             <Text style={styles.iconText}>←</Text>
           </Pressable>
-          <Pressable
-            style={styles.iconBtn}
-            onPress={() => saveMutation.mutate()}
-          >
-            <Text style={[styles.iconText, isSaved && { color: colors.clay }]}>
-              {isSaved ? '♥' : '♡'}
-            </Text>
-          </Pressable>
+          <View style={{ flexDirection: 'row', gap: 8 }}>
+            <Pressable
+              style={styles.iconBtn}
+              onPress={() => router.push({ pathname: '/send-recipe', params: { recipeId: recipe.id, recipeTitle: recipe.title } } as any)}
+            >
+              <Text style={styles.iconText}>↗</Text>
+            </Pressable>
+            <Pressable
+              style={styles.iconBtn}
+              onPress={() => saveMutation.mutate()}
+            >
+              <Text style={[styles.iconText, isSaved && { color: colors.clay }]}>
+                {isSaved ? '♥' : '♡'}
+              </Text>
+            </Pressable>
+          </View>
         </View>
 
         {/* Hero card */}
