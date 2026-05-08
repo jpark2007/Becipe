@@ -15,20 +15,32 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.dishr.app"
+      "bundleIdentifier": "com.becipie.app",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundColor": "#FF6B35"
       },
-      "package": "com.dishr.app",
+      "package": "com.becipie.app",
       "intentFilters": [
         {
           "action": "android.intent.action.SEND",
-          "data": [{ "mimeType": "text/plain" }],
-          "category": ["android.intent.category.DEFAULT"]
+          "data": [
+            {
+              "mimeType": "text/plain"
+            }
+          ],
+          "category": [
+            "android.intent.category.DEFAULT"
+          ]
         }
+      ],
+      "permissions": [
+        "android.permission.RECORD_AUDIO"
       ]
     },
     "web": {
@@ -45,7 +57,9 @@
             "NSExtensionActivationSupportsWebURLWithMaxCount": 1,
             "NSExtensionActivationSupportsWebPageWithMaxCount": 1
           },
-          "androidIntentFilters": ["text/*"]
+          "androidIntentFilters": [
+            "text/*"
+          ]
         }
       ],
       [
@@ -57,6 +71,13 @@
     ],
     "experiments": {
       "typedRoutes": false
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "b3dab5f1-9f2d-4b18-a8e2-ea96ce27a349"
+      }
+    },
+    "owner": "nightshiftautomations"
   }
 }

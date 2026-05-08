@@ -1,6 +1,6 @@
 // app/(tabs)/profile.tsx
 // You — identity + relationships + settings.
-// Stack order: header → stats → palate → circles → friends row → sign out.
+// Stack order: header → stats → palate → friends row → sign out.
 import {
   View,
   Text,
@@ -15,11 +15,9 @@ import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/store/auth';
-import { CircleCard } from '@/components/CircleCard';
 import { colors, radius, shadow } from '@/lib/theme';
 import { parsePalate, PALATE_AXES } from '@/lib/palate';
 import { initialsFor, colorForUserId } from '@/lib/avatar';
-import { getStubCircles } from '@/lib/circles-stub';
 
 async function fetchProfile(userId: string) {
   const [profileRes, followersRes, followingRes, triesRes] = await Promise.all([
@@ -76,8 +74,6 @@ export default function ProfileScreen() {
   const username: string = profile?.username ?? '';
   const avInitials = initialsFor(displayName);
   const avColor = colorForUserId(profile?.id ?? '');
-
-  const circles = getStubCircles();
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -146,21 +142,6 @@ export default function ProfileScreen() {
             <Text style={styles.palateEdit}>edit your palate →</Text>
           </Pressable>
         </View>
-
-        {/* Your Circles */}
-        <Text style={styles.sectionTitle}>Your Circles</Text>
-        {circles.length === 0 ? (
-          <Text style={styles.empty}>You're not in any circles yet.</Text>
-        ) : (
-          circles.map((c) => (
-            <CircleCard
-              key={c.id}
-              circle={c}
-              variant="bar"
-              onPress={() => router.push(`/circle/${c.id}` as any)}
-            />
-          ))
-        )}
 
         {/* Friends row — tap to open standalone /friends page */}
         <Pressable
@@ -309,19 +290,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: colors.sage,
     marginTop: 6,
-  },
-  sectionTitle: {
-    fontFamily: 'Inter_800ExtraBold',
-    fontSize: 15,
-    color: colors.ink,
-    letterSpacing: -0.2,
-    marginBottom: 14,
-  },
-  empty: {
-    fontFamily: 'Inter_500Medium',
-    fontSize: 13,
-    color: colors.muted,
-    marginBottom: 12,
   },
   friendsLinkRow: {
     flexDirection: 'row',

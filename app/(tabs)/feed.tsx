@@ -15,11 +15,9 @@ import { useRouter } from 'expo-router';
 import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/store/auth';
 import { FeedCard } from '@/components/FeedCard';
-import { CircleCard } from '@/components/CircleCard';
 import { colors, radius } from '@/lib/theme';
 import { EditorialHeading } from '@/components/EditorialHeading';
 import { initialsFor, colorForUserId } from '@/lib/avatar';
-import { getStubCircles, sortCirclesByRitualEnding } from '@/lib/circles-stub';
 
 /* ── Data fetchers ── */
 
@@ -81,8 +79,6 @@ export default function FeedScreen() {
   const { user } = useAuthStore();
   const queryClient = useQueryClient();
 
-  const circles = sortCirclesByRitualEnding(getStubCircles()).slice(0, 3);
-
   const {
     data: feedData,
     isLoading: feedLoading,
@@ -139,23 +135,6 @@ export default function FeedScreen() {
           <Text style={styles.searchIcon}>⌕</Text>
         </Pressable>
       </View>
-
-      {/* Circle row — hide if no circles */}
-      {circles.length > 0 && (
-        <>
-          <Text style={styles.sectionLabel}>your circles</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 18 }}>
-            {circles.map((c) => (
-              <CircleCard
-                key={c.id}
-                circle={c}
-                variant="card"
-                onPress={() => router.push(`/circle/${c.id}` as any)}
-              />
-            ))}
-          </ScrollView>
-        </>
-      )}
 
       <EditorialHeading size={22} emphasis="cooking" emphasisColor="sage">
         {'See what your friends\nare '}

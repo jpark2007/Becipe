@@ -158,7 +158,6 @@ export default function RootLayout() {
                 headerTintColor: '#1b1c19',
               }}
             />
-            <Stack.Screen name="circle/[id]" options={{ headerShown: false }} />
             <Stack.Screen
               name="add-sheet"
               options={{ presentation: 'formSheet', headerShown: false }}
