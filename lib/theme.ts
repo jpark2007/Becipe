@@ -6,6 +6,7 @@ export const colors = {
   card:      '#FFFFFF',  // cards
   border:    '#ECECE6',
   borderSoft:'#F5F5F0',
+  overlayScrim: 'rgba(0,0,0,0.35)',
 
   // text
   ink:       '#0B0B0C',

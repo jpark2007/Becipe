@@ -418,7 +418,7 @@ export function AlbumPickerSheet(props: AlbumPickerSheetProps) {
 const sheetStyles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.35)',
+    backgroundColor: colors.overlayScrim,
     justifyContent: 'flex-end',
   },
   sheet: {
