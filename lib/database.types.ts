@@ -107,6 +107,25 @@ export interface Database {
         Insert: Database['public']['Tables']['recipe_ingredients_flat']['Row'];
         Update: never;
       };
+      recipe_collections: {
+        Row: {
+          id: string;
+          user_id: string;
+          name: string;
+          created_at: string;
+        };
+        Insert: Omit<Database['public']['Tables']['recipe_collections']['Row'], 'id' | 'created_at'>;
+        Update: Partial<Pick<Database['public']['Tables']['recipe_collections']['Row'], 'name'>>;
+      };
+      recipe_collection_items: {
+        Row: {
+          collection_id: string;
+          recipe_id: string;
+          added_at: string;
+        };
+        Insert: Omit<Database['public']['Tables']['recipe_collection_items']['Row'], 'added_at'>;
+        Update: never;
+      };
       recipe_shares: {
         Row: {
           id: string;
@@ -157,3 +176,5 @@ export type Recipe = Database['public']['Tables']['recipes']['Row'];
 export type RecipeTry = Database['public']['Tables']['recipe_tries']['Row'];
 export type FeedItem = Database['public']['Tables']['feed_items']['Row'];
 export type Comment = Database['public']['Tables']['comments']['Row'];
+export type RecipeCollection = Database['public']['Tables']['recipe_collections']['Row'];
+export type RecipeCollectionItem = Database['public']['Tables']['recipe_collection_items']['Row'];
