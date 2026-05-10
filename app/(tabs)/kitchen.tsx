@@ -1,6 +1,5 @@
 // app/(tabs)/kitchen.tsx
-// Your cookbook. Queue (saved_recipes) + My Recipes (created_by = me)
-// + a small link to the Fridge sub-screen.
+import { useState, useMemo } from 'react';
 import {
   View,
   Text,
@@ -8,18 +7,53 @@ import {
   Pressable,
   ActivityIndicator,
   StyleSheet,
+  TextInput,
+  Modal,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Image } from 'expo-image';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/store/auth';
-import { RecipeCard } from '@/components/RecipeCard';
 import { EditorialHeading } from '@/components/EditorialHeading';
 import { colors, radius } from '@/lib/theme';
 import { InboxIcon } from '@/components/InboxIcon';
+import type { Recipe, RecipeCollection } from '@/lib/database.types';
 
-async function fetchQueue(userId: string) {
+// ─── Album colors (cycles) ──────────────────────────────────────────
+const ALBUM_COLORS = [colors.sageSoft, colors.claySoft, colors.ochreSoft];
+const ALBUM_TEXT   = [colors.sage,     colors.clay,     colors.ochre];
+
+function albumColor(index: number) { return ALBUM_COLORS[index % 3]; }
+function albumTextColor(index: number) { return ALBUM_TEXT[index % 3]; }
+
+// ─── Data fetchers ──────────────────────────────────────────────────
+async function fetchCollections(userId: string): Promise<RecipeCollection[]> {
+  const { data, error } = await supabase
+    .from('recipe_collections')
+    .select('*')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: true });
+  if (error) throw error;
+  return data ?? [];
+}
+
+async function fetchCollectionCounts(userId: string): Promise<Record<string, number>> {
+  const { data, error } = await supabase
+    .from('recipe_collection_items')
+    .select('collection_id, recipe_collections!inner(user_id)')
+    .eq('recipe_collections.user_id', userId);
+  if (error) return {};
+  const counts: Record<string, number> = {};
+  for (const row of data ?? []) {
+    counts[(row as any).collection_id] = (counts[(row as any).collection_id] ?? 0) + 1;
+  }
+  return counts;
+}
+
+async function fetchSavedRecipes(userId: string) {
   const { data, error } = await supabase
     .from('saved_recipes')
     .select('recipe_id, recipe:recipes(*)')
@@ -27,8 +61,8 @@ async function fetchQueue(userId: string) {
     .order('saved_at', { ascending: false });
   if (error) throw error;
   return (data ?? [])
-    .map((row: any) => ({ savedId: row.recipe_id, recipe: row.recipe }))
-    .filter((row: any) => !!row.recipe);
+    .map((row: any) => ({ ...row.recipe, _source: 'saved' as const }))
+    .filter(Boolean) as (Recipe & { _source: 'saved' })[];
 }
 
 async function fetchMyRecipes(userId: string) {
@@ -38,215 +72,505 @@ async function fetchMyRecipes(userId: string) {
     .eq('created_by', userId)
     .order('created_at', { ascending: false });
   if (error) throw error;
-  return data ?? [];
+  return (data ?? []).map((r: Recipe) => ({ ...r, _source: 'mine' as const }));
 }
+
+function mergeAllRecipes(
+  saved: (Recipe & { _source: 'saved' })[],
+  mine: (Recipe & { _source: 'mine' })[],
+): (Recipe & { _source: 'saved' | 'mine' })[] {
+  const map = new Map<string, Recipe & { _source: 'saved' | 'mine' }>();
+  for (const r of saved) map.set(r.id, r);
+  for (const r of mine) map.set(r.id, r);
+  return Array.from(map.values());
+}
+
+// ─── New Album Modal ────────────────────────────────────────────────
+function NewAlbumModal({
+  visible,
+  onClose,
+  onCreated,
+}: {
+  visible: boolean;
+  onClose: () => void;
+  onCreated: (collection: RecipeCollection) => void;
+}) {
+  const { user } = useAuthStore();
+  const [name, setName] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  async function create() {
+    if (!name.trim() || !user) return;
+    setLoading(true);
+    const { data, error } = await supabase
+      .from('recipe_collections')
+      .insert({ user_id: user.id, name: name.trim() })
+      .select()
+      .single();
+    setLoading(false);
+    if (error) { Alert.alert('Error', 'Could not create album.'); return; }
+    setName('');
+    onCreated(data as RecipeCollection);
+  }
+
+  return (
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+      <Pressable style={newAlbumStyles.overlay} onPress={onClose}>
+        <Pressable style={newAlbumStyles.sheet} onPress={(e) => e.stopPropagation()}>
+          <Text style={newAlbumStyles.title}>New album</Text>
+          <TextInput
+            style={newAlbumStyles.input}
+            placeholder="Album name"
+            placeholderTextColor={colors.muted}
+            value={name}
+            onChangeText={setName}
+            autoFocus
+            returnKeyType="done"
+            onSubmitEditing={create}
+          />
+          <Pressable
+            style={[newAlbumStyles.btn, (!name.trim() || loading) && { opacity: 0.4 }]}
+            onPress={create}
+            disabled={!name.trim() || loading}
+          >
+            <Text style={newAlbumStyles.btnText}>{loading ? 'Creating…' : 'Create'}</Text>
+          </Pressable>
+        </Pressable>
+      </Pressable>
+    </Modal>
+  );
+}
+
+const newAlbumStyles = StyleSheet.create({
+  overlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 32,
+  },
+  sheet: {
+    width: '100%',
+    backgroundColor: colors.card,
+    borderRadius: radius.xl,
+    padding: 24,
+    gap: 14,
+  },
+  title: {
+    fontFamily: 'Inter_700Bold',
+    fontSize: 17,
+    color: colors.ink,
+  },
+  input: {
+    height: 44,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.md,
+    paddingHorizontal: 14,
+    fontFamily: 'Inter_500Medium',
+    fontSize: 15,
+    color: colors.ink,
+    backgroundColor: colors.bg,
+  },
+  btn: {
+    backgroundColor: colors.sage,
+    borderRadius: radius.pill,
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+  btnText: {
+    fontFamily: 'Inter_700Bold',
+    fontSize: 14,
+    color: '#fff',
+  },
+});
+
+// ─── Compact recipe row ─────────────────────────────────────────────
+function RecipeRow({
+  recipe,
+  onPress,
+  onMenu,
+}: {
+  recipe: Recipe & { _source: 'saved' | 'mine' };
+  onPress: () => void;
+  onMenu: () => void;
+}) {
+  return (
+    <Pressable style={rowStyles.row} onPress={onPress} onLongPress={onMenu}>
+      {recipe.cover_image_url ? (
+        <Image source={{ uri: recipe.cover_image_url }} style={rowStyles.thumb} contentFit="cover" />
+      ) : (
+        <View style={[rowStyles.thumb, { backgroundColor: colors.bg, alignItems: 'center', justifyContent: 'center' }]}>
+          <Text style={{ fontSize: 18 }}>🍽</Text>
+        </View>
+      )}
+      <View style={rowStyles.meta}>
+        <Text style={rowStyles.title} numberOfLines={1}>{recipe.title}</Text>
+        <Text style={rowStyles.source}>{recipe._source === 'mine' ? 'Your recipe' : 'Saved'}</Text>
+      </View>
+      <Pressable hitSlop={8} onPress={onMenu} style={rowStyles.menu}>
+        <Text style={rowStyles.menuText}>⋯</Text>
+      </Pressable>
+    </Pressable>
+  );
+}
+
+const rowStyles = StyleSheet.create({
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.borderSoft,
+    gap: 12,
+  },
+  thumb: { width: 44, height: 44, borderRadius: radius.sm },
+  meta: { flex: 1 },
+  title: {
+    fontFamily: 'Inter_600SemiBold',
+    fontSize: 14,
+    color: colors.ink,
+  },
+  source: {
+    fontFamily: 'Inter_500Medium',
+    fontSize: 11,
+    color: colors.muted,
+    marginTop: 2,
+  },
+  menu: { paddingHorizontal: 4 },
+  menuText: {
+    fontFamily: 'Inter_700Bold',
+    fontSize: 18,
+    color: colors.muted,
+  },
+});
+
+// ─── Main screen ────────────────────────────────────────────────────
+type Tab = 'albums' | 'all' | 'mine';
 
 export default function KitchenScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { user } = useAuthStore();
 
-  const { data: queue, isLoading: queueLoading } = useQuery({
-    queryKey: ['kitchen-queue', user?.id],
-    queryFn: () => fetchQueue(user!.id),
+  const [tab, setTab] = useState<Tab>('albums');
+  const [search, setSearch] = useState('');
+  const [newAlbumVisible, setNewAlbumVisible] = useState(false);
+  const [pickerRecipeId, setPickerRecipeId] = useState<string | null>(null);
+
+  const { data: collections = [], isLoading: collectionsLoading } = useQuery({
+    queryKey: ['collections', user?.id],
+    queryFn: () => fetchCollections(user!.id),
     enabled: !!user,
   });
 
-  const { data: myRecipes, isLoading: recipesLoading } = useQuery({
-    queryKey: ['kitchen-my-recipes', user?.id],
+  const { data: albumCounts = {} } = useQuery({
+    queryKey: ['collection-counts', user?.id],
+    queryFn: () => fetchCollectionCounts(user!.id),
+    enabled: !!user,
+  });
+
+  const { data: savedRecipes = [], isLoading: savedLoading } = useQuery({
+    queryKey: ['kitchen-saved', user?.id],
+    queryFn: () => fetchSavedRecipes(user!.id),
+    enabled: !!user,
+  });
+
+  const { data: myRecipes = [], isLoading: mineLoading } = useQuery({
+    queryKey: ['kitchen-mine', user?.id],
     queryFn: () => fetchMyRecipes(user!.id),
     enabled: !!user,
   });
 
-  const removeFromQueue = useMutation({
-    mutationFn: async (savedId: string) => {
-      const { error } = await supabase
-        .from('saved_recipes')
-        .delete()
-        .eq('user_id', user!.id)
-        .eq('recipe_id', savedId);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['kitchen-queue', user?.id] });
-    },
-  });
+  const allRecipes = useMemo(
+    () => mergeAllRecipes(savedRecipes, myRecipes),
+    [savedRecipes, myRecipes],
+  );
+
+  const filteredAll = useMemo(
+    () => search.trim()
+      ? allRecipes.filter(r => r.title.toLowerCase().includes(search.toLowerCase()))
+      : allRecipes,
+    [allRecipes, search],
+  );
+
+  const filteredMine = useMemo(
+    () => search.trim()
+      ? myRecipes.filter(r => r.title.toLowerCase().includes(search.toLowerCase()))
+      : myRecipes,
+    [myRecipes, search],
+  );
+
+  function handleMenuAll(recipe: Recipe & { _source: 'saved' | 'mine' }) {
+    const opts: { text: string; onPress?: () => void; style?: 'cancel' | 'destructive' }[] = [
+      { text: 'View recipe', onPress: () => router.push(`/recipe/${recipe.id}` as any) },
+      { text: 'Add to album', onPress: () => setPickerRecipeId(recipe.id) },
+    ];
+    if (recipe._source === 'saved') {
+      opts.push({
+        text: 'Remove from saved',
+        style: 'destructive',
+        onPress: async () => {
+          await supabase
+            .from('saved_recipes')
+            .delete()
+            .eq('user_id', user!.id)
+            .eq('recipe_id', recipe.id);
+          queryClient.invalidateQueries({ queryKey: ['kitchen-saved', user?.id] });
+        },
+      });
+    }
+    Alert.alert(recipe.title, undefined, [...opts, { text: 'Cancel', style: 'cancel' }]);
+  }
+
+  function onAlbumCreated(collection: RecipeCollection) {
+    queryClient.invalidateQueries({ queryKey: ['collections', user?.id] });
+    queryClient.invalidateQueries({ queryKey: ['collection-counts', user?.id] });
+    setNewAlbumVisible(false);
+  }
+
+  const TABS: { key: Tab; label: string }[] = [
+    { key: 'albums', label: 'Albums' },
+    { key: 'all', label: 'All' },
+    { key: 'mine', label: 'Mine' },
+  ];
 
   return (
     <SafeAreaView style={styles.safe}>
-      <ScrollView contentContainerStyle={{ paddingHorizontal: 22, paddingBottom: 120, paddingTop: 6 }}>
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-          <View style={{ flex: 1 }}>
-            <EditorialHeading size={30} emphasis="Kitchen" emphasisColor="sage">
-              {'Your\n'}
-            </EditorialHeading>
-          </View>
-          <InboxIcon />
+      {/* Header */}
+      <View style={styles.headerRow}>
+        <View style={{ flex: 1 }}>
+          <EditorialHeading size={30} emphasis="Kitchen" emphasisColor="sage">
+            {'Your\n'}
+          </EditorialHeading>
         </View>
+        <InboxIcon />
+      </View>
 
-        {/* Queue section */}
-        <View style={styles.sectionHead}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-            <Text style={styles.sectionTitle}>Cooking soon</Text>
-            <View style={styles.countPill}>
-              <Text style={styles.countPillText}>{(queue ?? []).length}</Text>
-            </View>
-          </View>
+      {/* Search bar — only for list tabs */}
+      {tab !== 'albums' && (
+        <View style={styles.searchWrap}>
+          <TextInput
+            style={styles.search}
+            placeholder="Search recipes…"
+            placeholderTextColor={colors.muted}
+            value={search}
+            onChangeText={setSearch}
+            returnKeyType="search"
+            clearButtonMode="while-editing"
+          />
+        </View>
+      )}
+
+      {/* Tab bar */}
+      <View style={styles.tabBar}>
+        {TABS.map(t => (
           <Pressable
-            style={styles.fridgeLink}
-            onPress={() => router.push('/fridge' as any)}
-            hitSlop={6}
+            key={t.key}
+            style={[styles.tabBtn, tab === t.key && styles.tabBtnActive]}
+            onPress={() => { setTab(t.key); setSearch(''); }}
           >
-            <Text style={styles.fridgeLinkText}>🧊 Fridge →</Text>
+            <Text style={[styles.tabLabel, tab === t.key && styles.tabLabelActive]}>
+              {t.label}
+            </Text>
           </Pressable>
-        </View>
+        ))}
+      </View>
 
-        {queueLoading ? (
-          <ActivityIndicator color={colors.sage} />
-        ) : (queue ?? []).length === 0 ? (
-          <Text style={styles.empty}>
-            Save recipes you want to try — they'll show up here.
-          </Text>
-        ) : (
-          (queue ?? []).map((row: any) => (
-            <View key={row.savedId} style={styles.queueItem}>
-              <RecipeCard recipe={row.recipe} variant="plate" />
+      {/* Albums tab */}
+      {tab === 'albums' && (
+        <ScrollView
+          contentContainerStyle={styles.albumGrid}
+          showsVerticalScrollIndicator={false}
+        >
+          {collectionsLoading ? (
+            <ActivityIndicator color={colors.sage} style={{ marginTop: 40, width: '100%' }} />
+          ) : (
+            <>
+              {collections.map((col, i) => (
+                <Pressable
+                  key={col.id}
+                  style={[styles.albumCard, { backgroundColor: albumColor(i) }]}
+                  onPress={() => router.push(`/collection/${col.id}` as any)}
+                >
+                  <Text style={[styles.albumName, { color: albumTextColor(i) }]} numberOfLines={2}>
+                    {col.name}
+                  </Text>
+                  <Text style={[styles.albumCount, { color: albumTextColor(i) }]}>
+                    {albumCounts[col.id] ?? 0} recipe{(albumCounts[col.id] ?? 0) !== 1 ? 's' : ''}
+                  </Text>
+                </Pressable>
+              ))}
               <Pressable
-                style={styles.removeBtn}
-                onPress={() => removeFromQueue.mutate(row.savedId)}
-                hitSlop={8}
+                style={[styles.albumCard, styles.albumCardNew]}
+                onPress={() => setNewAlbumVisible(true)}
               >
-                <Text style={styles.removeBtnText}>×</Text>
+                <Text style={styles.albumPlus}>＋</Text>
+                <Text style={styles.albumNewLabel}>New album</Text>
               </Pressable>
-            </View>
-          ))
-        )}
+            </>
+          )}
+        </ScrollView>
+      )}
 
-        {/* My Recipes section */}
-        <View style={[styles.sectionHead, { marginTop: 28 }]}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-            <Text style={styles.sectionTitle}>Your recipes</Text>
-            <View style={styles.countPill}>
-              <Text style={styles.countPillText}>{(myRecipes ?? []).length}</Text>
-            </View>
-          </View>
-        </View>
+      {/* All tab */}
+      {tab === 'all' && (
+        <ScrollView contentContainerStyle={styles.listContent}>
+          {(savedLoading || mineLoading) ? (
+            <ActivityIndicator color={colors.sage} style={{ marginTop: 40 }} />
+          ) : filteredAll.length === 0 ? (
+            <Text style={styles.empty}>
+              {search ? 'No recipes match your search.' : 'Save or create recipes to see them here.'}
+            </Text>
+          ) : (
+            filteredAll.map(r => (
+              <RecipeRow
+                key={r.id}
+                recipe={r}
+                onPress={() => router.push(`/recipe/${r.id}` as any)}
+                onMenu={() => handleMenuAll(r)}
+              />
+            ))
+          )}
+        </ScrollView>
+      )}
 
-        {recipesLoading ? (
-          <ActivityIndicator color={colors.sage} />
-        ) : (myRecipes ?? []).length === 0 ? (
-          <Text style={styles.empty}>
-            No recipes yet. Tap the + button to add your first.
-          </Text>
-        ) : (
-          (myRecipes ?? []).map((r: any) => {
-            const isDraft = r.is_public === false;
-            const isImported = r.source_type && r.source_type !== 'manual';
-            return (
-              <View key={r.id}>
-                {(isDraft || isImported) && (
-                  <View style={styles.badgeRow}>
-                    {isDraft && (
-                      <View style={[styles.badge, { backgroundColor: colors.ochreSoft }]}>
-                        <Text style={[styles.badgeText, { color: colors.ochre }]}>DRAFT</Text>
-                      </View>
-                    )}
-                    {isImported && (
-                      <View style={[styles.badge, { backgroundColor: colors.borderSoft }]}>
-                        <Text style={[styles.badgeText, { color: colors.muted }]}>
-                          IMPORTED
-                        </Text>
-                      </View>
-                    )}
-                  </View>
-                )}
-                <RecipeCard recipe={r} variant="plate" />
-              </View>
-            );
-          })
-        )}
-      </ScrollView>
+      {/* Mine tab */}
+      {tab === 'mine' && (
+        <ScrollView contentContainerStyle={styles.listContent}>
+          {mineLoading ? (
+            <ActivityIndicator color={colors.sage} style={{ marginTop: 40 }} />
+          ) : filteredMine.length === 0 ? (
+            <Text style={styles.empty}>
+              {search ? 'No recipes match your search.' : 'No recipes yet. Tap + to add your first.'}
+            </Text>
+          ) : (
+            filteredMine.map(r => (
+              <RecipeRow
+                key={r.id}
+                recipe={r as Recipe & { _source: 'mine' }}
+                onPress={() => router.push(`/recipe/${r.id}` as any)}
+                onMenu={() => handleMenuAll(r as Recipe & { _source: 'mine' })}
+              />
+            ))
+          )}
+        </ScrollView>
+      )}
+
+      <NewAlbumModal
+        visible={newAlbumVisible}
+        onClose={() => setNewAlbumVisible(false)}
+        onCreated={onAlbumCreated}
+      />
     </SafeAreaView>
   );
 }
 
+const COL_PADDING = 22;
+
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.bone },
-  sectionHead: {
+  headerRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: 4,
-    marginBottom: 12,
+    alignItems: 'flex-start',
+    paddingHorizontal: COL_PADDING,
+    paddingTop: 6,
   },
-  sectionTitle: {
-    fontFamily: 'Inter_800ExtraBold',
-    fontSize: 16,
-    color: colors.ink,
-    letterSpacing: -0.3,
+  searchWrap: {
+    paddingHorizontal: COL_PADDING,
+    paddingTop: 4,
+    paddingBottom: 6,
   },
-  countPill: {
-    backgroundColor: colors.sageSoft,
-    paddingHorizontal: 10,
-    paddingVertical: 3,
+  search: {
+    height: 38,
+    backgroundColor: colors.bg,
     borderRadius: radius.pill,
-  },
-  countPillText: {
-    fontFamily: 'Inter_700Bold',
-    fontSize: 10,
-    color: colors.sage,
-    letterSpacing: 0.3,
-  },
-  fridgeLink: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-  },
-  fridgeLinkText: {
-    fontFamily: 'Inter_700Bold',
-    fontSize: 12,
-    color: colors.clay,
-    letterSpacing: -0.2,
-  },
-  queueItem: { position: 'relative' },
-  removeBtn: {
-    position: 'absolute',
-    top: 6,
-    right: 6,
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: colors.card,
+    paddingHorizontal: 16,
+    fontFamily: 'Inter_500Medium',
+    fontSize: 14,
+    color: colors.ink,
     borderWidth: 1,
     borderColor: colors.border,
+  },
+  tabBar: {
+    flexDirection: 'row',
+    paddingHorizontal: COL_PADDING,
+    gap: 6,
+    marginBottom: 14,
+  },
+  tabBtn: {
+    paddingHorizontal: 16,
+    paddingVertical: 7,
+    borderRadius: radius.pill,
+    backgroundColor: colors.bg,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  tabBtnActive: {
+    backgroundColor: colors.sage,
+    borderColor: colors.sage,
+  },
+  tabLabel: {
+    fontFamily: 'Inter_600SemiBold',
+    fontSize: 13,
+    color: colors.muted,
+  },
+  tabLabelActive: {
+    color: '#fff',
+  },
+  albumGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    paddingHorizontal: COL_PADDING,
+    gap: 12,
+    paddingBottom: 120,
+  },
+  albumCard: {
+    width: '47%',
+    aspectRatio: 1,
+    borderRadius: radius.lg,
+    padding: 16,
+    justifyContent: 'flex-end',
+  },
+  albumName: {
+    fontFamily: 'Inter_700Bold',
+    fontSize: 15,
+  },
+  albumCount: {
+    fontFamily: 'Inter_500Medium',
+    fontSize: 11,
+    marginTop: 4,
+    opacity: 0.7,
+  },
+  albumCardNew: {
+    backgroundColor: colors.borderSoft,
     alignItems: 'center',
     justifyContent: 'center',
-    zIndex: 2,
+    borderWidth: 1.5,
+    borderStyle: 'dashed',
+    borderColor: colors.border,
   },
-  removeBtnText: {
+  albumPlus: {
     fontFamily: 'Inter_700Bold',
-    fontSize: 16,
+    fontSize: 28,
     color: colors.muted,
-    lineHeight: 18,
+  },
+  albumNewLabel: {
+    fontFamily: 'Inter_600SemiBold',
+    fontSize: 13,
+    color: colors.muted,
+    marginTop: 4,
+  },
+  listContent: {
+    paddingHorizontal: COL_PADDING,
+    paddingBottom: 120,
   },
   empty: {
     fontFamily: 'Inter_500Medium',
     fontSize: 13,
     color: colors.muted,
-    marginBottom: 12,
-  },
-  badgeRow: {
-    flexDirection: 'row',
-    gap: 6,
-    marginBottom: 6,
-  },
-  badge: {
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: radius.pill,
-  },
-  badgeText: {
-    fontFamily: 'Inter_700Bold',
-    fontSize: 9,
-    letterSpacing: 0.8,
+    marginTop: 32,
+    textAlign: 'center',
   },
 });
