@@ -372,7 +372,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  miniAvText: { fontFamily: 'Inter_700Bold', fontSize: 10, color: '#F5E9D3' },
+  miniAvText: { fontFamily: 'Inter_700Bold', fontSize: 10, color: colors.parchment },
   bylineText: { fontFamily: 'Inter_500Medium', fontSize: 11, color: colors.muted },
   statRow: { flexDirection: 'row', gap: 14 },
   heroPlate: {
@@ -556,7 +556,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  tryAvText: { fontFamily: 'Inter_700Bold', fontSize: 11, color: '#F5E9D3' },
+  tryAvText: { fontFamily: 'Inter_700Bold', fontSize: 11, color: colors.parchment },
   tryName: {
     flex: 1,
     fontFamily: 'Inter_600SemiBold',

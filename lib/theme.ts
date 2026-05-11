@@ -7,6 +7,7 @@ export const colors = {
   border:    '#ECECE6',
   borderSoft:'#F5F5F0',
   overlayScrim: 'rgba(0,0,0,0.35)',
+  parchment: '#F5E9D3',
 
   // text
   ink:       '#0B0B0C',
