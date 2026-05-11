@@ -20,6 +20,7 @@ import { useAuthStore } from '@/store/auth';
 import type { Ingredient, Tip } from '@/lib/database.types';
 import { emojiFor } from '@/lib/ingredient-emoji';
 import { initialsFor, colorForUserId } from '@/lib/avatar';
+import { AlbumPickerSheet } from '@/components/AlbumPickerSheet';
 
 async function fetchRecipe(id: string) {
   const { data, error } = await supabase
@@ -54,6 +55,7 @@ export default function RecipeDetailScreen() {
   const userPalate = useAuthStore(s => s.profile?.palate_vector ?? null);
   const [isSaved, setIsSaved] = useState(false);
   const [tipsOpen, setTipsOpen] = useState(false);
+  const [albumPickerVisible, setAlbumPickerVisible] = useState(false);
 
   const { data: recipe, isLoading } = useQuery({
     queryKey: ['recipe', id],
@@ -115,6 +117,12 @@ export default function RecipeDetailScreen() {
               <Text style={[styles.iconText, isSaved && { color: colors.clay }]}>
                 {isSaved ? '♥' : '♡'}
               </Text>
+            </Pressable>
+            <Pressable
+              style={styles.iconBtn}
+              onPress={() => setAlbumPickerVisible(true)}
+            >
+              <Text style={styles.iconText}>＋</Text>
             </Pressable>
           </View>
         </View>
@@ -287,6 +295,15 @@ export default function RecipeDetailScreen() {
           </Text>
         )}
       </ScrollView>
+      {user && (
+        <AlbumPickerSheet
+          visible={albumPickerVisible}
+          onClose={() => setAlbumPickerVisible(false)}
+          mode="pick-albums"
+          recipeId={id}
+          userId={user.id}
+        />
+      )}
     </SafeAreaView>
   );
 }

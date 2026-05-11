@@ -21,6 +21,7 @@ import { EditorialHeading } from '@/components/EditorialHeading';
 import { colors, radius } from '@/lib/theme';
 import { InboxIcon } from '@/components/InboxIcon';
 import type { Recipe, RecipeCollection } from '@/lib/database.types';
+import { AlbumPickerSheet } from '@/components/AlbumPickerSheet';
 
 // ─── Album colors (cycles) ──────────────────────────────────────────
 const ALBUM_COLORS = [colors.sageSoft, colors.claySoft, colors.ochreSoft];
@@ -462,6 +463,15 @@ export default function KitchenScreen() {
         onClose={() => setNewAlbumVisible(false)}
         onCreated={onAlbumCreated}
       />
+      {user && pickerRecipeId && (
+        <AlbumPickerSheet
+          visible={!!pickerRecipeId}
+          onClose={() => setPickerRecipeId(null)}
+          mode="pick-albums"
+          recipeId={pickerRecipeId}
+          userId={user.id}
+        />
+      )}
     </SafeAreaView>
   );
 }
