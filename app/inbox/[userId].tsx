@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { View, Text, FlatList, Pressable, Image, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -31,6 +31,7 @@ export default function ThreadScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const myId = useAuthStore((s) => s.session?.user?.id);
+  const [activeReactionId, setActiveReactionId] = useState<string | null>(null);
 
   const { data: otherUser } = useQuery({
     queryKey: ['profile', otherUserId],
@@ -94,12 +95,56 @@ export default function ThreadScreen() {
   const renderShare = ({ item }: { item: Share }) => {
     const isMine = item.sender_id === myId;
     const myReaction = item.reactions?.find((r) => r.user_id === myId);
+    const showReactionPicker = activeReactionId === item.id;
+
+    // Aggregate reactions by emoji for badge display
+    const reactionCounts: { emoji: string; key: string; count: number }[] = [];
+    if (item.reactions?.length) {
+      const grouped: Record<string, number> = {};
+      for (const r of item.reactions) {
+        grouped[r.emoji] = (grouped[r.emoji] || 0) + 1;
+      }
+      for (const [key, count] of Object.entries(grouped)) {
+        if (EMOJI_MAP[key]) {
+          reactionCounts.push({ emoji: EMOJI_MAP[key], key, count });
+        }
+      }
+    }
 
     return (
       <View style={[styles.bubble, isMine ? styles.bubbleRight : styles.bubbleLeft]}>
+        {/* Floating reaction picker */}
+        {showReactionPicker && (
+          <View style={styles.reactionBar}>
+            {EMOJI_KEYS.map((key) => {
+              const isSelected = myReaction?.emoji === key;
+              return (
+                <Pressable
+                  key={key}
+                  style={[styles.reactionBarBtn, isSelected && styles.reactionBarBtnSelected]}
+                  onPress={() => {
+                    reactMutation.mutate({ shareId: item.id, emoji: key });
+                    setActiveReactionId(null);
+                  }}
+                >
+                  <Text style={styles.reactionBarEmoji}>{EMOJI_MAP[key]}</Text>
+                </Pressable>
+              );
+            })}
+          </View>
+        )}
+
+        {/* Recipe card with long-press */}
         <Pressable
           style={styles.recipeCard}
-          onPress={() => router.push(`/recipe/${item.recipe.id}` as any)}
+          onPress={() => {
+            if (activeReactionId) {
+              setActiveReactionId(null);
+              return;
+            }
+            router.push(`/recipe/${item.recipe.id}` as any);
+          }}
+          onLongPress={() => setActiveReactionId(item.id)}
         >
           {item.recipe.cover_image_url ? (
             <Image source={{ uri: item.recipe.cover_image_url }} style={styles.recipeThumbnail} />
@@ -111,33 +156,33 @@ export default function ThreadScreen() {
           <Text style={styles.recipeTitle} numberOfLines={2}>{item.recipe.title}</Text>
         </Pressable>
 
-        {item.note && <Text style={styles.note}>{item.note}</Text>}
+        {/* Note bubble */}
+        {item.note && (
+          <View style={[styles.noteBubble, isMine ? styles.noteBubbleSent : styles.noteBubbleReceived]}>
+            <Text style={styles.noteText}>{item.note}</Text>
+          </View>
+        )}
 
+        {/* Reaction badge */}
+        {reactionCounts.length > 0 && (
+          <View style={[styles.reactionBadgeRow, isMine ? styles.badgeRight : styles.badgeLeft]}>
+            {reactionCounts.map((r) => (
+              <View key={r.key} style={styles.reactionBadge}>
+                <Text style={styles.reactionBadgeEmoji}>{r.emoji}</Text>
+                {r.count > 1 && <Text style={styles.reactionBadgeCount}>{r.count}</Text>}
+              </View>
+            ))}
+          </View>
+        )}
+
+        {/* "I tried this" button — received messages only */}
         {!isMine && (
-          <>
-            <View style={styles.reactionRow}>
-              {EMOJI_KEYS.map((key) => {
-                const count = item.reactions?.filter((r) => r.emoji === key).length ?? 0;
-                const isSelected = myReaction?.emoji === key;
-                return (
-                  <Pressable
-                    key={key}
-                    style={[styles.reactionBtn, isSelected && styles.reactionSelected]}
-                    onPress={() => reactMutation.mutate({ shareId: item.id, emoji: key })}
-                  >
-                    <Text style={styles.reactionEmoji}>{EMOJI_MAP[key]}</Text>
-                    {count > 0 && <Text style={styles.reactionCount}>{count}</Text>}
-                  </Pressable>
-                );
-              })}
-            </View>
-            <Pressable
-              style={styles.tryBtn}
-              onPress={() => router.push(`/try/${item.recipe.id}` as any)}
-            >
-              <Text style={styles.tryBtnText}>I tried this →</Text>
-            </Pressable>
-          </>
+          <Pressable
+            style={styles.tryBtn}
+            onPress={() => router.push(`/try/${item.recipe.id}` as any)}
+          >
+            <Text style={styles.tryBtnText}>I tried this →</Text>
+          </Pressable>
         )}
       </View>
     );
@@ -152,10 +197,12 @@ export default function ThreadScreen() {
         <Text style={styles.headerName}>{otherUser?.display_name ?? 'Loading...'}</Text>
       </View>
       <FlatList
-        data={shares}
+        data={[...shares].reverse()}
+        inverted={true}
         keyExtractor={(item) => item.id}
         renderItem={renderShare}
         contentContainerStyle={{ padding: 16, paddingBottom: 40 }}
+        onScrollBeginDrag={() => setActiveReactionId(null)}
         ListEmptyComponent={
           <Text style={styles.empty}>No recipes shared yet</Text>
         }
@@ -216,51 +263,97 @@ const styles = StyleSheet.create({
     padding: 12,
     letterSpacing: -0.2,
   },
-  note: {
-    fontFamily: 'Inter_400Regular',
-    fontSize: 13,
-    color: colors.inkSoft,
+  // Note bubble styles
+  noteBubble: {
     marginTop: 6,
-    paddingHorizontal: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    borderRadius: radius.lg,
   },
-  reactionRow: {
-    flexDirection: 'row',
-    gap: 6,
-    marginTop: 8,
+  noteBubbleSent: {
+    backgroundColor: colors.sageSoft,
   },
-  reactionBtn: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: radius.pill,
+  noteBubbleReceived: {
     backgroundColor: colors.card,
     borderWidth: 1,
     borderColor: colors.border,
+  },
+  noteText: {
+    fontFamily: 'Inter_400Regular',
+    fontSize: 13,
+    color: colors.ink,
+  },
+  // Floating reaction bar
+  reactionBar: {
+    flexDirection: 'row',
+    alignSelf: 'center',
+    backgroundColor: colors.card,
+    borderRadius: radius.pill,
+    padding: 6,
+    borderWidth: 1,
+    borderColor: colors.border,
+    marginBottom: 8,
+    ...shadow.card,
+  },
+  reactionBarBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: radius.pill,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  reactionBarBtnSelected: {
+    backgroundColor: colors.sageSoft,
+  },
+  reactionBarEmoji: {
+    fontSize: 18,
+  },
+  // Reaction badge
+  reactionBadgeRow: {
+    flexDirection: 'row',
+    gap: 4,
+    marginTop: 6,
+  },
+  badgeRight: {
+    justifyContent: 'flex-end',
+    alignSelf: 'flex-end',
+  },
+  badgeLeft: {
+    justifyContent: 'flex-start',
+    alignSelf: 'flex-start',
+  },
+  reactionBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 3,
+    backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.pill,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    gap: 2,
   },
-  reactionSelected: {
-    backgroundColor: colors.sageSoft,
-    borderColor: colors.sage,
+  reactionBadgeEmoji: {
+    fontSize: 12,
   },
-  reactionEmoji: { fontSize: 14 },
-  reactionCount: {
+  reactionBadgeCount: {
     fontFamily: 'Inter_600SemiBold',
     fontSize: 10,
     color: colors.muted,
   },
+  // Try button
   tryBtn: {
-    marginTop: 8,
-    backgroundColor: colors.sage,
-    paddingVertical: 10,
-    paddingHorizontal: 16,
+    marginTop: 6,
+    backgroundColor: colors.sageSoft,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
     borderRadius: radius.pill,
     alignSelf: 'flex-start',
   },
   tryBtnText: {
-    fontFamily: 'Inter_700Bold',
-    fontSize: 12,
-    color: '#fff',
+    fontFamily: 'Inter_600SemiBold',
+    fontSize: 11,
+    color: colors.sage,
   },
   empty: {
     fontFamily: 'Inter_400Regular',

@@ -1,6 +1,7 @@
 import { View, Pressable, Text, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
+import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/store/auth';
 import { colors, shadow } from '@/lib/theme';
@@ -30,7 +31,7 @@ export function InboxIcon() {
 
   return (
     <Pressable style={styles.btn} onPress={() => router.push('/inbox' as any)}>
-      <Text style={styles.icon}>✉</Text>
+      <Ionicons name="mail-outline" size={20} color={colors.ink} />
       {unread > 0 && (
         <View style={styles.badge}>
           <Text style={styles.badgeText}>{unread > 9 ? '9+' : unread}</Text>
@@ -49,10 +50,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     ...shadow.card,
-  },
-  icon: {
-    fontSize: 16,
-    color: colors.ink,
   },
   badge: {
     position: 'absolute',

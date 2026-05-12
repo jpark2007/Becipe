@@ -8,7 +8,6 @@ import {
   ActivityIndicator,
   StyleSheet,
   TextInput,
-  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
@@ -18,6 +17,7 @@ import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/store/auth';
 import { colors, radius } from '@/lib/theme';
 import { AlbumPickerSheet } from '@/components/AlbumPickerSheet';
+import { ActionSheet } from '@/components/ActionSheet';
 import type { Recipe, RecipeCollection } from '@/lib/database.types';
 
 async function fetchCollection(id: string): Promise<RecipeCollection> {
@@ -43,22 +43,14 @@ async function fetchCollectionRecipes(collectionId: string): Promise<Recipe[]> {
 function RecipeRow({
   recipe,
   onPress,
-  onRemove,
+  onMenu,
 }: {
   recipe: Recipe;
   onPress: () => void;
-  onRemove: () => void;
+  onMenu: () => void;
 }) {
-  function showMenu() {
-    Alert.alert(recipe.title, undefined, [
-      { text: 'View recipe', onPress },
-      { text: 'Remove from album', style: 'destructive', onPress: onRemove },
-      { text: 'Cancel', style: 'cancel' },
-    ]);
-  }
-
   return (
-    <Pressable style={rowStyles.row} onPress={onPress} onLongPress={showMenu}>
+    <Pressable style={rowStyles.row} onPress={onPress} onLongPress={onMenu}>
       {recipe.cover_image_url ? (
         <Image source={{ uri: recipe.cover_image_url }} style={rowStyles.thumb} contentFit="cover" />
       ) : (
@@ -72,7 +64,7 @@ function RecipeRow({
           <Text style={rowStyles.cuisine}>{recipe.cuisine}</Text>
         )}
       </View>
-      <Pressable hitSlop={8} onPress={showMenu} style={rowStyles.menu}>
+      <Pressable hitSlop={8} onPress={onMenu} style={rowStyles.menu}>
         <Text style={rowStyles.menuText}>⋯</Text>
       </Pressable>
     </Pressable>
@@ -104,6 +96,7 @@ export default function CollectionDetailScreen() {
 
   const [search, setSearch] = useState('');
   const [addRecipesVisible, setAddRecipesVisible] = useState(false);
+  const [menuRecipe, setMenuRecipe] = useState<Recipe | null>(null);
 
   const { data: collection, isLoading: colLoading } = useQuery({
     queryKey: ['collection', id],
@@ -184,7 +177,7 @@ export default function CollectionDetailScreen() {
               key={r.id}
               recipe={r}
               onPress={() => router.push(`/recipe/${r.id}` as any)}
-              onRemove={() => removeRecipe.mutate(r.id)}
+              onMenu={() => setMenuRecipe(r)}
             />
           ))
         )}
@@ -194,6 +187,15 @@ export default function CollectionDetailScreen() {
         </Pressable>
       </ScrollView>
 
+      <ActionSheet
+        visible={!!menuRecipe}
+        onClose={() => setMenuRecipe(null)}
+        title={menuRecipe?.title}
+        actions={menuRecipe ? [
+          { label: 'View recipe', onPress: () => router.push(`/recipe/${menuRecipe.id}` as any) },
+          { label: 'Remove from album', destructive: true, onPress: () => removeRecipe.mutate(menuRecipe.id) },
+        ] : []}
+      />
       {user && (
         <AlbumPickerSheet
           visible={addRecipesVisible}

@@ -10,6 +10,8 @@ import {
   TextInput,
   ActivityIndicator,
   Alert,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
@@ -164,6 +166,7 @@ function PickAlbumsContent({
   const queryClient = useQueryClient();
   const [newName, setNewName] = useState('');
   const [saving, setSaving] = useState(false);
+  const [localFavorited, setLocalFavorited] = useState<boolean | null>(null);
 
   const { data: collections = [], isLoading: colLoading } = useQuery({
     queryKey: ['collections', userId],
@@ -175,11 +178,31 @@ function PickAlbumsContent({
     queryFn: () => fetchCollectionsForRecipe(recipeId),
   });
 
+  const { data: isFavorited = false } = useQuery({
+    queryKey: ['recipe-liked', recipeId, userId],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('recipe_likes')
+        .select('user_id')
+        .eq('user_id', userId)
+        .eq('recipe_id', recipeId)
+        .maybeSingle();
+      return !!data;
+    },
+  });
+
+  const favChecked = localFavorited ?? isFavorited;
+
   const [localChecked, setLocalChecked] = useState<Set<string>>(new Set());
+  const [syncedIds, setSyncedIds] = useState<string>('');
 
   useEffect(() => {
-    setLocalChecked(new Set(checkedIds));
-  }, [checkedIds]);
+    const key = checkedIds.slice().sort().join(',');
+    if (key !== syncedIds) {
+      setSyncedIds(key);
+      setLocalChecked(new Set(checkedIds));
+    }
+  }, [checkedIds, syncedIds]);
 
   function toggleAlbum(colId: string) {
     setLocalChecked(prev => {
@@ -205,29 +228,60 @@ function PickAlbumsContent({
 
   async function save() {
     setSaving(true);
-    const toAdd = [...localChecked].filter(id => !checkedIds.includes(id));
-    const toRemove = checkedIds.filter(id => !localChecked.has(id));
+    try {
+      const toAdd = [...localChecked].filter(id => !checkedIds.includes(id));
+      const toRemove = checkedIds.filter(id => !localChecked.has(id));
 
-    const inserts = toAdd.map(collection_id => ({ collection_id, recipe_id: recipeId }));
-    const tasks: Promise<any>[] = [];
-    if (inserts.length) {
-      tasks.push(supabase.from('recipe_collection_items').insert(inserts));
+      const inserts = toAdd.map(collection_id => ({ collection_id, recipe_id: recipeId }));
+      const ops: Promise<any>[] = [];
+      if (inserts.length) {
+        ops.push(supabase.from('recipe_collection_items').insert(inserts));
+      }
+      for (const collection_id of toRemove) {
+        ops.push(
+          supabase
+            .from('recipe_collection_items')
+            .delete()
+            .eq('collection_id', collection_id)
+            .eq('recipe_id', recipeId),
+        );
+      }
+      await Promise.all(ops);
+      if (localChecked.size > 0) {
+        await supabase.from('saved_recipes').upsert(
+          { user_id: userId, recipe_id: recipeId },
+          { onConflict: 'user_id,recipe_id' }
+        );
+      }
+      if (localFavorited !== null && localFavorited !== isFavorited) {
+        if (localFavorited) {
+          await supabase.from('recipe_likes').upsert(
+            { user_id: userId, recipe_id: recipeId },
+            { onConflict: 'user_id,recipe_id' }
+          );
+        } else {
+          await supabase
+            .from('recipe_likes')
+            .delete()
+            .eq('user_id', userId)
+            .eq('recipe_id', recipeId);
+        }
+      }
+      queryClient.invalidateQueries({ queryKey: ['recipe-collections', recipeId] });
+      queryClient.invalidateQueries({ queryKey: ['collection-items'] });
+      queryClient.invalidateQueries({ queryKey: ['collection-counts', userId] });
+      queryClient.invalidateQueries({ queryKey: ['recipe-saved', recipeId] });
+      queryClient.invalidateQueries({ queryKey: ['kitchen-saved', userId] });
+      queryClient.invalidateQueries({ queryKey: ['recipe-liked', recipeId, userId] });
+      queryClient.invalidateQueries({ queryKey: ['recipe-like-count', recipeId] });
+      queryClient.invalidateQueries({ queryKey: ['liked-count', userId] });
+      queryClient.invalidateQueries({ queryKey: ['liked-recipes', userId] });
+      onClose();
+    } catch {
+      Alert.alert('Error', 'Could not update albums. Please try again.');
+    } finally {
+      setSaving(false);
     }
-    for (const collection_id of toRemove) {
-      tasks.push(
-        supabase
-          .from('recipe_collection_items')
-          .delete()
-          .eq('collection_id', collection_id)
-          .eq('recipe_id', recipeId),
-      );
-    }
-    await Promise.all(tasks);
-    queryClient.invalidateQueries({ queryKey: ['recipe-collections', recipeId] });
-    queryClient.invalidateQueries({ queryKey: ['collection-items'] });
-    queryClient.invalidateQueries({ queryKey: ['collection-counts', userId] });
-    setSaving(false);
-    onClose();
   }
 
   const isLoading = colLoading || checkLoading;
@@ -239,6 +293,12 @@ function PickAlbumsContent({
         <ActivityIndicator color={colors.sage} style={{ marginVertical: 24 }} />
       ) : (
         <ScrollView style={{ maxHeight: 280 }} showsVerticalScrollIndicator={false}>
+          <Pressable style={checkStyles.row} onPress={() => setLocalFavorited(prev => !(prev ?? isFavorited))}>
+            <View style={[checkStyles.box, favChecked && { backgroundColor: colors.clay, borderColor: colors.clay }]}>
+              {favChecked && <Text style={checkStyles.tick}>♥</Text>}
+            </View>
+            <Text style={[checkStyles.label, { color: colors.clay }]}>Favorites</Text>
+          </Pressable>
           {collections.map(col => (
             <CheckRow
               key={col.id}
@@ -302,10 +362,15 @@ function PickRecipesContent({
   });
 
   const [localChecked, setLocalChecked] = useState<Set<string>>(new Set());
+  const [syncedIds, setSyncedIds] = useState<string>('');
 
   useEffect(() => {
-    setLocalChecked(new Set(checkedIds));
-  }, [checkedIds]);
+    const key = checkedIds.slice().sort().join(',');
+    if (key !== syncedIds) {
+      setSyncedIds(key);
+      setLocalChecked(new Set(checkedIds));
+    }
+  }, [checkedIds, syncedIds]);
 
   function toggle(recipeId: string) {
     setLocalChecked(prev => {
@@ -322,27 +387,32 @@ function PickRecipesContent({
 
   async function save() {
     setSaving(true);
-    const toAdd = [...localChecked].filter(id => !checkedIds.includes(id));
-    const toRemove = checkedIds.filter(id => !localChecked.has(id));
+    try {
+      const toAdd = [...localChecked].filter(id => !checkedIds.includes(id));
+      const toRemove = checkedIds.filter(id => !localChecked.has(id));
 
-    const inserts = toAdd.map(recipe_id => ({ collection_id: collectionId, recipe_id }));
-    const tasks: Promise<any>[] = [];
-    if (inserts.length) {
-      tasks.push(supabase.from('recipe_collection_items').insert(inserts));
+      const inserts = toAdd.map(recipe_id => ({ collection_id: collectionId, recipe_id }));
+      const ops: Promise<any>[] = [];
+      if (inserts.length) {
+        ops.push(supabase.from('recipe_collection_items').insert(inserts));
+      }
+      for (const recipe_id of toRemove) {
+        ops.push(
+          supabase
+            .from('recipe_collection_items')
+            .delete()
+            .eq('collection_id', collectionId)
+            .eq('recipe_id', recipe_id),
+        );
+      }
+      await Promise.all(ops);
+      queryClient.invalidateQueries({ queryKey: ['collection-items', collectionId] });
+      onClose();
+    } catch {
+      Alert.alert('Error', 'Could not update album. Please try again.');
+    } finally {
+      setSaving(false);
     }
-    for (const recipe_id of toRemove) {
-      tasks.push(
-        supabase
-          .from('recipe_collection_items')
-          .delete()
-          .eq('collection_id', collectionId)
-          .eq('recipe_id', recipe_id),
-      );
-    }
-    await Promise.all(tasks);
-    queryClient.invalidateQueries({ queryKey: ['collection-items', collectionId] });
-    setSaving(false);
-    onClose();
   }
 
   const isLoading = recipesLoading || checkLoading;
@@ -394,23 +464,28 @@ export function AlbumPickerSheet(props: AlbumPickerSheetProps) {
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <Pressable style={sheetStyles.overlay} onPress={onClose}>
-        <Pressable style={sheetStyles.sheet} onPress={(e) => e.stopPropagation()}>
-          {props.mode === 'pick-albums' ? (
-            <PickAlbumsContent
-              recipeId={props.recipeId}
-              userId={props.userId}
-              onClose={onClose}
-            />
-          ) : (
-            <PickRecipesContent
-              collectionId={props.collectionId}
-              userId={props.userId}
-              onClose={onClose}
-            />
-          )}
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      >
+        <Pressable style={sheetStyles.overlay} onPress={onClose}>
+          <Pressable style={sheetStyles.sheet} onPress={(e) => e.stopPropagation()}>
+            {props.mode === 'pick-albums' ? (
+              <PickAlbumsContent
+                recipeId={props.recipeId}
+                userId={props.userId}
+                onClose={onClose}
+              />
+            ) : (
+              <PickRecipesContent
+                collectionId={props.collectionId}
+                userId={props.userId}
+                onClose={onClose}
+              />
+            )}
+          </Pressable>
         </Pressable>
-      </Pressable>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }

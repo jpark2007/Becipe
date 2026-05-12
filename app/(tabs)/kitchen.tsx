@@ -19,9 +19,12 @@ import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/store/auth';
 import { EditorialHeading } from '@/components/EditorialHeading';
 import { colors, radius } from '@/lib/theme';
+import { Ionicons } from '@expo/vector-icons';
 import { InboxIcon } from '@/components/InboxIcon';
 import type { Recipe, RecipeCollection } from '@/lib/database.types';
 import { AlbumPickerSheet } from '@/components/AlbumPickerSheet';
+import { ActionSheet } from '@/components/ActionSheet';
+import type { ActionSheetAction } from '@/components/ActionSheet';
 
 // ─── Album colors (cycles) ──────────────────────────────────────────
 const ALBUM_COLORS = [colors.sageSoft, colors.claySoft, colors.ochreSoft];
@@ -74,6 +77,15 @@ async function fetchMyRecipes(userId: string) {
     .order('created_at', { ascending: false });
   if (error) throw error;
   return (data ?? []).map((r: Recipe) => ({ ...r, _source: 'mine' as const }));
+}
+
+async function fetchLikedCount(userId: string): Promise<number> {
+  const { count, error } = await supabase
+    .from('recipe_likes')
+    .select('*', { count: 'exact', head: true })
+    .eq('user_id', userId);
+  if (error) return 0;
+  return count ?? 0;
 }
 
 function mergeAllRecipes(
@@ -145,7 +157,7 @@ function NewAlbumModal({
 const newAlbumStyles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.4)',
+    backgroundColor: colors.overlayScrim,
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 32,
@@ -258,6 +270,8 @@ export default function KitchenScreen() {
   const [search, setSearch] = useState('');
   const [newAlbumVisible, setNewAlbumVisible] = useState(false);
   const [pickerRecipeId, setPickerRecipeId] = useState<string | null>(null);
+  const [menuRecipe, setMenuRecipe] = useState<(Recipe & { _source: 'saved' | 'mine' }) | null>(null);
+  const [menuAlbum, setMenuAlbum] = useState<RecipeCollection | null>(null);
 
   const { data: collections = [], isLoading: collectionsLoading } = useQuery({
     queryKey: ['collections', user?.id],
@@ -268,6 +282,12 @@ export default function KitchenScreen() {
   const { data: albumCounts = {} } = useQuery({
     queryKey: ['collection-counts', user?.id],
     queryFn: () => fetchCollectionCounts(user!.id),
+    enabled: !!user,
+  });
+
+  const { data: likedCount = 0 } = useQuery({
+    queryKey: ['liked-count', user?.id],
+    queryFn: () => fetchLikedCount(user!.id),
     enabled: !!user,
   });
 
@@ -303,26 +323,55 @@ export default function KitchenScreen() {
   );
 
   function handleMenuAll(recipe: Recipe & { _source: 'saved' | 'mine' }) {
-    const opts: { text: string; onPress?: () => void; style?: 'cancel' | 'destructive' }[] = [
-      { text: 'View recipe', onPress: () => router.push(`/recipe/${recipe.id}` as any) },
-      { text: 'Add to album', onPress: () => setPickerRecipeId(recipe.id) },
+    setMenuRecipe(recipe);
+  }
+
+  const menuActions = useMemo<ActionSheetAction[]>(() => {
+    if (!menuRecipe) return [];
+    const actions: ActionSheetAction[] = [
+      { label: 'View recipe', onPress: () => router.push(`/recipe/${menuRecipe.id}` as any) },
+      { label: 'Add to album', onPress: () => setPickerRecipeId(menuRecipe.id) },
     ];
-    if (recipe._source === 'saved') {
-      opts.push({
-        text: 'Remove from saved',
-        style: 'destructive',
+    if (menuRecipe._source === 'mine') {
+      actions.splice(1, 0, {
+        label: 'Edit recipe',
+        onPress: () => router.push({ pathname: '/add-recipe', params: { editId: menuRecipe.id } } as any),
+      });
+    }
+    if (menuRecipe._source === 'saved') {
+      actions.push({
+        label: 'Remove from saved',
+        destructive: true,
         onPress: async () => {
           await supabase
             .from('saved_recipes')
             .delete()
             .eq('user_id', user!.id)
-            .eq('recipe_id', recipe.id);
+            .eq('recipe_id', menuRecipe.id);
           queryClient.invalidateQueries({ queryKey: ['kitchen-saved', user?.id] });
         },
       });
     }
-    Alert.alert(recipe.title, undefined, [...opts, { text: 'Cancel', style: 'cancel' }]);
-  }
+    return actions;
+  }, [menuRecipe]);
+
+  const albumMenuActions = useMemo<ActionSheetAction[]>(() => {
+    if (!menuAlbum) return [];
+    return [
+      {
+        label: 'Delete album',
+        destructive: true,
+        onPress: async () => {
+          await supabase
+            .from('recipe_collections')
+            .delete()
+            .eq('id', menuAlbum.id);
+          queryClient.invalidateQueries({ queryKey: ['collections', user?.id] });
+          queryClient.invalidateQueries({ queryKey: ['collection-counts', user?.id] });
+        },
+      },
+    ];
+  }, [menuAlbum]);
 
   function onAlbumCreated(collection: RecipeCollection) {
     queryClient.invalidateQueries({ queryKey: ['collections', user?.id] });
@@ -333,7 +382,7 @@ export default function KitchenScreen() {
   const TABS: { key: Tab; label: string }[] = [
     { key: 'albums', label: 'Albums' },
     { key: 'all', label: 'All' },
-    { key: 'mine', label: 'Mine' },
+    { key: 'mine', label: 'My Recipes' },
   ];
 
   return (
@@ -351,15 +400,18 @@ export default function KitchenScreen() {
       {/* Search bar — only for list tabs */}
       {tab !== 'albums' && (
         <View style={styles.searchWrap}>
-          <TextInput
-            style={styles.search}
-            placeholder="Search recipes…"
-            placeholderTextColor={colors.muted}
-            value={search}
-            onChangeText={setSearch}
-            returnKeyType="search"
-            clearButtonMode="while-editing"
-          />
+          <View style={styles.search}>
+            <Ionicons name="search-outline" size={20} color={colors.muted} />
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Search recipes…"
+              placeholderTextColor={colors.muted}
+              value={search}
+              onChangeText={setSearch}
+              returnKeyType="search"
+              clearButtonMode="while-editing"
+            />
+          </View>
         </View>
       )}
 
@@ -388,11 +440,23 @@ export default function KitchenScreen() {
             <ActivityIndicator color={colors.sage} style={{ marginTop: 40, width: '100%' }} />
           ) : (
             <>
+              {/* Liked virtual album — always first */}
+              <Pressable
+                style={[styles.albumCard, { backgroundColor: colors.claySoft }]}
+                onPress={() => router.push('/liked' as any)}
+              >
+                <Text style={{ fontSize: 24, marginBottom: 4 }}>♥</Text>
+                <Text style={[styles.albumName, { color: colors.clay }]}>Favorites</Text>
+                <Text style={[styles.albumCount, { color: colors.clay }]}>
+                  {likedCount} recipe{likedCount !== 1 ? 's' : ''}
+                </Text>
+              </Pressable>
               {collections.map((col, i) => (
                 <Pressable
                   key={col.id}
                   style={[styles.albumCard, { backgroundColor: albumColor(i) }]}
                   onPress={() => router.push(`/collection/${col.id}` as any)}
+                  onLongPress={() => setMenuAlbum(col)}
                 >
                   <Text style={[styles.albumName, { color: albumTextColor(i) }]} numberOfLines={2}>
                     {col.name}
@@ -463,6 +527,18 @@ export default function KitchenScreen() {
         onClose={() => setNewAlbumVisible(false)}
         onCreated={onAlbumCreated}
       />
+      <ActionSheet
+        visible={!!menuRecipe}
+        onClose={() => setMenuRecipe(null)}
+        title={menuRecipe?.title}
+        actions={menuActions}
+      />
+      <ActionSheet
+        visible={!!menuAlbum}
+        onClose={() => setMenuAlbum(null)}
+        title={menuAlbum?.name}
+        actions={albumMenuActions}
+      />
       {user && pickerRecipeId && (
         <AlbumPickerSheet
           visible={!!pickerRecipeId}
@@ -497,11 +573,18 @@ const styles = StyleSheet.create({
     backgroundColor: colors.bg,
     borderRadius: radius.pill,
     paddingHorizontal: 16,
+    borderWidth: 1,
+    borderColor: colors.border,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  searchInput: {
+    flex: 1,
     fontFamily: 'Inter_500Medium',
     fontSize: 14,
     color: colors.ink,
-    borderWidth: 1,
-    borderColor: colors.border,
+    height: '100%',
   },
   tabBar: {
     flexDirection: 'row',

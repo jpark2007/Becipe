@@ -139,6 +139,15 @@ export interface Database {
         Insert: Omit<Database['public']['Tables']['recipe_shares']['Row'], 'id' | 'created_at'>;
         Update: Partial<Pick<Database['public']['Tables']['recipe_shares']['Row'], 'read_at'>>;
       };
+      recipe_likes: {
+        Row: {
+          user_id: string;
+          recipe_id: string;
+          created_at: string;
+        };
+        Insert: Omit<Database['public']['Tables']['recipe_likes']['Row'], 'created_at'>;
+        Update: never;
+      };
       share_reactions: {
         Row: {
           share_id: string;
@@ -178,3 +187,4 @@ export type FeedItem = Database['public']['Tables']['feed_items']['Row'];
 export type Comment = Database['public']['Tables']['comments']['Row'];
 export type RecipeCollection = Database['public']['Tables']['recipe_collections']['Row'];
 export type RecipeCollectionItem = Database['public']['Tables']['recipe_collection_items']['Row'];
+export type RecipeLike = Database['public']['Tables']['recipe_likes']['Row'];

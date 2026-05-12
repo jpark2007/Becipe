@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { convertToSystem, formatAmount } from '@/lib/unit-conversion';
 import {
   ScrollView,
   View,
@@ -10,7 +11,8 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useQuery, useMutation } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '@/lib/supabase';
 import { colors, radius, shadow } from '@/lib/theme';
 import { Plate } from '@/components/Plate';
@@ -18,7 +20,6 @@ import { EditorialHeading } from '@/components/EditorialHeading';
 import { matchScore, parsePalate } from '@/lib/palate';
 import { useAuthStore } from '@/store/auth';
 import type { Ingredient, Tip } from '@/lib/database.types';
-import { emojiFor } from '@/lib/ingredient-emoji';
 import { initialsFor, colorForUserId } from '@/lib/avatar';
 import { AlbumPickerSheet } from '@/components/AlbumPickerSheet';
 
@@ -52,30 +53,143 @@ export default function RecipeDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { user } = useAuthStore();
+  const queryClient = useQueryClient();
   const userPalate = useAuthStore(s => s.profile?.palate_vector ?? null);
+  const [isLiked, setIsLiked] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
   const [tipsOpen, setTipsOpen] = useState(false);
   const [albumPickerVisible, setAlbumPickerVisible] = useState(false);
+  const [flipped, setFlipped] = useState<Set<number>>(new Set());
 
   const { data: recipe, isLoading } = useQuery({
     queryKey: ['recipe', id],
     queryFn: () => fetchRecipe(id),
+    refetchOnMount: 'always',
   });
 
-  const saveMutation = useMutation({
+  // Check if already liked
+  const { data: likedData } = useQuery({
+    queryKey: ['recipe-liked', id, user?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('recipe_likes')
+        .select('user_id')
+        .eq('user_id', user!.id)
+        .eq('recipe_id', id)
+        .maybeSingle();
+      if (error) console.error('Liked query error:', error);
+      return !!data;
+    },
+    enabled: !!user,
+    refetchOnMount: 'always',
+  });
+
+  // Like count
+  const { data: likeCount = 0 } = useQuery({
+    queryKey: ['recipe-like-count', id],
+    queryFn: async () => {
+      const { count } = await supabase
+        .from('recipe_likes')
+        .select('*', { count: 'exact', head: true })
+        .eq('recipe_id', id);
+      return count ?? 0;
+    },
+    refetchOnMount: 'always',
+  });
+
+  // Check if already saved
+  const { data: savedData } = useQuery({
+    queryKey: ['recipe-saved', id, user?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('saved_recipes')
+        .select('user_id')
+        .eq('user_id', user!.id)
+        .eq('recipe_id', id)
+        .maybeSingle();
+      if (error) console.error('Saved query error:', error);
+      return !!data;
+    },
+    enabled: !!user,
+    refetchOnMount: 'always',
+  });
+
+  // Sync query data to local state
+  useEffect(() => {
+    if (likedData !== undefined) setIsLiked(likedData);
+  }, [likedData]);
+
+  useEffect(() => {
+    if (savedData !== undefined) setIsSaved(savedData);
+  }, [savedData]);
+
+  // Like mutation
+  const likeMutation = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase.from('saved_recipes').insert({
-        user_id: user!.id,
-        recipe_id: id,
-      });
-      if (error && error.code !== '23505') throw error;
+      if (isLiked) {
+        const { error } = await supabase
+          .from('recipe_likes')
+          .delete()
+          .eq('user_id', user!.id)
+          .eq('recipe_id', id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from('recipe_likes').insert({
+          user_id: user!.id,
+          recipe_id: id,
+        });
+        if (error && error.code !== '23505') throw error;
+      }
+    },
+    onMutate: () => {
+      setIsLiked(prev => !prev);
     },
     onSuccess: () => {
-      setIsSaved(true);
-      Alert.alert('Added to your queue', 'Find it in Kitchen › Cooking soon.');
+      queryClient.invalidateQueries({ queryKey: ['recipe-like-count', id] });
+      queryClient.invalidateQueries({ queryKey: ['recipe-liked', id, user?.id] });
     },
-    onError: () => {
-      Alert.alert('Could not save', 'Something went wrong. Please try again.');
+    onError: (error) => {
+      console.error('Like mutation failed:', error);
+      setIsLiked(prev => !prev);
+    },
+  });
+
+  // Save mutation (toggle: save or unsave)
+  const saveMutation = useMutation({
+    mutationFn: async () => {
+      if (isSaved) {
+        // Remove from all collection items first, then unsave
+        await supabase
+          .from('recipe_collection_items')
+          .delete()
+          .eq('recipe_id', id);
+        const { error } = await supabase
+          .from('saved_recipes')
+          .delete()
+          .eq('user_id', user!.id)
+          .eq('recipe_id', id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from('saved_recipes').insert({
+          user_id: user!.id,
+          recipe_id: id,
+        });
+        if (error && error.code !== '23505') throw error;
+      }
+    },
+    onMutate: () => {
+      setIsSaved(prev => !prev);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['recipe-saved', id, user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['kitchen-saved', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['recipe-collections', id] });
+      queryClient.invalidateQueries({ queryKey: ['collection-counts', user?.id] });
+    },
+    onError: (error) => {
+      console.error('Save mutation failed:', error);
+      setIsSaved(prev => !prev);
+      Alert.alert('Error', 'Could not update bookmark. Please try again.');
     },
   });
 
@@ -112,17 +226,34 @@ export default function RecipeDetailScreen() {
             </Pressable>
             <Pressable
               style={styles.iconBtn}
-              onPress={() => saveMutation.mutate()}
+              onPress={() => user && likeMutation.mutate()}
             >
-              <Text style={[styles.iconText, isSaved && { color: colors.clay }]}>
-                {isSaved ? '♥' : '♡'}
-              </Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
+                <Text style={[styles.iconText, { color: isLiked ? colors.clay : colors.ink }]}>
+                  {isLiked ? '♥' : '♡'}
+                </Text>
+                {likeCount > 0 && (
+                  <Text style={styles.likeCount}>{likeCount}</Text>
+                )}
+              </View>
             </Pressable>
             <Pressable
               style={styles.iconBtn}
-              onPress={() => setAlbumPickerVisible(true)}
+              onPress={() => {
+                if (!user) return;
+                if (isSaved) {
+                  saveMutation.mutate();
+                } else {
+                  saveMutation.mutate();
+                  setAlbumPickerVisible(true);
+                }
+              }}
             >
-              <Text style={styles.iconText}>＋</Text>
+              <Ionicons
+                name={isSaved ? 'bookmark' : 'bookmark-outline'}
+                size={18}
+                color={isSaved ? colors.sage : colors.ink}
+              />
             </Pressable>
           </View>
         </View>
@@ -191,25 +322,47 @@ export default function RecipeDetailScreen() {
           <Text style={styles.sectionTitle}>Ingredients</Text>
           <Text style={styles.count}>{ingredients.length} items</Text>
         </View>
-        <View style={{ gap: 10, marginBottom: 22 }}>
-          {ingredients.slice(0, 6).map((ing, i) => {
-            const emoji = emojiFor(ing.name);
+        <View style={{ marginBottom: 22 }}>
+          {ingredients.map((ing, i) => {
+            const isFlipped = flipped.has(i);
+            let displayAmount = ing.amount;
+            let displayUnit = ing.unit;
+            let isConverted = false;
+
+            if (isFlipped) {
+              const numAmount = parseFloat(ing.amount);
+              if (!isNaN(numAmount) && ing.unit) {
+                const result = convertToSystem(numAmount, ing.unit, ing.name, 'metric');
+                if (result) {
+                  displayAmount = formatAmount(result.amount);
+                  displayUnit = result.unit;
+                  isConverted = true;
+                }
+              }
+            }
+
             return (
-              <View key={i} style={styles.ingItem}>
-                <View style={styles.ingGlyph}>
-                  <Text style={styles.ingGlyphText}>{emoji ?? '·'}</Text>
-                </View>
+              <Pressable
+                key={i}
+                style={styles.ingRow}
+                onPress={() => {
+                  setFlipped(prev => {
+                    const next = new Set(prev);
+                    if (next.has(i)) next.delete(i);
+                    else next.add(i);
+                    return next;
+                  });
+                }}
+              >
                 <Text style={styles.ingName}>{ing.name}</Text>
                 <Text style={styles.ingQ}>
-                  {ing.amount}
-                  {ing.unit ? ` ${ing.unit}` : ''}
+                  {isConverted ? '≈ ' : ''}
+                  {displayAmount}
+                  {displayUnit ? ` ${displayUnit}` : ''}
                 </Text>
-              </View>
+              </Pressable>
             );
           })}
-          {ingredients.length > 6 && (
-            <Text style={styles.moreText}>+ {ingredients.length - 6} more in cook mode</Text>
-          )}
         </View>
 
         {/* Start cooking CTA */}
@@ -226,17 +379,6 @@ export default function RecipeDetailScreen() {
           onPress={() => router.push(`/try/${id}`)}
         >
           <Text style={styles.tryBtnText}>log a try</Text>
-        </Pressable>
-
-        {/* Add to queue explicit CTA */}
-        <Pressable
-          style={[styles.tryBtn, isSaved && styles.queueBtnSaved]}
-          onPress={() => !isSaved && saveMutation.mutate()}
-          disabled={isSaved || saveMutation.isPending}
-        >
-          <Text style={[styles.tryBtnText, isSaved && { color: colors.sage }]}>
-            {isSaved ? '✓ In your queue' : '🔖 Add to queue'}
-          </Text>
         </Pressable>
 
         {/* Tips accordion */}
@@ -452,35 +594,25 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: 999,
   },
-  ingItem: {
+  ingRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-    backgroundColor: colors.card,
-    borderRadius: 16,
-    padding: 8,
-    borderWidth: 1,
-    borderColor: colors.border,
+    justifyContent: 'space-between',
+    paddingVertical: 12,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.border,
   },
-  ingGlyph: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    backgroundColor: colors.borderSoft,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  ingGlyphText: {
-    fontSize: 20,
-  },
-  ingName: { flex: 1, fontFamily: 'Inter_600SemiBold', fontSize: 13, color: colors.ink },
-  ingQ: { fontFamily: 'Inter_600SemiBold', fontSize: 12, color: colors.muted, paddingRight: 8 },
-  moreText: {
+  ingName: {
+    flex: 1,
     fontFamily: 'Inter_500Medium',
-    fontSize: 11,
+    fontSize: 14,
+    color: colors.ink,
+  },
+  ingQ: {
+    fontFamily: 'Inter_600SemiBold',
+    fontSize: 13,
     color: colors.muted,
-    textAlign: 'center',
-    marginTop: 4,
+    marginLeft: 16,
   },
   cookBtn: {
     backgroundColor: colors.clay,
@@ -510,9 +642,10 @@ const styles = StyleSheet.create({
     color: colors.ink,
     letterSpacing: -0.1,
   },
-  queueBtnSaved: {
-    backgroundColor: colors.sageSoft,
-    borderColor: colors.sageSoft,
+  likeCount: {
+    fontFamily: 'Inter_600SemiBold',
+    fontSize: 11,
+    color: colors.muted,
   },
   tipsWrap: {
     marginTop: 28,

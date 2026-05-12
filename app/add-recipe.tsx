@@ -12,11 +12,11 @@ import {
   ScrollView,
   ActivityIndicator,
   Alert,
-  Image,
   KeyboardAvoidingView,
   Platform,
   StyleSheet,
 } from 'react-native';
+import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -39,7 +39,7 @@ function isSocialUrl(url: string): boolean {
 export default function AddRecipeScreen() {
   const router = useRouter();
   const { user } = useAuthStore();
-  const { importUrl: paramImportUrl, importCaption: paramCaption } = useLocalSearchParams<{ importUrl?: string; importCaption?: string }>();
+  const { importUrl: paramImportUrl, importCaption: paramCaption, editId } = useLocalSearchParams<{ importUrl?: string; importCaption?: string; editId?: string }>();
 
   const [importUrl, setImportUrl] = useState('');
   const [importCaption, setImportCaption] = useState('');
@@ -71,6 +71,34 @@ export default function AddRecipeScreen() {
   const { shouldShow: showTips, dismiss: dismissTips } = usePhotoTips();
 
   useEffect(() => {
+    if (!editId) return;
+    (async () => {
+      const { data, error } = await supabase
+        .from('recipes')
+        .select('*')
+        .eq('id', editId)
+        .single();
+      if (error || !data) return;
+      setTitle(data.title ?? '');
+      setDescription(data.description ?? '');
+      setCuisine(data.cuisine ?? '');
+      setDifficulty((data.difficulty as Difficulty) ?? 'easy');
+      setPrepTime(data.prep_time_min != null ? String(data.prep_time_min) : '');
+      setCookTime(data.cook_time_min != null ? String(data.cook_time_min) : '');
+      setServings(data.servings != null ? String(data.servings) : '');
+      setIngredients((data.ingredients as Ingredient[])?.length ? data.ingredients as Ingredient[] : [{ amount: '', unit: '', name: '' }]);
+      setSteps((data.steps as Step[])?.length ? data.steps as Step[] : [{ order: 1, instruction: '' }]);
+      setTips((data.tips as Tip[]) ?? []);
+      setSourceUrl(data.source_url ?? '');
+      setSourceName(data.source_name ?? '');
+      setSourceCredit(data.source_credit ?? '');
+      setSourceType(data.source_type as any ?? 'manual');
+      setPublish(data.is_public ?? false);
+      if (data.cover_image_url) setScrapedImageUrl(data.cover_image_url);
+    })();
+  }, [editId]);
+
+  useEffect(() => {
     if (paramImportUrl) {
       setImportUrl(paramImportUrl);
       if (paramCaption) setImportCaption(paramCaption);
@@ -96,6 +124,17 @@ export default function AddRecipeScreen() {
     setSourceCredit(data.source_credit ?? '');
     setSourceType(data.source_type ?? 'url');
     if (data.image) setScrapedImageUrl(data.image);
+
+    const missing: string[] = [];
+    if (!data.title) missing.push('title');
+    if (!data.ingredients?.length) missing.push('ingredients');
+    if (!data.steps?.length) missing.push('steps');
+    if (missing.length > 0) {
+      Alert.alert(
+        'Partial import',
+        `We imported what we could, but couldn't parse: ${missing.join(', ')}. Please add ${missing.length === 1 ? 'it' : 'them'} manually below.`,
+      );
+    }
   }
 
   async function handleImport(urlOverride?: string, captionOverride?: string) {
@@ -140,9 +179,15 @@ export default function AddRecipeScreen() {
     } catch (err: any) {
       const msg = err.message ?? '';
       if (msg.includes('abort') || msg.includes('Abort')) {
-        setImportError('Import timed out — try again.');
+        Alert.alert(
+          'Import timed out',
+          'The site took too long to respond. You can try again or fill in the recipe manually below.',
+        );
       } else {
-        setImportError("Couldn't import that link. You can fill in the recipe manually below.");
+        Alert.alert(
+          'Import failed',
+          'We couldn\'t parse that link. Some sites block recipe scraping. You can fill in the recipe manually below.',
+        );
       }
     } finally {
       setImporting(false);
@@ -248,13 +293,26 @@ export default function AddRecipeScreen() {
         cover_image_url: finalCoverUrl,
       };
 
-      const { error } = await (supabase.from('recipes') as any).insert(payload);
-      if (error) throw error;
+      let dbError;
+      if (editId) {
+        const { error } = await (supabase.from('recipes') as any)
+          .update(payload)
+          .eq('id', editId);
+        dbError = error;
+      } else {
+        const { error } = await (supabase.from('recipes') as any).insert(payload);
+        dbError = error;
+      }
+      if (dbError) throw dbError;
 
       queryClient.invalidateQueries({ queryKey: ['profile'] });
-      queryClient.invalidateQueries({ queryKey: ['kitchen-my-recipes'] });
+      queryClient.invalidateQueries({ queryKey: ['kitchen-mine'] });
+      queryClient.invalidateQueries({ queryKey: ['kitchen-saved'] });
       queryClient.invalidateQueries({ queryKey: ['discover'] });
       queryClient.invalidateQueries({ queryKey: ['explore'] });
+      if (editId) {
+        queryClient.invalidateQueries({ queryKey: ['recipe', editId] });
+      }
       router.replace('/(tabs)/kitchen' as any);
     } catch (e: any) {
       Alert.alert('Save failed', e.message ?? 'Unknown error');
@@ -289,7 +347,7 @@ export default function AddRecipeScreen() {
           </View>
 
           <EditorialHeading size={26} emphasis="recipe" emphasisColor="clay">
-            {'Add a\n'}
+            {editId ? 'Edit\n' : 'Add a\n'}
           </EditorialHeading>
           <Text style={styles.subtitle}>
             {fromShareIntent ? 'imported from share — edit below' : 'paste a link or fill it in manually'}
@@ -300,7 +358,7 @@ export default function AddRecipeScreen() {
               <Text style={styles.fieldLabel}>paste a link</Text>
               <TextInput
                 style={styles.inputInline}
-                placeholder="Paste a TikTok or recipe URL"
+                placeholder="Paste a recipe URL"
                 placeholderTextColor={colors.muted}
                 value={importUrl}
                 onChangeText={setImportUrl}
@@ -310,7 +368,7 @@ export default function AddRecipeScreen() {
               {importUrl.trim().length > 0 && (
                 <Pressable
                   style={[styles.importBtn, importing && styles.btnDisabled]}
-                  onPress={handleImport}
+                  onPress={() => handleImport()}
                   disabled={importing}
                 >
                   {importing ? (
@@ -363,12 +421,12 @@ export default function AddRecipeScreen() {
             <Text style={styles.fieldLabel}>cover photo *</Text>
             {coverUri ? (
               <Pressable onPress={handlePickWithTips}>
-                <Image source={{ uri: coverUri }} style={{ width: '100%', height: 180, borderRadius: 10 }} />
+                <Image source={coverUri} style={{ width: '100%', height: 180, borderRadius: 10 }} contentFit="cover" />
                 <Text style={[styles.fieldLabel, { marginTop: 8, color: colors.sage }]}>tap to change</Text>
               </Pressable>
             ) : scrapedImageUrl ? (
               <Pressable onPress={handlePickWithTips}>
-                <Image source={{ uri: scrapedImageUrl }} style={{ width: '100%', height: 180, borderRadius: 10 }} />
+                <Image source={scrapedImageUrl} style={{ width: '100%', height: 180, borderRadius: 10 }} contentFit="cover" />
                 <Text style={[styles.fieldLabel, { marginTop: 8, color: colors.sage }]}>tap to change</Text>
               </Pressable>
             ) : (
@@ -651,7 +709,7 @@ export default function AddRecipeScreen() {
               <ActivityIndicator color="#fff" />
             ) : (
               <Text style={styles.primaryBtnText}>
-                {publish ? 'Publish →' : 'Save as draft'}
+                {editId ? 'Save changes' : publish ? 'Publish →' : 'Save as draft'}
               </Text>
             )}
           </Pressable>

@@ -1,6 +1,7 @@
 // app/(tabs)/profile.tsx
 // You — identity + relationships + settings.
 // Stack order: header → stats → palate → friends row → sign out.
+import { useState } from 'react';
 import {
   View,
   Text,
@@ -9,9 +10,11 @@ import {
   ActivityIndicator,
   StyleSheet,
   Alert,
+  Modal,
+  TextInput,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/store/auth';
@@ -46,9 +49,16 @@ const AXIS_LABELS: Record<string, string> = {
 
 export default function ProfileScreen() {
   const router = useRouter();
-  const { user, setSession } = useAuthStore();
+  const queryClient = useQueryClient();
+  const { user } = useAuthStore();
   const storedPalate = useAuthStore((s) => s.profile?.palate_vector);
   const palate = parsePalate(storedPalate);
+
+  const [editVisible, setEditVisible] = useState(false);
+  const [editName, setEditName] = useState('');
+  const [editUsername, setEditUsername] = useState('');
+  const [editBio, setEditBio] = useState('');
+  const [editSaving, setEditSaving] = useState(false);
 
   const { data, isLoading } = useQuery({
     queryKey: ['profile', user?.id],
@@ -56,9 +66,24 @@ export default function ProfileScreen() {
     enabled: !!user,
   });
 
-  async function handleSignOut() {
-    await supabase.auth.signOut();
-    setSession(null);
+  async function handleSaveProfile() {
+    if (!user) return;
+    setEditSaving(true);
+    const { error } = await supabase
+      .from('profiles')
+      .update({
+        display_name: editName.trim() || null,
+        username: editUsername.trim() || null,
+        bio: editBio.trim() || null,
+      })
+      .eq('id', user.id);
+    setEditSaving(false);
+    if (error) {
+      Alert.alert('Error', 'Could not update profile.');
+      return;
+    }
+    setEditVisible(false);
+    queryClient.invalidateQueries({ queryKey: ['profile', user.id] });
   }
 
   if (isLoading || !data) {
@@ -92,7 +117,12 @@ export default function ProfileScreen() {
           </View>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
             <InboxIcon />
-            <Pressable style={styles.editBtn} onPress={() => {}}>
+            <Pressable style={styles.editBtn} onPress={() => {
+              setEditName(displayName === 'You' ? '' : displayName);
+              setEditUsername(username);
+              setEditBio(profile?.bio ?? '');
+              setEditVisible(true);
+            }}>
               <Text style={styles.editBtnText}>edit</Text>
             </Pressable>
           </View>
@@ -161,19 +191,33 @@ export default function ProfileScreen() {
           <Text style={styles.friendsLinkChevron}>›</Text>
         </Pressable>
 
-        {/* Sign out */}
+        {/* Settings */}
         <Pressable
-          style={styles.signOutBtn}
-          onPress={() =>
-            Alert.alert('Sign out', 'Are you sure?', [
-              { text: 'Cancel', style: 'cancel' },
-              { text: 'Sign Out', style: 'destructive', onPress: handleSignOut },
-            ])
-          }
+          style={styles.friendsLinkRow}
+          onPress={() => router.push('/settings' as any)}
         >
-          <Text style={styles.signOutText}>sign out</Text>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.friendsLinkTitle}>Settings</Text>
+            <Text style={styles.friendsLinkSub}>Units, notifications, account</Text>
+          </View>
+          <Text style={styles.friendsLinkChevron}>›</Text>
         </Pressable>
       </ScrollView>
+
+      {/* Edit profile modal */}
+      <Modal visible={editVisible} transparent animationType="fade" onRequestClose={() => setEditVisible(false)}>
+        <Pressable style={editStyles.overlay} onPress={() => setEditVisible(false)}>
+          <Pressable style={editStyles.sheet} onPress={(e) => e.stopPropagation()}>
+            <Text style={editStyles.title}>Edit profile</Text>
+            <TextInput style={editStyles.input} placeholder="Display name" placeholderTextColor={colors.muted} value={editName} onChangeText={setEditName} />
+            <TextInput style={editStyles.input} placeholder="Username" placeholderTextColor={colors.muted} value={editUsername} onChangeText={setEditUsername} autoCapitalize="none" />
+            <TextInput style={[editStyles.input, { height: 80, textAlignVertical: 'top', paddingTop: 12 }]} placeholder="Bio" placeholderTextColor={colors.muted} value={editBio} onChangeText={setEditBio} multiline numberOfLines={3} />
+            <Pressable style={[editStyles.saveBtn, editSaving && { opacity: 0.5 }]} onPress={handleSaveProfile} disabled={editSaving}>
+              <Text style={editStyles.saveBtnText}>{editSaving ? 'Saving…' : 'Save'}</Text>
+            </Pressable>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -327,17 +371,48 @@ const styles = StyleSheet.create({
     lineHeight: 22,
   },
 
-  signOutBtn: {
-    marginTop: 30,
-    backgroundColor: '#F1F1EC',
+});
+
+const editStyles = StyleSheet.create({
+  overlay: {
+    flex: 1,
+    backgroundColor: colors.overlayScrim,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 32,
+  },
+  sheet: {
+    width: '100%',
+    backgroundColor: colors.card,
+    borderRadius: radius.xl,
+    padding: 24,
+    gap: 14,
+  },
+  title: {
+    fontFamily: 'Inter_700Bold',
+    fontSize: 17,
+    color: colors.ink,
+  },
+  input: {
+    height: 44,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.md,
+    paddingHorizontal: 14,
+    fontFamily: 'Inter_500Medium',
+    fontSize: 15,
+    color: colors.ink,
+    backgroundColor: colors.bg,
+  },
+  saveBtn: {
+    backgroundColor: colors.sage,
     borderRadius: radius.pill,
-    paddingVertical: 15,
+    paddingVertical: 13,
     alignItems: 'center',
   },
-  signOutText: {
+  saveBtnText: {
     fontFamily: 'Inter_700Bold',
-    fontSize: 13,
-    color: colors.inkSoft,
-    letterSpacing: -0.1,
+    fontSize: 14,
+    color: colors.card,
   },
 });
