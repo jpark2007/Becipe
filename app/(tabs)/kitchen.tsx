@@ -88,6 +88,16 @@ async function fetchLikedCount(userId: string): Promise<number> {
   return count ?? 0;
 }
 
+async function fetchDraftsCount(userId: string): Promise<number> {
+  const { count, error } = await supabase
+    .from('recipes')
+    .select('*', { count: 'exact', head: true })
+    .eq('created_by', userId)
+    .eq('is_public', false);
+  if (error) return 0;
+  return count ?? 0;
+}
+
 function mergeAllRecipes(
   saved: (Recipe & { _source: 'saved' })[],
   mine: (Recipe & { _source: 'mine' })[],
@@ -291,6 +301,12 @@ export default function KitchenScreen() {
     enabled: !!user,
   });
 
+  const { data: draftsCount = 0 } = useQuery({
+    queryKey: ['drafts-count', user?.id],
+    queryFn: () => fetchDraftsCount(user!.id),
+    enabled: !!user,
+  });
+
   const { data: savedRecipes = [], isLoading: savedLoading } = useQuery({
     queryKey: ['kitchen-saved', user?.id],
     queryFn: () => fetchSavedRecipes(user!.id),
@@ -336,6 +352,26 @@ export default function KitchenScreen() {
       actions.splice(1, 0, {
         label: 'Edit recipe',
         onPress: () => router.push({ pathname: '/add-recipe', params: { editId: menuRecipe.id } } as any),
+      });
+      actions.push({
+        label: 'Delete recipe',
+        destructive: true,
+        onPress: () => {
+          Alert.alert('Delete recipe', `Are you sure you want to delete "${menuRecipe.title}"?`, [
+            { text: 'Cancel', style: 'cancel' },
+            {
+              text: 'Delete',
+              style: 'destructive',
+              onPress: async () => {
+                await supabase.from('recipes').delete().eq('id', menuRecipe.id);
+                queryClient.invalidateQueries({ queryKey: ['kitchen-mine', user?.id] });
+                queryClient.invalidateQueries({ queryKey: ['kitchen-saved', user?.id] });
+                queryClient.invalidateQueries({ queryKey: ['drafts', user?.id] });
+                queryClient.invalidateQueries({ queryKey: ['drafts-count', user?.id] });
+              },
+            },
+          ]);
+        },
       });
     }
     if (menuRecipe._source === 'saved') {
@@ -440,7 +476,7 @@ export default function KitchenScreen() {
             <ActivityIndicator color={colors.sage} style={{ marginTop: 40, width: '100%' }} />
           ) : (
             <>
-              {/* Liked virtual album — always first */}
+              {/* Virtual albums — always first */}
               <Pressable
                 style={[styles.albumCard, { backgroundColor: colors.claySoft }]}
                 onPress={() => router.push('/liked' as any)}
@@ -449,6 +485,16 @@ export default function KitchenScreen() {
                 <Text style={[styles.albumName, { color: colors.clay }]}>Favorites</Text>
                 <Text style={[styles.albumCount, { color: colors.clay }]}>
                   {likedCount} recipe{likedCount !== 1 ? 's' : ''}
+                </Text>
+              </Pressable>
+              <Pressable
+                style={[styles.albumCard, { backgroundColor: colors.bg }]}
+                onPress={() => router.push('/drafts' as any)}
+              >
+                <Text style={{ fontSize: 24, marginBottom: 4 }}>✎</Text>
+                <Text style={[styles.albumName, { color: colors.inkSoft }]}>Drafts</Text>
+                <Text style={[styles.albumCount, { color: colors.muted }]}>
+                  {draftsCount} recipe{draftsCount !== 1 ? 's' : ''}
                 </Text>
               </Pressable>
               {collections.map((col, i) => (

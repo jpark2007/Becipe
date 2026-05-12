@@ -15,8 +15,9 @@ import {
   KeyboardAvoidingView,
   Platform,
   StyleSheet,
+  Image as RNImage,
 } from 'react-native';
-import { Image } from 'expo-image';
+import { Image as ExpoImage } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -249,16 +250,27 @@ export default function AddRecipeScreen() {
     try {
       let finalCoverUrl: string | null = scrapedImageUrl || null;
       if (coverUri) {
-        const ext = coverUri.split('.').pop() || 'jpg';
+        const rawExt = coverUri.split('.').pop()?.split('?')[0]?.toLowerCase() || 'jpg';
+        const ext = ['jpg', 'jpeg', 'png', 'webp', 'heic'].includes(rawExt) ? rawExt : 'jpg';
+        const mimeType = `image/${ext === 'jpg' ? 'jpeg' : ext}`;
         const fileName = `covers/${user.id}/${Date.now()}.${ext}`;
-        const response = await fetch(coverUri);
-        const blob = await response.blob();
-        const { error: uploadErr } = await supabase.storage
-          .from('recipe-photos')
-          .upload(fileName, blob, { contentType: `image/${ext}` });
-        if (!uploadErr) {
-          const { data: urlData } = supabase.storage.from('recipe-photos').getPublicUrl(fileName);
-          finalCoverUrl = urlData.publicUrl;
+        try {
+          const response = await fetch(coverUri);
+          const arrayBuf = await response.arrayBuffer();
+          const { error: uploadErr } = await supabase.storage
+            .from('recipe-photos')
+            .upload(fileName, arrayBuf, { contentType: mimeType, upsert: true });
+          if (uploadErr) {
+            console.error('Cover upload failed:', uploadErr);
+            Alert.alert('Image upload failed', uploadErr.message ?? 'Could not upload cover photo.');
+          } else {
+            const { data: urlData } = supabase.storage.from('recipe-photos').getPublicUrl(fileName);
+            finalCoverUrl = urlData.publicUrl;
+            console.log('Cover uploaded:', finalCoverUrl);
+          }
+        } catch (fetchErr: any) {
+          console.error('Cover upload error:', fetchErr);
+          Alert.alert('Image error', 'Could not upload the selected photo.');
         }
       }
 
@@ -421,12 +433,12 @@ export default function AddRecipeScreen() {
             <Text style={styles.fieldLabel}>cover photo *</Text>
             {coverUri ? (
               <Pressable onPress={handlePickWithTips}>
-                <Image source={coverUri} style={{ width: '100%', height: 180, borderRadius: 10 }} contentFit="cover" />
+                <RNImage source={{ uri: coverUri }} style={{ width: '100%', height: 180, borderRadius: 10 }} resizeMode="cover" />
                 <Text style={[styles.fieldLabel, { marginTop: 8, color: colors.sage }]}>tap to change</Text>
               </Pressable>
             ) : scrapedImageUrl ? (
               <Pressable onPress={handlePickWithTips}>
-                <Image source={scrapedImageUrl} style={{ width: '100%', height: 180, borderRadius: 10 }} contentFit="cover" />
+                <ExpoImage source={{ uri: scrapedImageUrl }} style={{ width: '100%', height: 180, borderRadius: 10 }} contentFit="cover" />
                 <Text style={[styles.fieldLabel, { marginTop: 8, color: colors.sage }]}>tap to change</Text>
               </Pressable>
             ) : (
