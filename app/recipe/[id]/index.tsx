@@ -229,9 +229,11 @@ export default function RecipeDetailScreen() {
               onPress={() => user && likeMutation.mutate()}
             >
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
-                <Text style={[styles.iconText, { color: isLiked ? colors.clay : colors.ink }]}>
-                  {isLiked ? '♥' : '♡'}
-                </Text>
+                <Ionicons
+                  name={isLiked ? 'heart' : 'heart-outline'}
+                  size={18}
+                  color={isLiked ? colors.clay : colors.ink}
+                />
                 {likeCount > 0 && (
                   <Text style={styles.likeCount}>{likeCount}</Text>
                 )}

@@ -6,6 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { colors, shadow } from '@/lib/theme';
 import { EditorialHeading } from '@/components/EditorialHeading';
+import { Ionicons } from '@expo/vector-icons';
 
 type DictState = 'idle' | 'listening' | 'thinking' | 'done';
 
@@ -13,7 +14,7 @@ const STATE_LABELS: Record<DictState, string> = {
   idle: 'TAP TO START',
   listening: '● LISTENING…',
   thinking: '◌ THINKING…',
-  done: '✓ GOT IT',
+  done: 'GOT IT',
 };
 
 const STATE_COLORS: Record<DictState, string> = {
@@ -93,7 +94,7 @@ export default function VoiceDictateScreen() {
         onPress={simulateDictation}
         disabled={isRunning && dictState !== 'done'}
       >
-        <Text style={styles.micGlyph}>🎤</Text>
+        <Ionicons name="mic-outline" size={32} color={colors.card} />
       </Pressable>
 
       {/* Caption card */}

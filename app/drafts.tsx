@@ -15,6 +15,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/store/auth';
 import { colors, radius } from '@/lib/theme';
+import { Ionicons } from '@expo/vector-icons';
 import type { Recipe } from '@/lib/database.types';
 
 async function fetchDraftRecipes(userId: string): Promise<Recipe[]> {
@@ -59,14 +60,17 @@ export default function DraftsScreen() {
       </View>
 
       <View style={styles.searchWrap}>
-        <TextInput
-          style={styles.search}
-          placeholder="Search drafts…"
-          placeholderTextColor={colors.muted}
-          value={search}
-          onChangeText={setSearch}
-          clearButtonMode="while-editing"
-        />
+        <View style={styles.search}>
+          <Ionicons name="search-outline" size={16} color={colors.muted} />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search drafts…"
+            placeholderTextColor={colors.muted}
+            value={search}
+            onChangeText={setSearch}
+            clearButtonMode="while-editing"
+          />
+        </View>
       </View>
 
       <ScrollView contentContainerStyle={styles.content}>
@@ -87,7 +91,7 @@ export default function DraftsScreen() {
                 <Image source={{ uri: recipe.cover_image_url }} style={styles.thumb} contentFit="cover" />
               ) : (
                 <View style={[styles.thumb, { backgroundColor: colors.bg, alignItems: 'center', justifyContent: 'center' }]}>
-                  <Text style={{ fontSize: 18 }}>📝</Text>
+                  <Ionicons name="document-text-outline" size={20} color={colors.muted} />
                 </View>
               )}
               <View style={styles.meta}>
@@ -146,11 +150,18 @@ const styles = StyleSheet.create({
     backgroundColor: colors.bg,
     borderRadius: radius.pill,
     paddingHorizontal: 16,
+    borderWidth: 1,
+    borderColor: colors.border,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  searchInput: {
+    flex: 1,
     fontFamily: 'Inter_500Medium',
     fontSize: 14,
     color: colors.ink,
-    borderWidth: 1,
-    borderColor: colors.border,
+    height: '100%',
   },
   content: {
     paddingHorizontal: 22,

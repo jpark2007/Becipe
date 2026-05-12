@@ -6,6 +6,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/store/auth';
 import { colors, radius, shadow } from '@/lib/theme';
+import { Ionicons } from '@expo/vector-icons';
 
 export default function SendRecipeScreen() {
   const { recipeId, recipeTitle } = useLocalSearchParams<{ recipeId: string; recipeTitle: string }>();
@@ -98,7 +99,7 @@ export default function SendRecipeScreen() {
               <Text style={styles.userName}>{item.display_name}</Text>
               <Text style={styles.userHandle}>@{item.username}</Text>
             </View>
-            {selectedId === item.id && <Text style={styles.check}>✓</Text>}
+            {selectedId === item.id && <Ionicons name="checkmark" size={18} color={colors.sage} />}
           </Pressable>
         )}
         ListEmptyComponent={

@@ -1,10 +1,13 @@
 import React from 'react';
 import { View, Text, Pressable, Image, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Ionicons } from '@expo/vector-icons';
 import { MatchPill } from '@/components/MatchPill';
 import { colors, radius, shadow } from '@/lib/theme';
 import { matchScore, parsePalate } from '@/lib/palate';
 import { useAuthStore } from '@/store/auth';
+import { supabase } from '@/lib/supabase';
 import { initialsFor, colorForUserId } from '@/lib/avatar';
 
 type FeedItem = {
@@ -39,21 +42,100 @@ function hashId(id: string): number {
 
 export function FeedCard({ item }: { item: FeedItem }) {
   const router = useRouter();
+  const { user } = useAuthStore();
   const userPalate = useAuthStore(s => s.profile?.palate_vector ?? null);
+  const queryClient = useQueryClient();
+
   if (!item.recipe || !item.actor) return null;
 
+  const recipeId = item.recipe.id;
   const actorName = item.actor.display_name || item.actor.username;
   const avInitials = initialsFor(actorName);
   const avColor = colorForUserId(item.actor.id);
   const score = matchScore(parsePalate(userPalate), parsePalate(item.recipe.palate_vector));
   const time = formatRelative(item.created_at);
   const hasPhoto = !!item.recipe.cover_image_url;
-  const palette = NO_PHOTO_PALETTES[hashId(item.recipe.id) % NO_PHOTO_PALETTES.length];
+  const palette = NO_PHOTO_PALETTES[hashId(recipeId) % NO_PHOTO_PALETTES.length];
+
+  // ── Like state ──
+  const { data: isLiked = false } = useQuery({
+    queryKey: ['feed-like', recipeId, user?.id],
+    queryFn: async () => {
+      if (!user) return false;
+      const { data } = await supabase
+        .from('recipe_likes')
+        .select('recipe_id')
+        .eq('user_id', user.id)
+        .eq('recipe_id', recipeId)
+        .maybeSingle();
+      return !!data;
+    },
+    enabled: !!user,
+    staleTime: 30_000,
+  });
+
+  const likeMutation = useMutation({
+    mutationFn: async () => {
+      if (!user) return;
+      if (isLiked) {
+        await supabase.from('recipe_likes').delete()
+          .eq('user_id', user.id).eq('recipe_id', recipeId);
+      } else {
+        await (supabase.from('recipe_likes') as any).insert({ user_id: user.id, recipe_id: recipeId });
+      }
+    },
+    onMutate: async () => {
+      await queryClient.cancelQueries({ queryKey: ['feed-like', recipeId, user?.id] });
+      queryClient.setQueryData(['feed-like', recipeId, user?.id], !isLiked);
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['feed-like', recipeId, user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['liked-count', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['liked-recipes', user?.id] });
+    },
+  });
+
+  // ── Save state ──
+  const { data: isSaved = false } = useQuery({
+    queryKey: ['feed-save', recipeId, user?.id],
+    queryFn: async () => {
+      if (!user) return false;
+      const { data } = await supabase
+        .from('saved_recipes')
+        .select('recipe_id')
+        .eq('user_id', user.id)
+        .eq('recipe_id', recipeId)
+        .maybeSingle();
+      return !!data;
+    },
+    enabled: !!user,
+    staleTime: 30_000,
+  });
+
+  const saveMutation = useMutation({
+    mutationFn: async () => {
+      if (!user) return;
+      if (isSaved) {
+        await supabase.from('saved_recipes').delete()
+          .eq('user_id', user.id).eq('recipe_id', recipeId);
+      } else {
+        await (supabase.from('saved_recipes') as any).insert({ user_id: user.id, recipe_id: recipeId });
+      }
+    },
+    onMutate: async () => {
+      await queryClient.cancelQueries({ queryKey: ['feed-save', recipeId, user?.id] });
+      queryClient.setQueryData(['feed-save', recipeId, user?.id], !isSaved);
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['feed-save', recipeId, user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['kitchen-saved', user?.id] });
+    },
+  });
 
   return (
     <Pressable
       style={styles.card}
-      onPress={() => router.push(`/recipe/${item.recipe!.id}`)}
+      onPress={() => router.push(`/recipe/${recipeId}`)}
     >
       {/* Header */}
       <View style={styles.header}>
@@ -96,10 +178,49 @@ export function FeedCard({ item }: { item: FeedItem }) {
 
       {/* Footer */}
       <View style={styles.footer}>
-        {hasPhoto && (
-          <Text style={styles.title} numberOfLines={2}>{item.recipe.title}</Text>
-        )}
-        {score != null && <MatchPill score={score} />}
+        <View style={styles.footerTop}>
+          {hasPhoto && (
+            <Text style={styles.title} numberOfLines={2}>{item.recipe.title}</Text>
+          )}
+          {score != null && <MatchPill score={score} />}
+        </View>
+
+        {/* Action row */}
+        <View style={styles.actionRow}>
+          <Pressable
+            style={styles.actionBtn}
+            onPress={(e) => { e.stopPropagation?.(); likeMutation.mutate(); }}
+            hitSlop={8}
+          >
+            <Ionicons
+              name={isLiked ? 'heart' : 'heart-outline'}
+              size={22}
+              color={isLiked ? colors.clay : colors.muted}
+            />
+          </Pressable>
+
+          <Pressable
+            style={styles.actionBtn}
+            onPress={(e) => { e.stopPropagation?.(); saveMutation.mutate(); }}
+            hitSlop={8}
+          >
+            <Ionicons
+              name={isSaved ? 'bookmark' : 'bookmark-outline'}
+              size={22}
+              color={isSaved ? colors.sage : colors.muted}
+            />
+          </Pressable>
+
+          <View style={{ flex: 1 }} />
+
+          <Pressable
+            style={styles.viewBtn}
+            onPress={() => router.push(`/recipe/${recipeId}`)}
+          >
+            <Text style={styles.viewBtnText}>View recipe</Text>
+            <Ionicons name="arrow-forward" size={13} color={colors.sage} />
+          </Pressable>
+        </View>
       </View>
     </Pressable>
   );
@@ -176,8 +297,11 @@ const styles = StyleSheet.create({
   footer: {
     paddingHorizontal: 14,
     paddingTop: 11,
-    paddingBottom: 14,
-    gap: 7,
+    paddingBottom: 6,
+    gap: 10,
+  },
+  footerTop: {
+    gap: 6,
   },
   title: {
     fontFamily: 'Inter_800ExtraBold',
@@ -185,5 +309,32 @@ const styles = StyleSheet.create({
     color: colors.ink,
     letterSpacing: -0.4,
     lineHeight: 20,
+  },
+  actionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingTop: 6,
+    borderTopWidth: 1,
+    borderTopColor: colors.borderSoft,
+    paddingBottom: 8,
+  },
+  actionBtn: {
+    padding: 6,
+    borderRadius: radius.sm,
+  },
+  viewBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    backgroundColor: colors.sageSoft,
+    borderRadius: radius.pill,
+  },
+  viewBtnText: {
+    fontFamily: 'Inter_600SemiBold',
+    fontSize: 12,
+    color: colors.sage,
   },
 });

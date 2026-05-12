@@ -5,6 +5,7 @@ import {
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { supabase } from '@/lib/supabase';
 import { colors } from '@/lib/theme';
+import { Ionicons } from '@expo/vector-icons';
 
 export default function VerifyEmailScreen() {
   const router = useRouter();
@@ -48,9 +49,7 @@ export default function VerifyEmailScreen() {
     <View style={{ flex: 1, backgroundColor: colors.bone, paddingHorizontal: 32, justifyContent: 'center' }}>
 
       {/* Icon */}
-      <Text style={{ fontFamily: 'Inter_700Bold', fontSize: 32, color: colors.sage, marginBottom: 40 }}>
-        ✉
-      </Text>
+      <Ionicons name="mail-outline" size={36} color={colors.sage} style={{ marginBottom: 40 }} />
 
       {/* Heading */}
       <Text style={{ fontFamily: 'Inter_600SemiBold', fontSize: 10, color: colors.muted, letterSpacing: 3, marginBottom: 12 }}>

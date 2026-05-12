@@ -18,6 +18,7 @@ import { useAuthStore } from '@/store/auth';
 import { colors, radius } from '@/lib/theme';
 import { AlbumPickerSheet } from '@/components/AlbumPickerSheet';
 import { ActionSheet } from '@/components/ActionSheet';
+import { Ionicons } from '@expo/vector-icons';
 import type { Recipe, RecipeCollection } from '@/lib/database.types';
 
 async function fetchCollection(id: string): Promise<RecipeCollection> {
@@ -55,7 +56,7 @@ function RecipeRow({
         <Image source={{ uri: recipe.cover_image_url }} style={rowStyles.thumb} contentFit="cover" />
       ) : (
         <View style={[rowStyles.thumb, { backgroundColor: colors.bg, alignItems: 'center', justifyContent: 'center' }]}>
-          <Text style={{ fontSize: 18 }}>🍽</Text>
+          <Ionicons name="restaurant-outline" size={20} color={colors.muted} />
         </View>
       )}
       <View style={rowStyles.meta}>

@@ -8,6 +8,7 @@ import {
   ActivityIndicator,
   StyleSheet,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -190,7 +191,7 @@ export default function CookScreen() {
                         checked[i] ? styles.checkboxOn : styles.checkboxOff,
                       ]}
                     >
-                      {checked[i] ? <Text style={styles.checkboxTick}>✓</Text> : null}
+                      {checked[i] ? <Ionicons name="checkmark" size={14} color="#fff" /> : null}
                     </View>
                     <Text
                       style={[

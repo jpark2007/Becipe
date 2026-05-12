@@ -224,7 +224,7 @@ function RecipeRow({
         <Image source={{ uri: recipe.cover_image_url }} style={rowStyles.thumb} contentFit="cover" />
       ) : (
         <View style={[rowStyles.thumb, { backgroundColor: colors.bg, alignItems: 'center', justifyContent: 'center' }]}>
-          <Text style={{ fontSize: 18 }}>🍽</Text>
+          <Ionicons name="restaurant-outline" size={20} color={colors.muted} />
         </View>
       )}
       <View style={rowStyles.meta}>
@@ -481,7 +481,7 @@ export default function KitchenScreen() {
                 style={[styles.albumCard, { backgroundColor: colors.claySoft }]}
                 onPress={() => router.push('/liked' as any)}
               >
-                <Text style={{ fontSize: 24, marginBottom: 4 }}>♥</Text>
+                <Ionicons name="heart" size={22} color={colors.clay} style={{ marginBottom: 4 }} />
                 <Text style={[styles.albumName, { color: colors.clay }]}>Favorites</Text>
                 <Text style={[styles.albumCount, { color: colors.clay }]}>
                   {likedCount} recipe{likedCount !== 1 ? 's' : ''}
@@ -491,7 +491,7 @@ export default function KitchenScreen() {
                 style={[styles.albumCard, { backgroundColor: colors.bg }]}
                 onPress={() => router.push('/drafts' as any)}
               >
-                <Text style={{ fontSize: 24, marginBottom: 4 }}>✎</Text>
+                <Ionicons name="create-outline" size={22} color={colors.inkSoft} style={{ marginBottom: 4 }} />
                 <Text style={[styles.albumName, { color: colors.inkSoft }]}>Drafts</Text>
                 <Text style={[styles.albumCount, { color: colors.muted }]}>
                   {draftsCount} recipe{draftsCount !== 1 ? 's' : ''}

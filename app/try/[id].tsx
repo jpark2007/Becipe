@@ -21,6 +21,7 @@ import { useAuthStore } from '@/store/auth';
 import { RatingSlider } from '@/components/RatingSlider';
 import { Plate } from '@/components/Plate';
 import { EditorialHeading } from '@/components/EditorialHeading';
+import { Ionicons } from '@expo/vector-icons';
 import { colors, shadow } from '@/lib/theme';
 
 const TAG_OPTIONS = ['make again', 'crushed it', 'tweaked', 'weeknight'];
@@ -143,7 +144,7 @@ export default function TryScreen() {
               onPress={() => router.back()}
               hitSlop={8}
             >
-              <Text style={styles.iconText}>✕</Text>
+              <Ionicons name="close" size={20} color={colors.ink} />
             </Pressable>
             <Text style={styles.titleSm}>log a try</Text>
             <Pressable
@@ -171,9 +172,12 @@ export default function TryScreen() {
               {photoUri ? 'looks great' : 'required'}
             </Text>
             <Pressable style={styles.changeBtn} onPress={handlePickWithTips}>
-              <Text style={styles.changeBtnText}>
-                {photoUri ? '📷 change' : '📷 add photo'}
-              </Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <Ionicons name="camera-outline" size={16} color={colors.card} />
+                <Text style={styles.changeBtnText}>
+                  {photoUri ? 'change photo' : 'add photo'}
+                </Text>
+              </View>
             </Pressable>
             <View style={styles.plateFloat}>
               <Plate uri={photoUri} size={170} />

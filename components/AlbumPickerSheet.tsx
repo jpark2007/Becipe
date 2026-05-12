@@ -13,6 +13,7 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { colors, radius } from '@/lib/theme';
@@ -102,7 +103,7 @@ function CheckRow({
   return (
     <Pressable style={checkStyles.row} onPress={onToggle}>
       <View style={[checkStyles.box, checked && checkStyles.boxChecked]}>
-        {checked && <Text style={checkStyles.tick}>✓</Text>}
+        {checked && <Ionicons name="checkmark" size={13} color={colors.card} />}
       </View>
       <View style={{ flex: 1 }}>
         <Text style={checkStyles.label} numberOfLines={1}>{label}</Text>
@@ -295,7 +296,7 @@ function PickAlbumsContent({
         <ScrollView style={{ maxHeight: 280 }} showsVerticalScrollIndicator={false}>
           <Pressable style={checkStyles.row} onPress={() => setLocalFavorited(prev => !(prev ?? isFavorited))}>
             <View style={[checkStyles.box, favChecked && { backgroundColor: colors.clay, borderColor: colors.clay }]}>
-              {favChecked && <Text style={checkStyles.tick}>♥</Text>}
+              {favChecked && <Ionicons name="heart" size={13} color={colors.card} />}
             </View>
             <Text style={[checkStyles.label, { color: colors.clay }]}>Favorites</Text>
           </Pressable>

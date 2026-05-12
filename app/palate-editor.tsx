@@ -27,7 +27,6 @@ import {
 type AxisMeta = {
   key: keyof PalateVector;
   label: string;
-  emoji: string;
   subtitle: string;
   min: string;
   max: string;
@@ -38,7 +37,6 @@ const AXES: AxisMeta[] = [
   {
     key: 'sweet',
     label: 'SWEET',
-    emoji: '🍬',
     subtitle: 'FROM SUBTLE TO SYRUPY',
     min: 'SUBTLE',
     max: 'DOMINANT',
@@ -47,7 +45,6 @@ const AXES: AxisMeta[] = [
   {
     key: 'spicy',
     label: 'SPICY',
-    emoji: '🌶️',
     subtitle: 'FROM MILD TO FIERY',
     min: 'MILD',
     max: 'FIERY',
@@ -56,7 +53,6 @@ const AXES: AxisMeta[] = [
   {
     key: 'savory',
     label: 'SAVORY',
-    emoji: '🍖',
     subtitle: 'FROM LIGHT TO DEEP UMAMI',
     min: 'LIGHT',
     max: 'DEEP',
@@ -65,7 +61,6 @@ const AXES: AxisMeta[] = [
   {
     key: 'sour',
     label: 'SOUR',
-    emoji: '🍋',
     subtitle: 'FROM BRIGHT TO PUCKERING',
     min: 'BRIGHT',
     max: 'PUCKER',
@@ -74,7 +69,6 @@ const AXES: AxisMeta[] = [
   {
     key: 'bitter',
     label: 'BITTER',
-    emoji: '🌿',
     subtitle: 'FROM GENTLE TO BOLD',
     min: 'GENTLE',
     max: 'BOLD',
@@ -145,8 +139,8 @@ export default function PalateEditorScreen() {
         {AXES.map(axis => (
           <View key={axis.key} style={styles.card}>
             <View style={styles.cardHead}>
-              <View style={styles.emojiChip}>
-                <Text style={styles.emoji}>{axis.emoji}</Text>
+              <View style={[styles.accentChip, { backgroundColor: axis.trackColor + '1A' }]}>
+                <View style={[styles.accentDot, { backgroundColor: axis.trackColor }]} />
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={styles.cardLabel}>{axis.label}</Text>
@@ -185,7 +179,7 @@ export default function PalateEditorScreen() {
           disabled={saving}
         >
           <Text style={styles.saveBtnText}>
-            {saving ? 'saving…' : 'Save Flavor Profile ✓'}
+            {saving ? 'saving…' : 'Save Flavor Profile'}
           </Text>
         </Pressable>
       </View>
@@ -259,15 +253,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 12,
   },
-  emojiChip: {
+  accentChip: {
     width: 44,
     height: 44,
     borderRadius: 14,
-    backgroundColor: colors.borderSoft,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  emoji: { fontSize: 22 },
+  accentDot: {
+    width: 12,
+    height: 12,
+    borderRadius: 4,
+  },
   cardLabel: {
     fontFamily: 'Inter_800ExtraBold',
     fontSize: 12,

@@ -105,7 +105,7 @@ export default function VoiceCookScreen() {
           </View>
 
           <View style={styles.askPill}>
-            <Text style={styles.askText}>💬 ask julian anything</Text>
+            <Text style={styles.askText}>ask julian anything</Text>
           </View>
 
           <View style={styles.center}>

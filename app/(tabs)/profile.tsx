@@ -130,10 +130,13 @@ export default function ProfileScreen() {
 
         {/* Stats row */}
         <View style={styles.statsRow}>
-          <View style={styles.statCol}>
+          <Pressable
+            style={styles.statCol}
+            onPress={() => router.push('/my-tries' as any)}
+          >
             <Text style={styles.statNum}>{tryCount}</Text>
-            <Text style={styles.statLabel}>TRIES</Text>
-          </View>
+            <Text style={[styles.statLabel, { color: colors.sage }]}>TRIES</Text>
+          </Pressable>
           <Pressable
             style={styles.statCol}
             onPress={() => router.push('/friends?tab=followers' as any)}
@@ -176,6 +179,20 @@ export default function ProfileScreen() {
             <Text style={styles.palateEdit}>edit your palate →</Text>
           </Pressable>
         </View>
+
+        {/* Tries archive */}
+        <Pressable
+          style={styles.friendsLinkRow}
+          onPress={() => router.push('/my-tries' as any)}
+        >
+          <View style={{ flex: 1 }}>
+            <Text style={styles.friendsLinkTitle}>My Tries</Text>
+            <Text style={styles.friendsLinkSub}>
+              {tryCount} cook{tryCount !== 1 ? 's' : ''} logged
+            </Text>
+          </View>
+          <Text style={styles.friendsLinkChevron}>›</Text>
+        </Pressable>
 
         {/* Friends row — tap to open standalone /friends page */}
         <Pressable
