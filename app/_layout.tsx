@@ -162,6 +162,7 @@ export default function RootLayout() {
           >
             <Stack.Screen name="(auth)" />
             <Stack.Screen name="(onboarding)" />
+            <Stack.Screen name="(onboarding)/tutorial" options={{ headerShown: false, gestureEnabled: false }} />
             <Stack.Screen name="(tabs)" />
             <Stack.Screen name="recipe/[id]" options={{ headerShown: false }} />
             <Stack.Screen
@@ -196,6 +197,7 @@ export default function RootLayout() {
               options={{ presentation: 'modal', headerShown: false }}
             />
             <Stack.Screen name="friends" options={{ headerShown: false }} />
+            <Stack.Screen name="my-tries" options={{ headerShown: false }} />
             <Stack.Screen name="inbox" options={{ headerShown: false }} />
             <Stack.Screen name="inbox/[userId]" options={{ headerShown: false }} />
             <Stack.Screen

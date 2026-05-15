@@ -26,7 +26,7 @@ export default function Welcome() {
           </Text>
         </View>
       </View>
-      <Pressable style={styles.cta} onPress={() => router.push('/(onboarding)/palate-quiz')}>
+      <Pressable style={styles.cta} onPress={() => router.push('/(onboarding)/tutorial')}>
         <Text style={styles.ctaText}>let's go →</Text>
       </Pressable>
       <Pressable style={styles.switch} onPress={handleSwitchAccount}>
